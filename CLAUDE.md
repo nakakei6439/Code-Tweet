@@ -10,9 +10,9 @@
 
 ## 開発状況
 
-STEP 3（環境構築）完了。次のステップ：STEP 4 — V1 MVP 実装（Gemini API 連携・UI 構築）。
+STEP 4（V1 MVP 実装）完了。次のステップ：STEP 5 — Vercel デプロイ（本番公開）。
 
-詳細は [`devflow/step3-environment.md`](./devflow/step3-environment.md) を参照。
+詳細は [`devflow/step4-implementation.md`](./devflow/step4-implementation.md) を参照。
 
 ## 基本情報
 
