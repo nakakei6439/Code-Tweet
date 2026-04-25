@@ -42,7 +42,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
-    const tweets = await generateTweets(body.projectText, body.toneMemo ?? "", body.apiKey);
+    const tweets = await generateTweets(body.projectText, body.toneMemo ?? "", body.url ?? "", body.hashtags ?? "", body.apiKey);
     return Response.json({ tweets } satisfies GenerateResponse, { status: 200 });
   } catch (err) {
     const { message, status } = mapGeminiError(err);

@@ -19,31 +19,47 @@ function reformatTweet(text: string): string {
     rest = rest.slice(0, hashtagMatch.index).trim();
   }
 
-  const urlMatch = rest.match(/(https?:\/\/\S+?)([。、！？\s]*)$/);
-  let url = "";
-  if (urlMatch) {
-    url = urlMatch[1];
-    rest = rest.slice(0, urlMatch.index).trim();
+  // リード文と URL を別行として取り出す
+  const urlLineMatch = rest.match(/([^\n]*?)\s*(https?:\/\/\S+?)([。、！？\s]*)$/);
+  let urlBlock = "";
+  if (urlLineMatch) {
+    const leadIn = urlLineMatch[1].trim();
+    const urlStr = urlLineMatch[2];
+    urlBlock = leadIn ? `${leadIn}\n${urlStr}` : urlStr;
+    rest = rest.slice(0, urlLineMatch.index).trim();
   }
 
-  return [rest, url, hashtags].filter(Boolean).join("\n\n");
+  return [rest, urlBlock, hashtags].filter(Boolean).join("\n\n");
 }
 
-function buildPrompt(projectText: string, toneMemo: string): string {
+function detectUrlType(url: string): string {
+  if (/apps\.apple\.com/i.test(url))  return "App Store（iOS アプリのダウンロードページ）";
+  if (/play\.google\.com/i.test(url)) return "Google Play（Android アプリのダウンロードページ）";
+  if (/github\.io/i.test(url))        return "GitHub Pages（デモまたはドキュメントサイト）";
+  if (/github\.com/i.test(url))       return "GitHub（ソースコードまたはリポジトリページ）";
+  return "Webアプリ・ランディングページ";
+}
+
+function buildPrompt(projectText: string, toneMemo: string, url: string, hashtags: string): string {
   return `あなたは個人開発者向けのTwitter/Xマーケティングの専門家です。
 以下のプロジェクト説明を読み、そのプロダクトを宣伝するためのツイートを5件生成してください。
 
 【プロジェクト説明】
 ${projectText}
 ${toneMemo ? `\n【口調・トーン指示】\n${toneMemo}` : ""}
+${url ? `\n【URL（必須）】\n全ツイートに必ず以下のURLを含める。省略・変形は一切不可：${url}\nこのURLは「${detectUrlType(url)}」へのリンク。URLは単独行に置き、その直前の行にURLの種別に合ったリード文を記載する。\n- App Store/Google Play → 「App Storeで無料公開中 →」「今すぐインストール →」「iPhoneで無料で使える →」など\n- GitHub → 「コードを見る →」「OSSとして公開中 →」「GitHubで公開中 →」など\n- Webアプリ → 「詳しくはこちら →」「今すぐ試す →」「無料で使えます →」など\n5件それぞれ異なるリード文を使うこと。同じフレーズを繰り返さない。` : ""}
+${hashtags ? `\n【ハッシュタグ（必須）】\n以下のハッシュタグを必ず含め、さらにプロダクトに関連するハッシュタグを追加して合計3つ以上にする。指定タグの省略・変形は一切不可：${hashtags}` : ""}
 
 【要件】
 - 必ず5件のツイートを生成する
 - 各ツイートは X の weighted length で 280 ウェイト以内に収める
 - weighted length の計算ルール：半角英数記号=1、日本語・絵文字など全角文字=2、URL は実長を問わず 23 ウェイト固定
-- ハッシュタグ・URL・改行を含めた合計を 280 ウェイト以内とする
+- ハッシュタグ・URL・リード文・改行を含めた合計を 280 ウェイト以内とする
 - 余裕を持たせるため 260 ウェイトを目安に作成する（日本語のみなら約 130 文字、英語のみなら約 260 文字が目安）
-- ハッシュタグは本文と改行して末尾に記載する（例：「本文\n#tag1 #tag2」）
+- 本文には読みやすさのために1〜2箇所の改行を入れる
+- ハッシュタグは本文・URLと改行して末尾に記載する（例：「本文\n#tag1 #tag2 #tag3」）
+- ハッシュタグはユーザー指定分を含め合計3つ以上にする（ハッシュタグ未指定の場合もプロダクトに関連するタグを3つ以上生成する）
+${url ? "" : "- URLが指定されていないため、URL・アプリストアURL・App Store・Google Play などのリンクや参照テキストを一切含めない"}
 - 以下のストーリーアークに沿って順番に生成する：
   1. プロジェクト紹介（何ができるアプリかを端的に伝える）
   2. 使い方・始め方（すぐ使えることを強調）
@@ -65,13 +81,17 @@ function buildShortenPrompt(
   originalText: string,
   currentWeight: number,
   projectText: string,
-  toneMemo: string
+  toneMemo: string,
+  url: string,
+  hashtags: string
 ): string {
   return `以下のツイートは X の weighted length が ${currentWeight} で、上限 280 ウェイトを超過しています。文意・トーン・ハッシュタグを保ったまま、260 ウェイト以内に収まるように短縮してください。
 
 【プロジェクト説明（参考）】
 ${projectText}
 ${toneMemo ? `\n【口調・トーン指示】\n${toneMemo}` : ""}
+${url ? `\n【URL（省略・変形不可）】\n${url}\nURLは単独行に置き、直前の行のリード文も必ずそのまま保持する。` : ""}
+${hashtags ? `\n【ハッシュタグ（省略・変形不可）】\n指定タグを含む全ハッシュタグを保持する：${hashtags}` : ""}
 
 【元のツイート】
 ${originalText}
@@ -80,7 +100,7 @@ ${originalText}
 半角英数記号=1、日本語・絵文字など全角=2、URL は実長を問わず 23 ウェイト固定。
 
 【出力形式】
-短縮後のツイート本文のみを 1 行で返す。番号・引用符・説明・前置きは一切含めない。`;
+短縮後のツイート本文のみを返す。番号・引用符・説明・前置きは一切含めない。`;
 }
 
 async function regenerateOne(
@@ -88,10 +108,12 @@ async function regenerateOne(
   currentWeight: number,
   projectText: string,
   toneMemo: string,
+  url: string,
+  hashtags: string,
   model: GenerativeModel
 ): Promise<string> {
   const result = await model.generateContent(
-    buildShortenPrompt(originalText, currentWeight, projectText, toneMemo)
+    buildShortenPrompt(originalText, currentWeight, projectText, toneMemo, url, hashtags)
   );
   return result.response.text().trim().replace(/^["「『]|["」』]$/g, "").trim();
 }
@@ -99,12 +121,14 @@ async function regenerateOne(
 export async function generateTweets(
   projectText: string,
   toneMemo: string,
+  url: string,
+  hashtags: string,
   apiKey: string
 ): Promise<Tweet[]> {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-  const result = await model.generateContent(buildPrompt(projectText, toneMemo));
+  const result = await model.generateContent(buildPrompt(projectText, toneMemo, url, hashtags));
   const text = result.response.text();
 
   const lines = text
@@ -126,7 +150,7 @@ export async function generateTweets(
       attempts++;
       try {
         const shortened = reformatTweet(
-          await regenerateOne(current, weight, projectText, toneMemo, model)
+          await regenerateOne(current, weight, projectText, toneMemo, url, hashtags, model)
         );
         const shortenedWeight = countWeighted(shortened);
         if (shortenedWeight <= TWEET_LIMIT && shortened.length > 0) {

@@ -7,6 +7,8 @@ import type { Tweet, GenerateRequest, GenerateResponse, GenerateErrorResponse } 
 export default function Home() {
   const [projectText, setProjectText] = useState("");
   const [toneMemo, setToneMemo] = useState("");
+  const [url, setUrl] = useState("");
+  const [hashtags, setHashtags] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [tweets, setTweets] = useState<Tweet[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +25,7 @@ export default function Home() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectText, toneMemo, apiKey } satisfies GenerateRequest),
+        body: JSON.stringify({ projectText, toneMemo, url, hashtags, apiKey } satisfies GenerateRequest),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -78,13 +80,41 @@ export default function Home() {
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                口調メモ <span className="text-gray-500 font-normal">（任意）</span>
+                追加プロンプト <span className="text-gray-500 font-normal">（任意）</span>
               </label>
               <input
                 type="text"
                 value={toneMemo}
                 onChange={(e) => setToneMemo(e.target.value)}
                 placeholder="例：フランクな感じで、絵文字あり"
+                disabled={isLoading}
+                className={`${inputBase} focus:ring-fuchsia-500`}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                URL <span className="text-gray-500 font-normal">（任意）</span>
+              </label>
+              <input
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="例：https://example.com"
+                disabled={isLoading}
+                className={`${inputBase} focus:ring-fuchsia-500`}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                ハッシュタグ <span className="text-gray-500 font-normal">（任意）</span>
+              </label>
+              <input
+                type="text"
+                value={hashtags}
+                onChange={(e) => setHashtags(e.target.value)}
+                placeholder="例：#個人開発 #Webアプリ"
                 disabled={isLoading}
                 className={`${inputBase} focus:ring-fuchsia-500`}
               />
@@ -126,7 +156,7 @@ export default function Home() {
                   生成中...
                 </>
               ) : (
-                "ツイートを生成する"
+                "ポストを生成する"
               )}
             </button>
 

@@ -8,6 +8,8 @@ export interface Tweet {
 export interface GenerateRequest {
   projectText: string;
   toneMemo: string;
+  url?: string;
+  hashtags?: string;
   apiKey: string;
 }
 
