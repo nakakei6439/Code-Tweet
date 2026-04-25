@@ -10,9 +10,11 @@
 
 ## 開発状況
 
-STEP 4（V1 MVP 実装）完了。次のステップ：STEP 5 — Vercel デプロイ（本番公開）。
+STEP 5（Vercel デプロイ）完了。本番 URL: https://code-tweet.vercel.app/
 
-詳細は [`devflow/step4-implementation.md`](./devflow/step4-implementation.md) を参照。
+次のステップ：STEP 6 — V2 機能検討・実装（検索、ユーザー認証、サーバー管理 API キーなど）。
+
+詳細は [`devflow/step5-deploy.md`](./devflow/step5-deploy.md) を参照。
 
 ## 基本情報
 
