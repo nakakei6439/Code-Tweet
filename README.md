@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Code Tweet
 
-## Getting Started
+READMEやプロジェクト説明をAIが分析し、1週間分のマーケティングツイートを自動生成する個人開発者向けWebアプリ。
 
-First, run the development server:
+## 機能（V1）
+
+- プロジェクトテキストを貼り付けてツイートを生成
+- 口調・トーン指示に対応（任意）
+- Gemini APIで7件のツイートを自動生成（ストーリーアーク構成）
+- 1件ずつコピーボタンで即コピー
+
+## 技術スタック
+
+| 役割 | 採用 |
+|------|------|
+| フレームワーク | Next.js 16（App Router） |
+| 言語 | TypeScript |
+| スタイリング | Tailwind CSS v4 |
+| AI | Gemini API（gemini-2.5-flash） |
+| ホスティング | Vercel（予定） |
+
+## セットアップ
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+[http://localhost:3000](http://localhost:3000) をブラウザで開く。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 使い方
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. プロジェクトの README や機能説明を貼り付ける
+2. 口調メモを入力（任意）
+3. [Google AI Studio](https://aistudio.google.com) で取得した Gemini API キーを入力
+4. 「ツイートを生成する」を押す
+5. 生成された7件のツイートをコピーして投稿
 
-## Learn More
+## ロードマップ
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| バージョン | 機能 |
+|-----------|------|
+| V1 | テキスト入力 + Gemini API でツイート生成（現在） |
+| V2 | GitHub URL からコードを自動取得 |
+| V3 | 生成ツイートの保存 |
+| V4 | スケジュール管理 |
+| V5 | Claude API 対応 |
+| V6 | Google 認証 |
