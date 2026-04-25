@@ -56,7 +56,7 @@ export default function Home() {
           がツイートに変わる
         </h1>
         <p className="text-gray-400 text-center mb-10">
-          AIがプロジェクトを分析して7件のマーケティングツイートを自動生成
+          AIがプロジェクトを分析して5件のマーケティングツイートを自動生成
         </p>
 
         <div className="bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden">
