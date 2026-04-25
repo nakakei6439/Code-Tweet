@@ -149,3 +149,27 @@ SDK の生エラー文字列（URL・ステータス・英文）が UI に露出
 |--------|--------|
 | `src/app/page.tsx` | 生成中オーバーレイ追加、URL・ハッシュタグのヒントテキスト追加 |
 | `src/lib/gemini.ts` | ハッシュタグ上限を3〜5つに変更、detectUrlType にコメント追加 |
+
+---
+
+## V1 推奨投稿日時表示（2026-04-27）
+
+### 変更内容
+
+1. **推奨投稿日時をAI生成に変更**：静的マッピングから Gemini が内容・目的・ターゲット層を踏まえて具体的な予約日時（例：4月28日（月）9:30）を決める方式に変更。追加 API コールなし（既存プロンプトに SCHEDULE 出力指示を付加）
+2. **ツイート番号（#1〜#5）を日付表示に置き換え**：各カード上部に `🕐 4月28日（月）9:30` を表示（シアンアイコン付き・`text-sm font-medium`）
+3. **投稿理由を日付直下に表示**：「週初め朝、新情報への関心が高い」などの理由を小さく表示
+
+### 実装詳細
+
+- `SCHEDULE: YYYY-MM-DD HH:MM / 理由` 形式で Gemini に出力させ、正規表現でパース
+- `formatScheduleLabel()` でパース結果を「4月28日（月）9:30」形式に整形
+- Gemini がスケジュールを返さなかった場合は `{ label: "—", reason: "" }` にフォールバック
+
+### 変更ファイル
+
+| ファイル | 変更内容 |
+|--------|--------|
+| `src/types/tweet.ts` | `RecommendedTime` を `{ label, reason }` に変更 |
+| `src/lib/gemini.ts` | `POSTING_TIMES` 削除・`formatScheduleLabel` 追加・`buildPrompt` に SCHEDULE 指示追加・パース処理更新 |
+| `src/components/TweetCard.tsx` | カード上部に日時・理由を表示、`#id` 削除 |

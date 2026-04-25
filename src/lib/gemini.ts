@@ -1,8 +1,14 @@
 import { GoogleGenerativeAI, type GenerativeModel } from "@google/generative-ai";
 import twitterText from "twitter-text";
-import type { Tweet } from "@/types/tweet";
+import type { Tweet, RecommendedTime } from "@/types/tweet";
 
 const TWEET_LIMIT = 280;
+
+function formatScheduleLabel(dateStr: string, timeStr: string): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const dow = ["日", "月", "火", "水", "木", "金", "土"][new Date(year, month - 1, day).getDay()];
+  return `${month}月${day}日（${dow}）${timeStr}`;
+}
 const MAX_REGENERATE_ATTEMPTS = 4;
 
 function countWeighted(text: string): number {
@@ -41,7 +47,7 @@ function detectUrlType(url: string): string {
   return "Webアプリ・ランディングページ";
 }
 
-function buildPrompt(projectText: string, toneMemo: string, url: string, hashtags: string): string {
+function buildPrompt(projectText: string, toneMemo: string, url: string, hashtags: string, todayStr: string): string {
   return `あなたは個人開発者向けのTwitter/Xマーケティングの専門家です。
 以下のプロジェクト説明を読み、そのプロダクトを宣伝するためのツイートを5件生成してください。
 
@@ -68,14 +74,26 @@ ${url ? "" : "- URLが指定されていないため、URL・アプリストアU
   4. ユーザーの声・共感（開発者あるあるの課題感）
   5. CTA・エンゲージメント（試してほしい呼びかけ）
 
+【推奨投稿日時】
+今日の日付：${todayStr}（この日より後の日付を指定すること）
+各ツイートの本文の直後の行に以下の形式で推奨投稿日時を出力する：
+SCHEDULE: YYYY-MM-DD HH:MM / 理由（15文字以内）
+- ツイートの目的・ターゲット層・内容に合わせた日時を選ぶ
+- 5件はすべて異なる日時にする
+
 【出力形式】
-必ず以下の形式で出力する。番号とツイート本文のみ。説明・見出し・空行は不要。
+必ず以下の形式で出力する。説明・見出し・空行は不要。
 
 1. [ツイート本文]
+SCHEDULE: YYYY-MM-DD HH:MM / 理由
 2. [ツイート本文]
+SCHEDULE: YYYY-MM-DD HH:MM / 理由
 3. [ツイート本文]
+SCHEDULE: YYYY-MM-DD HH:MM / 理由
 4. [ツイート本文]
-5. [ツイート本文]`;
+SCHEDULE: YYYY-MM-DD HH:MM / 理由
+5. [ツイート本文]
+SCHEDULE: YYYY-MM-DD HH:MM / 理由`;
 }
 
 function buildShortenPrompt(
@@ -129,19 +147,35 @@ export async function generateTweets(
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-  const result = await model.generateContent(buildPrompt(projectText, toneMemo, url, hashtags));
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+
+  const result = await model.generateContent(buildPrompt(projectText, toneMemo, url, hashtags, todayStr));
   const text = result.response.text();
 
-  const lines = text
-    .split(/\n(?=\d+\.\s)/)
-    .filter((block) => /^\d+\.\s/.test(block.trim()))
-    .map((block) => block.replace(/^\d+\.\s+/, "").trim());
+  const SCHEDULE_RE = /SCHEDULE:\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})\s*\/\s*(.+)/;
 
-  if (lines.length < 5) {
+  const blocks = text
+    .split(/\n(?=\d+\.\s)/)
+    .filter((block) => /^\d+\.\s/.test(block.trim()));
+
+  if (blocks.length < 5) {
     throw new Error("5件のツイートを生成できませんでした。もう一度お試しください。");
   }
 
-  const drafts = lines.slice(0, 5);
+  const drafts: string[] = [];
+  const schedules: { label: string; reason: string }[] = [];
+
+  for (const block of blocks.slice(0, 5)) {
+    const raw = block.replace(/^\d+\.\s+/, "").trim();
+    const m = raw.match(SCHEDULE_RE);
+    drafts.push(m ? raw.slice(0, raw.indexOf(m[0])).trim() : raw);
+    schedules.push(
+      m
+        ? { label: formatScheduleLabel(m[1], m[2]), reason: m[3].trim() }
+        : { label: "—", reason: "" }
+    );
+  }
 
   for (let i = 0; i < drafts.length; i++) {
     let current = reformatTweet(drafts[i]);
@@ -177,6 +211,7 @@ export async function generateTweets(
       text,
       weightedLength,
       isOverLimit: weightedLength > TWEET_LIMIT,
+      recommendedTime: schedules[i],
     };
   });
 }

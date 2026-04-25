@@ -1,8 +1,14 @@
+export interface RecommendedTime {
+  label: string;
+  reason: string;
+}
+
 export interface Tweet {
   id: number;
   text: string;
   weightedLength: number;
   isOverLimit: boolean;
+  recommendedTime: RecommendedTime;
 }
 
 export interface GenerateRequest {
