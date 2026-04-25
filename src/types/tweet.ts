@@ -1,6 +1,8 @@
 export interface Tweet {
   id: number;
   text: string;
+  weightedLength: number;
+  isOverLimit: boolean;
 }
 
 export interface GenerateRequest {

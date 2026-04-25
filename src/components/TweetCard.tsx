@@ -17,10 +17,25 @@ export default function TweetCard({ tweet }: TweetCardProps) {
   }
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+    <div
+      className={
+        tweet.isOverLimit
+          ? "bg-gray-900 border border-red-500/50 rounded-xl p-5"
+          : "bg-gray-900 border border-gray-800 rounded-xl p-5"
+      }
+    >
       <div className="flex items-center justify-between mb-3">
         <span className="text-gray-500 text-xs">#{tweet.id}</span>
-        <span className="text-gray-500 text-xs">{tweet.text.length}/280</span>
+        <span
+          className={
+            tweet.isOverLimit
+              ? "text-red-500 text-xs font-medium"
+              : "text-gray-500 text-xs"
+          }
+          title={tweet.isOverLimit ? "X の上限 280 ウェイトを超過しています" : undefined}
+        >
+          {tweet.weightedLength}/280
+        </span>
       </div>
       <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">{tweet.text}</p>
       <div className="flex justify-end mt-4">
