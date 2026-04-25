@@ -4,7 +4,7 @@
 
 ## プロジェクト概要・企画
 
-詳細は [`step1-planning.md`](./step1-planning.md) を参照。
+詳細は [`devflow/step1-planning.md`](./devflow/step1-planning.md) を参照。
 
 プロジェクト概要・機能ロードマップ・ユーザーフロー・技術スタック・収益化方針・競合調査はすべてそのファイルにまとめられている。
 
@@ -12,7 +12,7 @@
 
 STEP 3（環境構築）完了。次のステップ：STEP 4 — V1 MVP 実装（Gemini API 連携・UI 構築）。
 
-詳細は [`step3-environment.md`](./step3-environment.md) を参照。
+詳細は [`devflow/step3-environment.md`](./devflow/step3-environment.md) を参照。
 
 ## 基本情報
 
