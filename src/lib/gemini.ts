@@ -32,6 +32,7 @@ function reformatTweet(text: string): string {
   return [rest, urlBlock, hashtags].filter(Boolean).join("\n\n");
 }
 
+// 対応URL: App Store / Google Play / GitHub Pages / GitHub / その他Web
 function detectUrlType(url: string): string {
   if (/apps\.apple\.com/i.test(url))  return "App Store（iOS アプリのダウンロードページ）";
   if (/play\.google\.com/i.test(url)) return "Google Play（Android アプリのダウンロードページ）";
@@ -58,7 +59,7 @@ ${hashtags ? `\n【ハッシュタグ（必須）】\n以下のハッシュタ�
 - 余裕を持たせるため 260 ウェイトを目安に作成する（日本語のみなら約 130 文字、英語のみなら約 260 文字が目安）
 - 本文には読みやすさのために1〜2箇所の改行を入れる
 - ハッシュタグは本文・URLと改行して末尾に記載する（例：「本文\n#tag1 #tag2 #tag3」）
-- ハッシュタグはユーザー指定分を含め合計3つ以上にする（ハッシュタグ未指定の場合もプロダクトに関連するタグを3つ以上生成する）
+- ハッシュタグはユーザー指定分を含め合計3〜5つにする（ハッシュタグ未指定の場合もプロダクトに関連するタグを3〜5つ生成する）
 ${url ? "" : "- URLが指定されていないため、URL・アプリストアURL・App Store・Google Play などのリンクや参照テキストを一切含めない"}
 - 以下のストーリーアークに沿って順番に生成する：
   1. プロジェクト紹介（何ができるアプリかを端的に伝える）
@@ -91,7 +92,7 @@ function buildShortenPrompt(
 ${projectText}
 ${toneMemo ? `\n【口調・トーン指示】\n${toneMemo}` : ""}
 ${url ? `\n【URL（省略・変形不可）】\n${url}\nURLは単独行に置き、直前の行のリード文も必ずそのまま保持する。` : ""}
-${hashtags ? `\n【ハッシュタグ（省略・変形不可）】\n指定タグを含む全ハッシュタグを保持する：${hashtags}` : ""}
+${hashtags ? `\n【ハッシュタグ（省略・変形不可）】\n指定タグを含む全ハッシュタグを保持する（合計3〜5つ）：${hashtags}` : ""}
 
 【元のツイート】
 ${originalText}

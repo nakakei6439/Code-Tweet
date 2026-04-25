@@ -46,6 +46,23 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gray-950 relative overflow-hidden px-4 py-16">
+
+      {isLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/75 backdrop-blur-sm">
+          <div className="bg-gray-900/90 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden w-72">
+            <div className="h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
+            <div className="p-8 flex flex-col items-center gap-5">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400 animate-spin p-1">
+                <div className="w-full h-full rounded-full bg-gray-900" />
+              </div>
+              <div className="text-center">
+                <p className="text-white font-semibold text-base">生成中...</p>
+                <p className="text-gray-400 text-sm mt-1">AIがポストを作成しています</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-20 -left-20 w-96 h-96 rounded-full bg-fuchsia-500/10 blur-3xl pointer-events-none" />
 
@@ -104,6 +121,9 @@ export default function Home() {
                 disabled={isLoading}
                 className={`${inputBase} focus:ring-fuchsia-500`}
               />
+              <p className="text-xs text-gray-500 mt-1.5">
+                App Store / Google Play / GitHub / Web に対応。種別に合ったリード文が自動で付きます
+              </p>
             </div>
 
             <div>
@@ -118,6 +138,9 @@ export default function Home() {
                 disabled={isLoading}
                 className={`${inputBase} focus:ring-fuchsia-500`}
               />
+              <p className="text-xs text-gray-500 mt-1.5">
+                入力したハッシュタグに加え、関連タグが最大5つ付きます
+              </p>
             </div>
 
             <div>

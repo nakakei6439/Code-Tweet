@@ -130,3 +130,22 @@ SDK の生エラー文字列（URL・ステータス・英文）が UI に露出
 | `src/app/page.tsx` | URL・ハッシュタグ入力欄追加、ラベル変更、ボタンテキスト変更 |
 | `src/app/api/generate/route.ts` | 新フィールドを `generateTweets` に渡す |
 | `src/lib/gemini.ts` | `detectUrlType` 追加、`reformatTweet`・`buildPrompt`・`buildShortenPrompt` 更新 |
+
+---
+
+## V1 UI 細部改善（2026-04-26）
+
+### 変更内容
+
+1. **ハッシュタグ上限設定**：生成数を「3つ以上」から「3〜5つ」に変更
+2. **URL入力欄ヒントテキスト追加**：対応サービス（App Store / Google Play / GitHub / Web）とリード文自動生成の説明を表示
+3. **ハッシュタグ入力欄ヒントテキスト追加**：「最大5つ付きます」の説明を表示
+4. **detectUrlType にコメント追加**：対応URL種別一覧をコード上に明記
+5. **生成中オーバーレイ追加**：ポストを生成ボタン押下後、画面中央にグラデーションスピナー付きのポップアップを表示（backdrop-blur・既存デザインに統一）
+
+### 変更ファイル
+
+| ファイル | 変更内容 |
+|--------|--------|
+| `src/app/page.tsx` | 生成中オーバーレイ追加、URL・ハッシュタグのヒントテキスト追加 |
+| `src/lib/gemini.ts` | ハッシュタグ上限を3〜5つに変更、detectUrlType にコメント追加 |
