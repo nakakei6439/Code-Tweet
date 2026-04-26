@@ -49,17 +49,19 @@ function detectUrlType(url: string): string {
 
 function buildPrompt(projectText: string, toneMemo: string, url: string, hashtags: string, todayStr: string): string {
   return `あなたは個人開発者向けのTwitter/Xマーケティングの専門家です。
-以下のプロジェクト説明を読み、そのプロダクトを宣伝するためのツイートを5件生成してください。
+以下のプロジェクト説明を読み、そのプロダクトを宣伝するためのポストを5件生成してください。
 
 【プロジェクト説明】
 ${projectText}
 ${toneMemo ? `\n【口調・トーン指示】\n${toneMemo}` : ""}
-${url ? `\n【URL（必須）】\n全ツイートに必ず以下のURLを含める。省略・変形は一切不可：${url}\nこのURLは「${detectUrlType(url)}」へのリンク。URLは単独行に置き、その直前の行にURLの種別に合ったリード文を記載する。\n- App Store/Google Play → 「App Storeで無料公開中 →」「今すぐインストール →」「iPhoneで無料で使える →」など\n- GitHub → 「コードを見る →」「OSSとして公開中 →」「GitHubで公開中 →」など\n- Webアプリ → 「詳しくはこちら →」「今すぐ試す →」「無料で使えます →」など\n5件それぞれ異なるリード文を使うこと。同じフレーズを繰り返さない。` : ""}
-${hashtags ? `\n【ハッシュタグ（必須）】\n以下のハッシュタグを必ず含め、さらにプロダクトに関連するハッシュタグを追加して合計3つ以上にする。指定タグの省略・変形は一切不可：${hashtags}` : ""}
+${url ? `\n【URL（必須）】\n全ポストに必ず以下のURLを含める。省略・変形は一切不可：${url}\nこのURLは「${detectUrlType(url)}」へのリンク。URLは単独行に置き、その直前の行にURLの種別に合ったリード文を記載する。\n- App Store/Google Play → 「App Storeで無料公開中 →」「今すぐインストール →」「iPhoneで無料で使える →」など\n- GitHub → 「コードを見る →」「OSSとして公開中 →」「GitHubで公開中 →」など\n- Webアプリ → 「詳しくはこちら →」「今すぐ試す →」「無料で使えます →」など\n5件それぞれ異なるリード文を使うこと。同じフレーズを繰り返さない。` : ""}
+${hashtags
+  ? `\n【ハッシュタグ（必須）】\n以下のハッシュタグを必ず含め、さらにプロダクトに関連するハッシュタグを追加して合計3〜5つにする。指定タグの省略・変形は一切不可：${hashtags}`
+  : `\n【ハッシュタグ（必須）】\nプロダクトの内容・ターゲット層に合ったハッシュタグを3〜5つ生成して各ポストの末尾に付ける`}
 
 【要件】
-- 必ず5件のツイートを生成する
-- 各ツイートは X の weighted length で 280 ウェイト以内に収める
+- 必ず5件のポストを生成する
+- 各ポストは X の weighted length で 280 ウェイト以内に収める
 - weighted length の計算ルール：半角英数記号=1、日本語・絵文字など全角文字=2、URL は実長を問わず 23 ウェイト固定
 - ハッシュタグ・URL・リード文・改行を含めた合計を 280 ウェイト以内とする
 - 余裕を持たせるため 260 ウェイトを目安に作成する（日本語のみなら約 130 文字、英語のみなら約 260 文字が目安）
@@ -75,24 +77,24 @@ ${url ? "" : "- URLが指定されていないため、URL・アプリストアU
   5. CTA・エンゲージメント（試してほしい呼びかけ）
 
 【推奨投稿日時】
-今日の日付：${todayStr}（この日より後の日付を指定すること）
-各ツイートの本文の直後の行に以下の形式で推奨投稿日時を出力する：
+今日の日付：${todayStr}（翌日から7日以内の日付を指定すること）
+各ポストの本文の直後の行に以下の形式で推奨投稿日時を出力する：
 SCHEDULE: YYYY-MM-DD HH:MM / 理由（15文字以内）
-- ツイートの目的・ターゲット層・内容に合わせた日時を選ぶ
+- ポストの目的・ターゲット層・内容に合わせた日時を選ぶ
 - 5件はすべて異なる日時にする
 
 【出力形式】
 必ず以下の形式で出力する。説明・見出し・空行は不要。
 
-1. [ツイート本文]
+1. [ポスト本文]
 SCHEDULE: YYYY-MM-DD HH:MM / 理由
-2. [ツイート本文]
+2. [ポスト本文]
 SCHEDULE: YYYY-MM-DD HH:MM / 理由
-3. [ツイート本文]
+3. [ポスト本文]
 SCHEDULE: YYYY-MM-DD HH:MM / 理由
-4. [ツイート本文]
+4. [ポスト本文]
 SCHEDULE: YYYY-MM-DD HH:MM / 理由
-5. [ツイート本文]
+5. [ポスト本文]
 SCHEDULE: YYYY-MM-DD HH:MM / 理由`;
 }
 
@@ -104,7 +106,7 @@ function buildShortenPrompt(
   url: string,
   hashtags: string
 ): string {
-  return `以下のツイートは X の weighted length が ${currentWeight} で、上限 280 ウェイトを超過しています。文意・トーン・ハッシュタグを保ったまま、260 ウェイト以内に収まるように短縮してください。
+  return `以下のポストは X の weighted length が ${currentWeight} で、上限 280 ウェイトを超過しています。文意・トーン・ハッシュタグを保ったまま、260 ウェイト以内に収まるように短縮してください。
 
 【プロジェクト説明（参考）】
 ${projectText}
@@ -112,14 +114,14 @@ ${toneMemo ? `\n【口調・トーン指示】\n${toneMemo}` : ""}
 ${url ? `\n【URL（省略・変形不可）】\n${url}\nURLは単独行に置き、直前の行のリード文も必ずそのまま保持する。` : ""}
 ${hashtags ? `\n【ハッシュタグ（省略・変形不可）】\n指定タグを含む全ハッシュタグを保持する（合計3〜5つ）：${hashtags}` : ""}
 
-【元のツイート】
+【元のポスト】
 ${originalText}
 
 【weighted length 計算ルール】
 半角英数記号=1、日本語・絵文字など全角=2、URL は実長を問わず 23 ウェイト固定。
 
 【出力形式】
-短縮後のツイート本文のみを返す。番号・引用符・説明・前置きは一切含めない。`;
+短縮後のポスト本文のみを返す。番号・引用符・説明・前置きは一切含めない。`;
 }
 
 async function regenerateOne(
@@ -141,9 +143,10 @@ export async function generateTweets(
   projectText: string,
   toneMemo: string,
   url: string,
-  hashtags: string,
-  apiKey: string
+  hashtags: string
 ): Promise<Tweet[]> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY が設定されていません。");
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
@@ -160,7 +163,7 @@ export async function generateTweets(
     .filter((block) => /^\d+\.\s/.test(block.trim()));
 
   if (blocks.length < 5) {
-    throw new Error("5件のツイートを生成できませんでした。もう一度お試しください。");
+    throw new Error("5件のポストを生成できませんでした。もう一度お試しください。");
   }
 
   const drafts: string[] = [];
@@ -169,7 +172,7 @@ export async function generateTweets(
   for (const block of blocks.slice(0, 5)) {
     const raw = block.replace(/^\d+\.\s+/, "").trim();
     const m = raw.match(SCHEDULE_RE);
-    drafts.push(m ? raw.slice(0, raw.indexOf(m[0])).trim() : raw);
+    drafts.push(raw.replace(/^SCHEDULE:\s*\S+\s+\S+\s*\/.*$/m, "").trim());
     schedules.push(
       m
         ? { label: formatScheduleLabel(m[1], m[2]), reason: m[3].trim() }

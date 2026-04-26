@@ -16,7 +16,6 @@ export interface GenerateRequest {
   toneMemo: string;
   url?: string;
   hashtags?: string;
-  apiKey: string;
 }
 
 export interface GenerateResponse {

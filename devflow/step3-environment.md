@@ -79,5 +79,5 @@ src/
 - `src/types/tweet.ts`：型定義作成
 - `src/lib/gemini.ts`：Gemini API クライアント実装
 - `src/app/api/generate/route.ts`：Route Handler 実装
-- `src/app/page.tsx`：メインUI実装（入力フォーム＋ツイートカード）
-- `src/components/TweetCard.tsx`：ツイートカードコンポーネント
+- `src/app/page.tsx`：メインUI実装（入力フォーム＋ポストカード）
+- `src/components/TweetCard.tsx`：ポストカードコンポーネント

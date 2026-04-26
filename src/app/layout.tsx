@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Code Tweet",
-  description: "READMEをツイートに変換する個人開発者向けAIツール",
+  description: "READMEをポストに変換する個人開発者向けAIツール",
 };
 
 export default function RootLayout({

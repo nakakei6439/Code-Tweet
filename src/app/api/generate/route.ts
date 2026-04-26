@@ -5,7 +5,7 @@ function mapGeminiError(err: unknown): { message: string; status: number } {
   const raw = err instanceof Error ? err.message : "";
   console.error("[generate] Gemini API error:", err);
 
-  if (/5件のツイートを生成できませんでした/.test(raw)) {
+  if (/5件のポストを生成できませんでした/.test(raw)) {
     return { message: raw, status: 500 };
   }
   if (/API key|API_KEY_INVALID|\b401\b|\b403\b/i.test(raw)) {
@@ -23,10 +23,14 @@ function mapGeminiError(err: unknown): { message: string; status: number } {
   if (/fetch failed|ENOTFOUND|ECONNRESET|timeout|network/i.test(raw)) {
     return { message: "Gemini API への接続に失敗しました。ネットワークを確認してください。", status: 502 };
   }
-  return { message: "ツイート生成に失敗しました。少し時間をおいて再試行してください。", status: 500 };
+  return { message: "ポスト生成に失敗しました。少し時間をおいて再試行してください。", status: 500 };
 }
 
 export async function POST(request: Request): Promise<Response> {
+  if (!process.env.GEMINI_API_KEY) {
+    return Response.json({ error: "現在サービスが利用できません。しばらくお待ちください。" } satisfies GenerateErrorResponse, { status: 503 });
+  }
+
   let body: GenerateRequest;
   try {
     body = await request.json();
@@ -37,12 +41,8 @@ export async function POST(request: Request): Promise<Response> {
   if (!body.projectText?.trim()) {
     return Response.json({ error: "プロジェクト説明を入力してください。" } satisfies GenerateErrorResponse, { status: 400 });
   }
-  if (!body.apiKey?.trim()) {
-    return Response.json({ error: "Gemini APIキーを入力してください。" } satisfies GenerateErrorResponse, { status: 400 });
-  }
-
   try {
-    const tweets = await generateTweets(body.projectText, body.toneMemo ?? "", body.url ?? "", body.hashtags ?? "", body.apiKey);
+    const tweets = await generateTweets(body.projectText, body.toneMemo ?? "", body.url ?? "", body.hashtags ?? "");
     return Response.json({ tweets } satisfies GenerateResponse, { status: 200 });
   } catch (err) {
     const { message, status } = mapGeminiError(err);

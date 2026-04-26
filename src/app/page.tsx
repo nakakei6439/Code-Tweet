@@ -9,13 +9,12 @@ export default function Home() {
   const [toneMemo, setToneMemo] = useState("");
   const [url, setUrl] = useState("");
   const [hashtags, setHashtags] = useState("");
-  const [apiKey, setApiKey] = useState("");
   const [tweets, setTweets] = useState<Tweet[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  const isDisabled = isLoading || projectText.trim() === "" || apiKey.trim() === "";
+  const isDisabled = isLoading || projectText.trim() === "";
 
   async function handleGenerate() {
     setError(null);
@@ -25,7 +24,7 @@ export default function Home() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectText, toneMemo, url, hashtags, apiKey } satisfies GenerateRequest),
+        body: JSON.stringify({ projectText, toneMemo, url, hashtags } satisfies GenerateRequest),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -72,10 +71,10 @@ export default function Home() {
           <span className="bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-yellow-400 bg-clip-text text-transparent">
             README
           </span>{" "}
-          がツイートに変わる
+          がポストに変わる
         </h1>
         <p className="text-gray-400 text-center mb-10">
-          AIがプロジェクトを分析して5件のマーケティングツイートを自動生成
+          AIがプロジェクトを分析して5件のマーケティングポストを自動生成
         </p>
 
         <div className="bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden">
@@ -143,23 +142,6 @@ export default function Home() {
               </p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Gemini API キー <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="AIzaSy..."
-                disabled={isLoading}
-                className={`${inputBase} focus:ring-yellow-500`}
-              />
-              <p className="text-xs text-gray-500 mt-1.5">
-                APIキーはブラウザ外に保存されません
-              </p>
-            </div>
-
             <button
               onClick={handleGenerate}
               disabled={isDisabled}
@@ -193,7 +175,7 @@ export default function Home() {
 
         {tweets.length > 0 && (
           <div ref={resultsRef} className="mt-12">
-            <p className="text-gray-400 text-sm mb-4">生成されたツイート（{tweets.length}件）</p>
+            <p className="text-gray-400 text-sm mb-4">生成されたポスト（{tweets.length}件）</p>
             <div className="space-y-4">
               {tweets.map((tweet) => (
                 <TweetCard key={tweet.id} tweet={tweet} />
