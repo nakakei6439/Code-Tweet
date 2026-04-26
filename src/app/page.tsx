@@ -11,10 +11,35 @@ export default function Home() {
   const [hashtags, setHashtags] = useState("");
   const [tweets, setTweets] = useState<Tweet[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingReadme, setIsFetchingReadme] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  const isDisabled = isLoading || projectText.trim() === "";
+  const isDisabled = isLoading || isFetchingReadme || projectText.trim() === "";
+
+  const [githubUrl, setGithubUrl] = useState("");
+
+  async function handleFetchReadme() {
+    setError(null);
+    setIsFetchingReadme(true);
+    try {
+      const res = await fetch("/api/github", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: githubUrl }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "README の取得に失敗しました。");
+        return;
+      }
+      setProjectText(data.content);
+    } catch {
+      setError("ネットワークエラーが発生しました。接続を確認してください。");
+    } finally {
+      setIsFetchingReadme(false);
+    }
+  }
 
   async function handleGenerate() {
     setError(null);
@@ -82,6 +107,46 @@ export default function Home() {
         <div className="bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden">
           <div className="h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
           <div className="p-8 space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                GitHub URL <span className="text-gray-500 font-normal">（任意）</span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={githubUrl}
+                  onChange={(e) => setGithubUrl(e.target.value)}
+                  placeholder="例：https://github.com/owner/repo"
+                  disabled={isLoading || isFetchingReadme}
+                  className={`${inputBase} focus:ring-cyan-500 flex-1`}
+                />
+                <button
+                  onClick={handleFetchReadme}
+                  disabled={isLoading || isFetchingReadme || githubUrl.trim() === ""}
+                  className="px-4 py-3 rounded-lg text-sm font-semibold transition-all cursor-pointer
+                    bg-gray-700 border border-gray-600 text-gray-200
+                    hover:bg-gray-600
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                    whitespace-nowrap flex items-center gap-2"
+                >
+                  {isFetchingReadme ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                      </svg>
+                      取得中...
+                    </>
+                  ) : (
+                    "README を取得"
+                  )}
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1.5">
+                リポジトリ URL を入力すると README をプロジェクト説明に自動挿入します
+              </p>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 プロジェクト説明 <span className="text-red-400">*</span>
