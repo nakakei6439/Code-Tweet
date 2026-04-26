@@ -17,7 +17,7 @@
 | 状態 | # | ファイル | 機能 |
 |------|---|---------|------|
 | ✅ 完了 | 1 | [step8-feature1-api-key.md](./step8-feature1-api-key.md) | サーバー管理 API キー |
-| 未着手 | 2 | [step8-feature2-github.md](./step8-feature2-github.md) | GitHub URL 連携 |
+| ✅ 完了 | 2 | [step8-feature2-github.md](./step8-feature2-github.md) | GitHub URL 連携 |
 | 未着手 | 3 | [step8-feature3-auth.md](./step8-feature3-auth.md) | ユーザー認証（Google ログイン） |
 | 未着手 | 4 | [step8-feature4-history.md](./step8-feature4-history.md) | ポスト保存・履歴 |
 | 未着手 | 5 | [step8-feature5-search.md](./step8-feature5-search.md) | 検索・フィルタ |
@@ -45,8 +45,8 @@ Feature 1・2 は互いに独立しているため並行実装可能。
 ## 全体完了基準チェックリスト
 
 - [x] API キーの入力なしでポスト生成ができる
-- [ ] GitHub リポジトリ URL を貼り付けると README が自動取得される
-- [ ] 存在しない URL・private リポジトリで適切なエラーが表示される
+- [x] GitHub リポジトリ URL を貼り付けると README が自動取得される
+- [x] 存在しない URL・private リポジトリで適切なエラーが表示される
 - [ ] Google アカウントでログイン・ログアウトができる
 - [ ] 生成したポストを「保存する」ボタンで保存できる
 - [ ] `/history` でログインユーザーの保存済みポストを一覧表示できる

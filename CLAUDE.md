@@ -12,9 +12,12 @@
 
 STEP 5（Vercel デプロイ）完了。本番 URL: https://code-tweet.vercel.app/
 
-次のステップ：STEP 6 — V2 機能検討・実装（検索、ユーザー認証、サーバー管理 API キーなど）。
+V2 進捗：
+- ✅ Feature 1: サーバー管理 API キー
+- ✅ Feature 2: GitHub URL 連携（プライベートリポジトリ対応含む）
+- 未着手: Feature 3（認証）/ Feature 4（履歴保存）/ Feature 5（検索）
 
-詳細は [`devflow/step5-deploy.md`](./devflow/step5-deploy.md) を参照。
+詳細は [`devflow/step8-v2-overview.md`](./devflow/step8-v2-overview.md) を参照。
 
 ## 基本情報
 
