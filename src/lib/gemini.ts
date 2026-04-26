@@ -156,21 +156,43 @@ export async function generateTweets(
   const result = await model.generateContent(buildPrompt(projectText, toneMemo, url, hashtags, todayStr));
   const text = result.response.text();
 
-  const POST_RE = /(?:^|\n)\d+\.\s([\s\S]*?)\nSCHEDULE:\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})\s*\/\s*([^\n]+)/g;
-  const matches = Array.from(text.matchAll(POST_RE));
+  const SCHEDULE_RE = /SCHEDULE:\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})\s*\/\s*([^\n]+)/g;
+  const MARKER_RE = /(?:^|\n)\d+\.\s/g;
+  const SCHEDULE_LINE_RE = /\n?SCHEDULE:\s*\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s*\/\s*[^\n]+/;
 
-  if (matches.length < 5) {
+  const scheduleMatches = Array.from(text.matchAll(SCHEDULE_RE));
+  if (scheduleMatches.length < 5) {
     throw new Error("5件のポストを生成できませんでした。もう一度お試しください。");
   }
+
+  const markers = Array.from(text.matchAll(MARKER_RE)).map((m) => ({
+    start: m.index! + (m[0].startsWith("\n") ? 1 : 0),
+    contentStart: m.index! + m[0].length,
+  }));
 
   const drafts: string[] = [];
   const schedules: { label: string; reason: string }[] = [];
 
-  for (const match of matches.slice(0, 5)) {
-    drafts.push(match[1].trim());
+  for (let i = 0; i < 5; i++) {
+    const sched = scheduleMatches[i];
+    const schedStart = sched.index!;
+    const schedEnd = schedStart + sched[0].length;
+    const prevSchedEnd = i === 0 ? 0 : scheduleMatches[i - 1].index! + scheduleMatches[i - 1][0].length;
+    const nextSchedStart = i + 1 < scheduleMatches.length ? scheduleMatches[i + 1].index! : text.length;
+
+    const startMarker = markers.find((m) => m.start >= prevSchedEnd && m.start < schedStart);
+    if (!startMarker) {
+      throw new Error("ポストの解析に失敗しました。もう一度お試しください。");
+    }
+    const nextMarker = markers.find((m) => m.start >= schedEnd && m.start < nextSchedStart);
+    const contentEnd = nextMarker ? nextMarker.start : nextSchedStart;
+
+    const content = text.slice(startMarker.contentStart, contentEnd).replace(SCHEDULE_LINE_RE, "").trim();
+
+    drafts.push(content);
     schedules.push({
-      label: formatScheduleLabel(match[2], match[3]),
-      reason: match[4].trim(),
+      label: formatScheduleLabel(sched[1], sched[2]),
+      reason: sched[3].trim(),
     });
   }
 
