@@ -44,7 +44,7 @@ export default function Home() {
     "w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
   return (
-    <main className="min-h-screen bg-gray-950 relative overflow-hidden px-4 py-16">
+    <main className="min-h-screen bg-gray-950 relative px-4 py-16">
 
       {isLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/75 backdrop-blur-sm">
@@ -62,8 +62,10 @@ export default function Home() {
           </div>
         </div>
       )}
-      <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-20 -left-20 w-96 h-96 rounded-full bg-fuchsia-500/10 blur-3xl pointer-events-none" />
+      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+        <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="absolute -bottom-20 -left-20 w-96 h-96 rounded-full bg-fuchsia-500/10 blur-3xl" />
+      </div>
 
       <div className="max-w-2xl mx-auto relative z-10">
         <h1 className="text-3xl font-bold text-white text-center mb-2">
