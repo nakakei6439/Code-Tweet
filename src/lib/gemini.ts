@@ -156,28 +156,22 @@ export async function generateTweets(
   const result = await model.generateContent(buildPrompt(projectText, toneMemo, url, hashtags, todayStr));
   const text = result.response.text();
 
-  const SCHEDULE_RE = /SCHEDULE:\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})\s*\/\s*(.+)/;
+  const POST_RE = /(?:^|\n)\d+\.\s([\s\S]*?)\nSCHEDULE:\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})\s*\/\s*([^\n]+)/g;
+  const matches = Array.from(text.matchAll(POST_RE));
 
-  const blocks = text
-    .split(/\n(?=\d+\.\s)/)
-    .filter((block) => /^\d+\.\s/.test(block.trim()));
-
-  if (blocks.length < 5) {
+  if (matches.length < 5) {
     throw new Error("5件のポストを生成できませんでした。もう一度お試しください。");
   }
 
   const drafts: string[] = [];
   const schedules: { label: string; reason: string }[] = [];
 
-  for (const block of blocks.slice(0, 5)) {
-    const raw = block.replace(/^\d+\.\s+/, "").trim();
-    const m = raw.match(SCHEDULE_RE);
-    drafts.push(raw.replace(/^SCHEDULE:\s*\S+\s+\S+\s*\/.*$/m, "").trim());
-    schedules.push(
-      m
-        ? { label: formatScheduleLabel(m[1], m[2]), reason: m[3].trim() }
-        : { label: "—", reason: "" }
-    );
+  for (const match of matches.slice(0, 5)) {
+    drafts.push(match[1].trim());
+    schedules.push({
+      label: formatScheduleLabel(match[2], match[3]),
+      reason: match[4].trim(),
+    });
   }
 
   for (let i = 0; i < drafts.length; i++) {
