@@ -1,4 +1,12 @@
+import { createClient } from "@/lib/supabase/server";
+
 export async function POST(request: Request): Promise<Response> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return Response.json({ error: "ログインが必要です。" }, { status: 401 });
+  }
+
   let body: { url?: string };
   try {
     body = await request.json();

@@ -1,4 +1,5 @@
 import { generateTweets } from "@/lib/gemini";
+import { createClient } from "@/lib/supabase/server";
 import type { GenerateRequest, GenerateResponse, GenerateErrorResponse } from "@/types/tweet";
 
 function mapGeminiError(err: unknown): { message: string; status: number } {
@@ -27,6 +28,12 @@ function mapGeminiError(err: unknown): { message: string; status: number } {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return Response.json({ error: "ログインが必要です。" } satisfies GenerateErrorResponse, { status: 401 });
+  }
+
   if (!process.env.GEMINI_API_KEY) {
     return Response.json({ error: "現在サービスが利用できません。しばらくお待ちください。" } satisfies GenerateErrorResponse, { status: 503 });
   }
