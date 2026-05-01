@@ -1,6 +1,6 @@
 # Feature 1: サーバー管理 API キー ✅ 完了
 
-← [概要に戻る](./step8-v2-overview.md)
+← [概要に戻る](./v2-00-overview.md)
 
 ---
 

@@ -1,6 +1,6 @@
 # Feature 2: GitHub URL 連携
 
-← [概要に戻る](./step8-v2-overview.md)
+← [概要に戻る](./v2-00-overview.md)
 
 **前提**: Feature 1 完了済み ✅ / Feature 3 との依存なし（並行実装可能）
 

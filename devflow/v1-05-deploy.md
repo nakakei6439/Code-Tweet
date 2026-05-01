@@ -85,4 +85,4 @@ npx vercel --prod
 ## 次のステップ（STEP 6）
 
 V2 機能の検討・実装（検索、ユーザー認証、サーバー管理 API キーなど）。
-詳細は `step1-planning.md` の機能ロードマップを参照。
+詳細は `v1-01-planning.md` の機能ロードマップを参照。

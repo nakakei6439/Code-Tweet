@@ -1,6 +1,6 @@
 # Feature 5: 検索・フィルタ
 
-← [概要に戻る](./step8-v2-overview.md)
+← [概要に戻る](./v2-00-overview.md)
 
 **前提**: Feature 4（ポスト保存・履歴）が完了していること
 

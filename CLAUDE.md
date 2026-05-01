@@ -4,7 +4,7 @@
 
 ## プロジェクト概要・企画
 
-詳細は [`devflow/step1-planning.md`](./devflow/step1-planning.md) を参照。
+詳細は [`devflow/v1-01-planning.md`](./devflow/v1-01-planning.md) を参照。
 
 プロジェクト概要・機能ロードマップ・ユーザーフロー・技術スタック・収益化方針・競合調査はすべてそのファイルにまとめられている。
 
@@ -12,12 +12,14 @@
 
 STEP 5（Vercel デプロイ）完了。本番 URL: https://code-tweet.vercel.app/
 
-V2 進捗：
+V2 完了（2026-05-01）：
 - ✅ Feature 1: サーバー管理 API キー
-- ✅ Feature 2: GitHub URL 連携（プライベートリポジトリ対応含む）
-- 未着手: Feature 3（認証）/ Feature 4（履歴保存）/ Feature 5（検索）
+- ✅ Feature 2: GitHub URL 連携（公開リポジトリ対応）
+- ✅ Feature 3: Google ログイン（Supabase Auth）
+- 保留: Feature 4（履歴保存）/ Feature 5（検索）← X の予約投稿で代替可能なため不要と判断
+- ✅ 推奨投稿日時: AI が自動生成してカードに表示（V4 相当を実装済み）
 
-詳細は [`devflow/step8-v2-overview.md`](./devflow/step8-v2-overview.md) を参照。
+詳細は [`devflow/v2-00-overview.md`](./devflow/v2-00-overview.md) を参照。
 
 ## 基本情報
 

@@ -1,6 +1,6 @@
 # Feature 3: ユーザー認証（Google ログイン）✅
 
-← [概要に戻る](./step8-v2-overview.md)
+← [概要に戻る](./v2-00-overview.md)
 
 **前提**: Feature 1 完了済み ✅
 **ステータス**: 実装完了（Policy B / UX B 採用）
