@@ -157,18 +157,12 @@ export async function generateTweets(
   const text = result.response.text();
 
   const SCHEDULE_RE = /SCHEDULE:\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})\s*\/\s*([^\n]+)/g;
-  const MARKER_RE = /(?:^|\n)\d+\.\s/g;
-  const SCHEDULE_LINE_RE = /\n?SCHEDULE:\s*\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s*\/\s*[^\n]+/;
+  const POST_MARKER_RE = /(?:^|\n)\s*\d+\.\s+/;
 
   const scheduleMatches = Array.from(text.matchAll(SCHEDULE_RE));
   if (scheduleMatches.length < 5) {
     throw new Error("5件のポストを生成できませんでした。もう一度お試しください。");
   }
-
-  const markers = Array.from(text.matchAll(MARKER_RE)).map((m) => ({
-    start: m.index! + (m[0].startsWith("\n") ? 1 : 0),
-    contentStart: m.index! + m[0].length,
-  }));
 
   const drafts: string[] = [];
   const schedules: { label: string; reason: string }[] = [];
@@ -180,14 +174,21 @@ export async function generateTweets(
     const prevSchedEnd = i === 0 ? 0 : scheduleMatches[i - 1].index! + scheduleMatches[i - 1][0].length;
     const nextSchedStart = i + 1 < scheduleMatches.length ? scheduleMatches[i + 1].index! : text.length;
 
-    const startMarker = markers.find((m) => m.start >= prevSchedEnd && m.start < schedStart);
-    if (!startMarker) {
-      throw new Error("ポストの解析に失敗しました。もう一度お試しください。");
-    }
-    const nextMarker = markers.find((m) => m.start >= schedEnd && m.start < nextSchedStart);
-    const contentEnd = nextMarker ? nextMarker.start : nextSchedStart;
+    const beforeSched = text.slice(prevSchedEnd, schedStart);
+    const currentMarker = beforeSched.match(POST_MARKER_RE);
+    const bodyStart = currentMarker && currentMarker.index !== undefined
+      ? currentMarker.index + currentMarker[0].length
+      : 0;
+    const body = beforeSched.slice(bodyStart).trim();
 
-    const content = text.slice(startMarker.contentStart, contentEnd).replace(SCHEDULE_LINE_RE, "").trim();
+    const afterSched = text.slice(schedEnd, nextSchedStart);
+    const nextMarker = afterSched.match(POST_MARKER_RE);
+    const tailEnd = nextMarker && nextMarker.index !== undefined
+      ? nextMarker.index
+      : afterSched.length;
+    const tail = afterSched.slice(0, tailEnd).trim();
+
+    const content = tail ? body + "\n" + tail : body;
 
     drafts.push(content);
     schedules.push({

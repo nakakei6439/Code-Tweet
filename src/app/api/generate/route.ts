@@ -1,5 +1,13 @@
 import { generateTweets } from "@/lib/gemini";
 import { createClient } from "@/lib/supabase/server";
+import {
+  checkGuestLimit,
+  checkUserLimit,
+  getClientIp,
+  hashIp,
+  recordGuestUsage,
+  recordUserUsage,
+} from "@/lib/rateLimit";
 import type { GenerateRequest, GenerateResponse, GenerateErrorResponse } from "@/types/tweet";
 
 function mapGeminiError(err: unknown): { message: string; status: number } {
@@ -28,14 +36,29 @@ function mapGeminiError(err: unknown): { message: string; status: number } {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return Response.json({ error: "ログインが必要です。" } satisfies GenerateErrorResponse, { status: 401 });
-  }
-
   if (!process.env.GEMINI_API_KEY) {
     return Response.json({ error: "現在サービスが利用できません。しばらくお待ちください。" } satisfies GenerateErrorResponse, { status: 503 });
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let ipHash: string | null = null;
+  if (user) {
+    const limit = await checkUserLimit(supabase, user.id);
+    if (!limit.ok) {
+      return Response.json({ error: limit.message } satisfies GenerateErrorResponse, { status: limit.status });
+    }
+  } else {
+    const ip = getClientIp(request);
+    if (!ip) {
+      return Response.json({ error: "IP アドレスを特定できませんでした。" } satisfies GenerateErrorResponse, { status: 400 });
+    }
+    ipHash = hashIp(ip);
+    const limit = await checkGuestLimit(ipHash);
+    if (!limit.ok) {
+      return Response.json({ error: limit.message } satisfies GenerateErrorResponse, { status: limit.status });
+    }
   }
 
   let body: GenerateRequest;
@@ -48,8 +71,14 @@ export async function POST(request: Request): Promise<Response> {
   if (!body.projectText?.trim()) {
     return Response.json({ error: "プロジェクト説明を入力してください。" } satisfies GenerateErrorResponse, { status: 400 });
   }
+
   try {
     const tweets = await generateTweets(body.projectText, body.toneMemo ?? "", body.url ?? "", body.hashtags ?? "");
+    if (user) {
+      await recordUserUsage(supabase, user.id);
+    } else if (ipHash) {
+      await recordGuestUsage(ipHash);
+    }
     return Response.json({ tweets } satisfies GenerateResponse, { status: 200 });
   } catch (err) {
     const { message, status } = mapGeminiError(err);

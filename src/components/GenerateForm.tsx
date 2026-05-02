@@ -4,11 +4,7 @@ import { useRef, useState } from "react";
 import TweetCard from "@/components/TweetCard";
 import type { Tweet, GenerateRequest, GenerateResponse, GenerateErrorResponse } from "@/types/tweet";
 
-type Props = {
-  isAuthenticated: boolean;
-};
-
-export default function GenerateForm({ isAuthenticated }: Props) {
+export default function GenerateForm() {
   const [projectText, setProjectText] = useState("");
   const [toneMemo, setToneMemo] = useState("");
   const [url, setUrl] = useState("");
@@ -20,7 +16,7 @@ export default function GenerateForm({ isAuthenticated }: Props) {
   const resultsRef = useRef<HTMLDivElement>(null);
   const [githubUrl, setGithubUrl] = useState("");
 
-  const formDisabled = !isAuthenticated || isLoading || isFetchingReadme;
+  const formDisabled = isLoading || isFetchingReadme;
   const isDisabled = formDisabled || projectText.trim() === "";
 
   async function handleFetchReadme() {
@@ -33,10 +29,6 @@ export default function GenerateForm({ isAuthenticated }: Props) {
         body: JSON.stringify({ url: githubUrl }),
       });
       const data = await res.json();
-      if (res.status === 401) {
-        setError("セッションが切れました。再ログインしてください。");
-        return;
-      }
       if (!res.ok) {
         setError(data.error ?? "README の取得に失敗しました。");
         return;
@@ -60,10 +52,6 @@ export default function GenerateForm({ isAuthenticated }: Props) {
         body: JSON.stringify({ projectText, toneMemo, url, hashtags } satisfies GenerateRequest),
       });
       const data = await res.json();
-      if (res.status === 401) {
-        setError("セッションが切れました。再ログインしてください。");
-        return;
-      }
       if (!res.ok) {
         setError((data as GenerateErrorResponse).error ?? "エラーが発生しました。");
         return;

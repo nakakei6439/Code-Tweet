@@ -1,12 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
-
 export async function POST(request: Request): Promise<Response> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return Response.json({ error: "ログインが必要です。" }, { status: 401 });
-  }
-
   let body: { url?: string };
   try {
     body = await request.json();
@@ -21,9 +13,6 @@ export async function POST(request: Request): Promise<Response> {
 
   const [, owner, repo] = match;
   const headers: HeadersInit = { Accept: "application/vnd.github+json" };
-  if (process.env.GITHUB_TOKEN) {
-    headers["Authorization"] = `Bearer ${process.env.GITHUB_TOKEN}`;
-  }
 
   let res: Response;
   try {

@@ -26,12 +26,8 @@ export default async function Home() {
           AIがプロジェクトを分析して5件のマーケティングポストを自動生成
         </p>
 
-        <div className="relative">
-          <div className={isAuthenticated ? "" : "opacity-30 pointer-events-none select-none"}>
-            <GenerateForm isAuthenticated={isAuthenticated} />
-          </div>
-          {!isAuthenticated && <AuthOverlay />}
-        </div>
+        {!isAuthenticated && <AuthOverlay />}
+        <GenerateForm />
       </div>
     </main>
   );
