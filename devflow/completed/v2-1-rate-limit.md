@@ -9,12 +9,12 @@ V2.1 で実装した「ログイン任意化＋利用回数制限＋セキュリ
 ## 全体の流れ
 
 1. ✅ コード実装（完了済み）
-2. ⬜ Supabase でテーブルを作る（後述）
-3. ⬜ `SUPABASE_SERVICE_ROLE_KEY` を環境変数に追加（後述）
-4. ⬜ `GITHUB_TOKEN` を削除（後述）
-5. ⬜ ローカルで動作確認
-6. ⬜ 本番デプロイ
-7. ⬜ 本番で動作確認
+2. ✅ Supabase でテーブルを作る
+3. ✅ `SUPABASE_SERVICE_ROLE_KEY` を環境変数に追加
+4. ✅ `GITHUB_TOKEN` を削除
+5. ✅ ローカルで動作確認
+6. ✅ 本番デプロイ
+7. ✅ 本番で動作確認（curl で 1〜5 回 200 / 6 回目 429 を確認済み・2026-05-02）
 
 ---
 
@@ -288,13 +288,19 @@ A. Supabase ダッシュボード → Project Settings → API → **Roll** ボ�
 
 ## 完了チェックリスト
 
-- [ ] Supabase に `usage_logs` テーブルを作成
-- [ ] Supabase に `ip_usage_logs` テーブルを作成
-- [ ] `.env.local` に `SUPABASE_SERVICE_ROLE_KEY` を追加
-- [ ] Vercel に `SUPABASE_SERVICE_ROLE_KEY` を追加
-- [ ] `.env.local` から `GITHUB_TOKEN` を削除
-- [ ] Vercel から `GITHUB_TOKEN` を削除
-- [ ] GitHub 側で該当トークンを失効
-- [ ] ローカルで未ログイン5回・ログイン10回の制限を確認
-- [ ] 本番デプロイ
-- [ ] 本番 URL で動作確認
+- [x] Supabase に `usage_logs` テーブルを作成
+- [x] Supabase に `ip_usage_logs` テーブルを作成
+- [x] `.env.local` に `SUPABASE_SERVICE_ROLE_KEY` を追加
+- [x] Vercel に `SUPABASE_SERVICE_ROLE_KEY` を追加
+- [x] `.env.local` から `GITHUB_TOKEN` を削除
+- [x] Vercel から `GITHUB_TOKEN` を削除
+- [x] GitHub 側で該当トークンを失効
+- [x] ローカルで未ログイン5回・ログイン10回の制限を確認
+- [x] 本番デプロイ
+- [x] 本番 URL で動作確認（curl で 1〜5 回 200 / 6 回目 429 を確認・2026-05-02）
+
+---
+
+## ステータス
+
+**V2.1 セットアップ完了（2026-05-02）。** 本番でゲスト 5 回 / ログイン 10 回の利用制限が稼働中。

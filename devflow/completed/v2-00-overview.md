@@ -5,8 +5,9 @@
 | 項目 | V1 | V2（完了） |
 |------|-----------|-----------|
 | API キー | ユーザーが毎回入力 | サーバー管理（入力不要） ✅ |
-| 入力方法 | テキスト手動コピペ | GitHub URL 貼り付けで README 自動取得 ✅ |
-| ユーザー管理 | なし | Google ログイン ✅ |
+| 入力方法 | テキスト手動コピペ | GitHub URL 貼り付けで README 自動取得（公開リポジトリのみ） ✅ |
+| ユーザー管理 | なし | Google ログイン（任意） ✅ |
+| 利用制限 | なし | ゲスト 5 回 / ログイン 10 回 / 日 ✅（V2.1） |
 | 推奨投稿日時 | なし | AI が自動生成してカードに表示 ✅ |
 | 生成履歴 | なし | 保留（X の予約投稿で代替） |
 | 検索 | なし | 保留 |
@@ -18,10 +19,11 @@
 | 状態 | # | ファイル | 機能 |
 |------|---|---------|------|
 | ✅ 完了 | 1 | [v2-01-server-api-key.md](./v2-01-server-api-key.md) | サーバー管理 API キー |
-| ✅ 完了 | 2 | [v2-02-github-url.md](./v2-02-github-url.md) | GitHub URL 連携 |
-| ✅ 完了 | 3 | [v2-03-google-auth.md](./v2-03-google-auth.md) | ユーザー認証（Google ログイン） |
-| 保留 | 4 | [v2-04-history.md](./v2-04-history.md) | ポスト保存・履歴 |
-| 保留 | 5 | [v2-05-search.md](./v2-05-search.md) | 検索・フィルタ |
+| ✅ 完了 | 2 | [v2-02-github-url.md](./v2-02-github-url.md) | GitHub URL 連携（公開リポジトリのみ） |
+| ✅ 完了 | 3 | [v2-03-google-auth.md](./v2-03-google-auth.md) | ユーザー認証（Google ログイン・任意） |
+| ✅ 完了 | 2.1 | [v2-1-rate-limit.md](./v2-1-rate-limit.md) | 利用回数制限（ゲスト 5 回 / ログイン 10 回） |
+| 保留 | 4 | [v2-04-history.md](../pending/v2-04-history.md) | ポスト保存・履歴 |
+| 保留 | 5 | [v2-05-search.md](../pending/v2-05-search.md) | 検索・フィルタ |
 
 ---
 
@@ -47,6 +49,7 @@
 - [x] GitHub リポジトリ URL を貼り付けると README が自動取得される
 - [x] 存在しない URL・private リポジトリで適切なエラーが表示される
 - [x] Google アカウントでログイン・ログアウトができる
+- [x] ゲスト 5 回 / ログイン 10 回の利用制限が本番で動作する（V2.1）
 - [ ] ~~生成したポストを「保存する」ボタンで保存できる~~ ← 保留（X予約投稿で代替可能）
 - [ ] ~~`/history` でログインユーザーの保存済みポストを一覧表示できる~~ ← 保留
 - [ ] ~~未ログインでは `/history` にアクセスできない（リダイレクト）~~ ← 保留
@@ -63,9 +66,9 @@
 | `GEMINI_API_KEY` | `.env.local` / Vercel 環境変数 | サーバーサイドのみ | `NEXT_PUBLIC_` を付けないこと |
 | `NEXT_PUBLIC_SUPABASE_URL` | `.env.local` / Vercel 環境変数 | クライアント・サーバー両方 | anon キーなので公開 OK。RLS で保護 |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `.env.local` / Vercel 環境変数 | クライアント・サーバー両方 | 同上 |
-| Supabase サービスロールキー | Vercel 環境変数のみ | サーバーサイドのみ | 絶対にクライアントに渡さない |
+| `SUPABASE_SERVICE_ROLE_KEY` | `.env.local` / Vercel 環境変数 | サーバーサイドのみ | V2.1 で追加。`ip_usage_logs` への書き込みに使用。絶対にクライアントに渡さない |
 | ユーザーセッション（JWT） | httpOnly Cookie（`@supabase/ssr` が自動管理） | サーバーサイドのみ | XSS 対策 |
-| `GITHUB_TOKEN`（オプション） | Vercel 環境変数のみ | サーバーサイドのみ | レート制限拡張が必要な場合のみ |
+| ~~`GITHUB_TOKEN`~~ | ~~Vercel 環境変数のみ~~ | — | V2.1 で削除（サーバー側で開発者個人のトークンを使うのはセキュリティリスクのため。公開リポジトリのみ対応に絞った） |
 
 ---
 

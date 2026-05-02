@@ -1,6 +1,6 @@
 # Feature 4: ポスト保存・履歴
 
-← [概要に戻る](./v2-00-overview.md)
+← [概要に戻る](../completed/v2-00-overview.md)
 
 **前提**: Feature 3（ユーザー認証）が完了していること
 
