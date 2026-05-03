@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
+
 type Props = {
   hasPat: boolean;
 };
@@ -72,6 +73,15 @@ export default function SettingsForm({ hasPat: initialHasPat }: Props) {
             トークンはサーバーで暗号化して保存されます。スコープは{" "}
             <code className="text-cyan-400 text-xs bg-gray-800 px-1 py-0.5 rounded">repo</code>（読み取りのみ推奨）に設定してください。
           </p>
+          <Link
+            href="/pat-guide"
+            className="inline-flex items-center gap-1 text-cyan-400 text-xs hover:text-cyan-300 transition-colors mt-2"
+          >
+            PAT の取得方法を見る
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </Link>
         </div>
 
         <div className="flex items-center gap-3">
