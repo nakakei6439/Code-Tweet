@@ -35,14 +35,11 @@
 
 | 順番 | 機能 | 追加する外部サービス |
 |------|------|-------------------|
-| V2 | GitHubのURLからコードを自動取得 | GitHub API |
-| V3 | 生成したポストを保存できる | Supabase DB |
-| V4 | スケジュール管理（投稿日時を設定・一覧表示） | なし |
-| V5 | Claude APIも選択可能に | Claude API |
-| V6 | ログイン機能（Google認証） | Supabase Auth |
-| V7 | 広告の実装（Google AdSense） | AdSense |
-| V8 | フリーミアム導入（無料：月3回／有料：無制限） | Stripe など |
-| V9 | Instagram・Threads など他SNS対応 | なし |
+| V2 | GitHub URL からコードを自動取得（公開リポジトリ）+ Google ログイン + 利用制限 | GitHub API / Supabase Auth |
+| V3 | GitHub プライベートリポジトリ対応 | GitHub API（トークン連携） |
+| V5 | Claude API も選択可能に | Claude API |
+| V8 | フリーミアム導入（ゲスト 5回/日・無料 10回/日・有料 30回/日） | Stripe |
+| V9 | Instagram・Threads など他 SNS 対応（保留） | なし |
 
 ---
 

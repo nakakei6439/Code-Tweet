@@ -49,7 +49,7 @@ Code Tweet の企画・設計・実装・運用に関する記録の索引。
 
 | バージョン | 機能 |
 |-----------|------|
+| V3 | GitHub プライベートリポジトリ対応 |
 | V5 | Claude API も選択可能に |
-| V7 | Google AdSense 広告 |
-| V8 | フリーミアム導入（Stripe） |
-| V9 | Instagram・Threads など他 SNS 対応 |
+| V8 | フリーミアム導入（ゲスト 5回/日・無料 10回/日・有料 30回/日・Stripe） |
+| V9 | Instagram・Threads など他 SNS 対応（保留） |

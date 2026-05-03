@@ -12,10 +12,17 @@ export default async function Header() {
         <Link href="/" className="text-white font-semibold tracking-tight">
           Code Tweet
         </Link>
-        <HeaderActions
-          isAuthenticated={!!user}
-          email={user?.email ?? null}
-        />
+        <div className="flex items-center gap-4">
+          {user && (
+            <Link href="/settings" className="text-gray-400 text-sm hover:text-white transition-colors">
+              設定
+            </Link>
+          )}
+          <HeaderActions
+            isAuthenticated={!!user}
+            email={user?.email ?? null}
+          />
+        </div>
       </div>
     </header>
   );
