@@ -18,7 +18,6 @@ export async function POST(request: Request): Promise<Response> {
   const [, owner, repo] = match;
   const headers: HeadersInit = { Accept: "application/vnd.github+json" };
 
-  // ログイン済みの場合は PAT を Supabase から取得
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -41,7 +40,10 @@ export async function POST(request: Request): Promise<Response> {
         headers["Authorization"] = `token ${pat}`;
         hasPat = true;
       } catch {
-        // 復号失敗は無視して公開アクセスにフォールバック
+        return Response.json(
+          { error: "PAT の読み込みに失敗しました。設定ページから再登録してください。" },
+          { status: 500 },
+        );
       }
     }
   }
@@ -68,19 +70,31 @@ export async function POST(request: Request): Promise<Response> {
     }
     if (!hasPat) {
       return Response.json(
-        { error: "非公開リポジトリには設定ページで Personal Access Token を登録してください。" },
+        { error: "非公開リポジトリには設定ページで PAT を登録してください。" },
         { status: 403 },
       );
     }
-    return Response.json({ error: "このリポジトリへのアクセス権がありません。" }, { status: 403 });
+    return Response.json(
+      { error: "このリポジトリへのアクセス権がありません。PAT のスコープに repo が含まれているか確認してください。" },
+      { status: 403 },
+    );
   }
   if (res.status === 404) {
-    // GitHub は認証なし/権限なしのプライベートリポジトリも 404 で返す
+    // GitHub はプライベートリポジトリへのアクセス権がない場合も 404 を返す
+    if (hasPat) {
+      return Response.json(
+        { error: "リポジトリが見つかりません。URL を確認してください。" },
+        { status: 404 },
+      );
+    }
+    if (user) {
+      return Response.json(
+        { error: "リポジトリが見つかりません。非公開リポジトリの場合は設定ページで PAT を登録してください。" },
+        { status: 404 },
+      );
+    }
     return Response.json(
-      {
-        error:
-          "リポジトリが見つかりません。非公開リポジトリの場合はログインと PAT の登録が必要です。",
-      },
+      { error: "リポジトリが見つかりません。非公開リポジトリの場合はログインと PAT の登録が必要です。" },
       { status: 404 },
     );
   }
