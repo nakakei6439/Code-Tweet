@@ -37,7 +37,7 @@ export async function POST(request: Request): Promise<Response> {
           tokenRow.github_pat_iv,
           tokenRow.github_pat_tag,
         );
-        headers["Authorization"] = `token ${pat}`;
+        headers["Authorization"] = `Bearer ${pat}`;
         hasPat = true;
       } catch {
         return Response.json(

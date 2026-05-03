@@ -10,7 +10,8 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "リクエストが不正です。" }, { status: 400 });
   }
 
-  if (!body.token || typeof body.token !== "string" || body.token.trim() === "") {
+  const token = body.token?.trim() ?? "";
+  if (!token) {
     return Response.json({ error: "トークンを入力してください。" }, { status: 400 });
   }
 
@@ -20,7 +21,37 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "ログインが必要です。" }, { status: 401 });
   }
 
-  const { encrypted, iv, tag } = encrypt(body.token.trim());
+  // GitHub API で PAT の有効性を確認
+  let ghRes: Response;
+  try {
+    ghRes = await fetch("https://api.github.com/user", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+      },
+    });
+  } catch {
+    return Response.json({ error: "GitHub への接続に失敗しました。" }, { status: 502 });
+  }
+
+  if (ghRes.status === 401) {
+    return Response.json({ error: "PAT が無効です。トークンを確認してください。" }, { status: 400 });
+  }
+  if (!ghRes.ok) {
+    return Response.json({ error: "PAT の検証に失敗しました。" }, { status: 400 });
+  }
+
+  // repo スコープの確認（classic PAT のみ X-OAuth-Scopes が返る）
+  const scopes = ghRes.headers.get("x-oauth-scopes") ?? "";
+  const hasRepoScope = scopes.split(",").map((s) => s.trim()).some((s) => s === "repo" || s === "public_repo");
+  if (scopes && !hasRepoScope) {
+    return Response.json(
+      { error: `PAT に repo スコープがありません（現在のスコープ: ${scopes || "なし"}）。GitHub でトークンを再作成してください。` },
+      { status: 400 },
+    );
+  }
+
+  const { encrypted, iv, tag } = encrypt(token);
 
   const admin = createAdminClient();
   const { error } = await admin
