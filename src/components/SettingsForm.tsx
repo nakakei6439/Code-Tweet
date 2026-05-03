@@ -70,9 +70,18 @@ export default function SettingsForm({ hasPat: initialHasPat }: Props) {
           <h2 className="text-white font-semibold text-base mb-1">GitHub Personal Access Token</h2>
           <p className="text-gray-400 text-sm">
             プライベートリポジトリの README を取得するために使用します。
-            トークンはサーバーで暗号化して保存されます。スコープは{" "}
-            <code className="text-cyan-400 text-xs bg-gray-800 px-1 py-0.5 rounded">repo</code>（読み取りのみ推奨）に設定してください。
+            トークンはサーバーで暗号化して保存されます。
           </p>
+          <div className="mt-3 flex items-start gap-2 bg-amber-950/40 border border-amber-800/50 rounded-lg px-3 py-2.5">
+            <svg className="text-amber-400 shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+            <p className="text-amber-400 text-xs">
+              GitHub でトークンを作成する際、スコープの{" "}
+              <code className="bg-amber-900/50 px-1 rounded">repo</code>{" "}
+              に必ずチェックを入れてください。チェックなしではプライベートリポジトリにアクセスできません。
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
