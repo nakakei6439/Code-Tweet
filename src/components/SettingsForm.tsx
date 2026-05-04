@@ -6,9 +6,10 @@ import Link from "next/link";
 
 type Props = {
   hasPat: boolean;
+  isPaid: boolean;
 };
 
-export default function SettingsForm({ hasPat: initialHasPat }: Props) {
+export default function SettingsForm({ hasPat: initialHasPat, isPaid }: Props) {
   const [hasPat, setHasPat] = useState(initialHasPat);
   const [token, setToken] = useState("");
   const [isPending, setIsPending] = useState(false);
@@ -61,6 +62,33 @@ export default function SettingsForm({ hasPat: initialHasPat }: Props) {
 
   const inputBase =
     "w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+
+  if (!isPaid) {
+    return (
+      <div className="bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden">
+        <div className="h-px bg-gradient-to-r from-transparent via-fuchsia-500 to-transparent" />
+        <div className="p-8 space-y-4">
+          <div className="flex items-center gap-3">
+            <svg className="text-fuchsia-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0110 0v4" />
+            </svg>
+            <h2 className="text-white font-semibold text-base">GitHub Personal Access Token</h2>
+            <span className="text-xs font-medium text-fuchsia-400 bg-fuchsia-950/50 border border-fuchsia-800 px-2 py-0.5 rounded-full">
+              Pro 限定
+            </span>
+          </div>
+          <p className="text-gray-400 text-sm">
+            プライベートリポジトリの README 取得は Pro プラン（月 980 円）でご利用いただけます。
+            無料プランでは公開リポジトリのみ対応しています。
+          </p>
+          <p className="text-gray-500 text-xs">
+            ※ Pro プランの決済機能は近日公開予定です。
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden">

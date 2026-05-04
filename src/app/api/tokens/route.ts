@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { encrypt } from "@/lib/encryption";
+import { getSubscriptionTier } from "@/lib/subscription";
 
 export async function POST(request: Request): Promise<Response> {
   let body: { token?: string };
@@ -19,6 +20,14 @@ export async function POST(request: Request): Promise<Response> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return Response.json({ error: "ログインが必要です。" }, { status: 401 });
+  }
+
+  const tier = await getSubscriptionTier(user.id);
+  if (tier !== "paid") {
+    return Response.json(
+      { error: "PAT の登録は Pro プラン（月 980 円）でご利用いただけます。" },
+      { status: 403 },
+    );
   }
 
   // GitHub API で PAT の有効性を確認

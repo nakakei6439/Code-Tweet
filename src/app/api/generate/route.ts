@@ -8,6 +8,7 @@ import {
   recordGuestUsage,
   recordUserUsage,
 } from "@/lib/rateLimit";
+import { getSubscriptionTier } from "@/lib/subscription";
 import type { GenerateRequest, GenerateResponse, GenerateErrorResponse } from "@/types/tweet";
 
 function mapGeminiError(err: unknown): { message: string; status: number } {
@@ -45,7 +46,8 @@ export async function POST(request: Request): Promise<Response> {
 
   let ipHash: string | null = null;
   if (user) {
-    const limit = await checkUserLimit(supabase, user.id);
+    const tier = await getSubscriptionTier(user.id);
+    const limit = await checkUserLimit(supabase, user.id, tier);
     if (!limit.ok) {
       return Response.json({ error: limit.message } satisfies GenerateErrorResponse, { status: limit.status });
     }

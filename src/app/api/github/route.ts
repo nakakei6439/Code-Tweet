@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { decrypt } from "@/lib/encryption";
+import { getSubscriptionTier } from "@/lib/subscription";
 
 export async function POST(request: Request): Promise<Response> {
   let body: { url?: string };
@@ -22,28 +23,34 @@ export async function POST(request: Request): Promise<Response> {
   const { data: { user } } = await supabase.auth.getUser();
 
   let hasPat = false;
+  let isPaid = false;
   if (user) {
-    const admin = createAdminClient();
-    const { data: tokenRow } = await admin
-      .from("user_tokens")
-      .select("github_pat_encrypted, github_pat_iv, github_pat_tag")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const tier = await getSubscriptionTier(user.id);
+    isPaid = tier === "paid";
 
-    if (tokenRow) {
-      try {
-        const pat = decrypt(
-          tokenRow.github_pat_encrypted,
-          tokenRow.github_pat_iv,
-          tokenRow.github_pat_tag,
-        );
-        headers["Authorization"] = `Bearer ${pat}`;
-        hasPat = true;
-      } catch {
-        return Response.json(
-          { error: "PAT の読み込みに失敗しました。設定ページから再登録してください。" },
-          { status: 500 },
-        );
+    if (isPaid) {
+      const admin = createAdminClient();
+      const { data: tokenRow } = await admin
+        .from("user_tokens")
+        .select("github_pat_encrypted, github_pat_iv, github_pat_tag")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (tokenRow) {
+        try {
+          const pat = decrypt(
+            tokenRow.github_pat_encrypted,
+            tokenRow.github_pat_iv,
+            tokenRow.github_pat_tag,
+          );
+          headers["Authorization"] = `Bearer ${pat}`;
+          hasPat = true;
+        } catch {
+          return Response.json(
+            { error: "PAT の読み込みに失敗しました。設定ページから再登録してください。" },
+            { status: 500 },
+          );
+        }
       }
     }
   }
@@ -64,7 +71,13 @@ export async function POST(request: Request): Promise<Response> {
   if (res.status === 403) {
     if (!user) {
       return Response.json(
-        { error: "非公開リポジトリにはログインと PAT の登録が必要です。" },
+        { error: "非公開リポジトリにはログインと Pro プラン（月 980 円）の登録が必要です。" },
+        { status: 403 },
+      );
+    }
+    if (!isPaid) {
+      return Response.json(
+        { error: "非公開リポジトリは Pro プラン（月 980 円）でご利用いただけます。" },
         { status: 403 },
       );
     }
@@ -87,14 +100,20 @@ export async function POST(request: Request): Promise<Response> {
         { status: 404 },
       );
     }
-    if (user) {
+    if (isPaid) {
       return Response.json(
         { error: "リポジトリが見つかりません。非公開リポジトリの場合は設定ページで PAT を登録してください。" },
         { status: 404 },
       );
     }
+    if (user) {
+      return Response.json(
+        { error: "リポジトリが見つかりません。非公開リポジトリの場合は Pro プラン（月 980 円）が必要です。" },
+        { status: 404 },
+      );
+    }
     return Response.json(
-      { error: "リポジトリが見つかりません。非公開リポジトリの場合はログインと PAT の登録が必要です。" },
+      { error: "リポジトリが見つかりません。非公開リポジトリの場合はログインと Pro プラン（月 980 円）が必要です。" },
       { status: 404 },
     );
   }

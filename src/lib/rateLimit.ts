@@ -1,18 +1,19 @@
 import { createHash } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { SubscriptionTier } from "@/lib/subscription";
 
-export const GUEST_DAILY_LIMIT = 5;
-export const USER_DAILY_LIMIT = 10;
-
-const DAY_MS = 24 * 60 * 60 * 1000;
+export const GUEST_MONTHLY_LIMIT = 3;
+export const USER_FREE_MONTHLY_LIMIT = 10;
+export const USER_PAID_MONTHLY_LIMIT = 100;
 
 export type RateLimitResult =
   | { ok: true }
   | { ok: false; status: 429; message: string };
 
-function getDayWindowStart(): string {
-  return new Date(Date.now() - DAY_MS).toISOString();
+function getMonthWindowStart(): string {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
 }
 
 export function getClientIp(request: Request): string | null {
@@ -31,23 +32,33 @@ export function hashIp(ip: string): string {
 export async function checkUserLimit(
   supabase: SupabaseClient,
   userId: string,
+  tier: SubscriptionTier,
 ): Promise<RateLimitResult> {
+  const limit = tier === "paid" ? USER_PAID_MONTHLY_LIMIT : USER_FREE_MONTHLY_LIMIT;
+
   const { count, error } = await supabase
     .from("usage_logs")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
-    .gte("generated_at", getDayWindowStart());
+    .gte("generated_at", getMonthWindowStart());
 
   if (error) {
     console.error("[rateLimit] usage_logs count error:", error);
     return { ok: true };
   }
 
-  if ((count ?? 0) >= USER_DAILY_LIMIT) {
+  if ((count ?? 0) >= limit) {
+    if (tier === "paid") {
+      return {
+        ok: false,
+        status: 429,
+        message: `今月の生成上限（${limit}回）に達しました。来月 1 日にリセットされます。`,
+      };
+    }
     return {
       ok: false,
       status: 429,
-      message: `1日の生成上限（${USER_DAILY_LIMIT}回）に達しました。明日また試してください。`,
+      message: `今月の生成上限（${limit}回）に達しました。Pro プラン（月 980 円）で月 ${USER_PAID_MONTHLY_LIMIT} 回まで拡張されます。`,
     };
   }
   return { ok: true };
@@ -67,18 +78,18 @@ export async function checkGuestLimit(ipHash: string): Promise<RateLimitResult> 
     .from("ip_usage_logs")
     .select("id", { count: "exact", head: true })
     .eq("ip_hash", ipHash)
-    .gte("generated_at", getDayWindowStart());
+    .gte("generated_at", getMonthWindowStart());
 
   if (error) {
     console.error("[rateLimit] ip_usage_logs count error:", error);
     return { ok: true };
   }
 
-  if ((count ?? 0) >= GUEST_DAILY_LIMIT) {
+  if ((count ?? 0) >= GUEST_MONTHLY_LIMIT) {
     return {
       ok: false,
       status: 429,
-      message: `1日の生成上限（${GUEST_DAILY_LIMIT}回）に達しました。Google ログインで上限が ${USER_DAILY_LIMIT} 回まで拡張されます。`,
+      message: `今月の生成上限（${GUEST_MONTHLY_LIMIT}回）に達しました。Google ログインで月 ${USER_FREE_MONTHLY_LIMIT} 回まで拡張されます。`,
     };
   }
   return { ok: true };

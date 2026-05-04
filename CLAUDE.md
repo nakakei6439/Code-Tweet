@@ -27,6 +27,21 @@ V2.1 完了（2026-05-02）：
 
 詳細は [`devflow/completed/v2-00-overview.md`](./devflow/completed/v2-00-overview.md) / [`devflow/completed/v2-1-rate-limit.md`](./devflow/completed/v2-1-rate-limit.md) を参照。
 
+V3 完了（2026-05-04）：
+- ✅ GitHub プライベートリポジトリ対応（ユーザー PAT を AES-256-GCM 暗号化して Supabase に保存）
+- ✅ `/settings` ページ：PAT の登録・削除・取得ガイド
+- ✅ ハンバーガーメニュー（設定・ログイン/ログアウトをドロップダウンに統合）
+
+詳細は [`devflow/completed/v3-01-private-repo.md`](./devflow/completed/v3-01-private-repo.md) を参照。
+
+V8 Phase A 完了（2026-05-04）：
+- ✅ 月単位制限導入（ゲスト 月3 / 無料 月10 / 有料 月100）
+- ✅ `subscriptions` テーブル + `tier` ベースの機能差別化
+- ✅ プライベートリポジトリを Pro 限定に巻き上げ（`/api/github` / `/api/tokens` / `SettingsForm` で tier チェック）
+- 保留: Stripe 統合（Phase B で実装）。Phase A 時点では中川さん本人を手動で `tier='paid'` にして利用
+
+詳細は [`devflow/completed/v8-01-freemium-phase-a.md`](./devflow/completed/v8-01-freemium-phase-a.md) を参照。
+
 ## 基本情報
 
 - Keita Nakagawa（中川景太）/ GitHub: nakakei6439

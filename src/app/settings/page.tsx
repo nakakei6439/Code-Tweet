@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getSubscriptionTier } from "@/lib/subscription";
 import SettingsForm from "@/components/SettingsForm";
 
 const PAT_STEPS = [
@@ -55,6 +56,9 @@ export default async function SettingsPage() {
 
   if (!user) redirect("/");
 
+  const tier = await getSubscriptionTier(user.id);
+  const isPaid = tier === "paid";
+
   const admin = createAdminClient();
   const { data } = await admin
     .from("user_tokens")
@@ -76,8 +80,30 @@ export default async function SettingsPage() {
 
       <h1 className="text-white text-2xl font-bold mb-8">設定</h1>
 
-      <SettingsForm hasPat={!!data} />
+      <div className="mb-6 bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl p-6 flex items-center justify-between">
+        <div>
+          <p className="text-gray-400 text-sm mb-1">現在のプラン</p>
+          {isPaid ? (
+            <p className="text-white text-lg font-bold flex items-center gap-2">
+              Pro
+              <span className="text-xs font-medium text-fuchsia-400 bg-fuchsia-950/50 border border-fuchsia-800 px-2 py-0.5 rounded-full">
+                月 980 円
+              </span>
+            </p>
+          ) : (
+            <p className="text-white text-lg font-bold">無料プラン</p>
+          )}
+          <p className="text-gray-500 text-xs mt-1">
+            {isPaid
+              ? "月 100 回まで生成・プライベートリポジトリ対応"
+              : "月 10 回まで生成・公開リポジトリのみ"}
+          </p>
+        </div>
+      </div>
 
+      <SettingsForm hasPat={!!data} isPaid={isPaid} />
+
+      {isPaid && (
       <div className="mt-10">
         <h2 className="text-white text-base font-semibold mb-4">PAT の取得方法</h2>
         <div className="space-y-3">
@@ -105,6 +131,7 @@ export default async function SettingsPage() {
           ))}
         </div>
       </div>
+      )}
     </main>
   );
 }

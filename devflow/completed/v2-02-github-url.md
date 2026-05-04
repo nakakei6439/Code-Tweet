@@ -28,7 +28,7 @@ GitHub リポジトリの URL を貼り付けるだけで README を自動取得
   - Private リポジトリ → 「非公開リポジトリには対応していません」（トークン未設定時）
   - README ファイルなし → 「README が見つかりません」
   - URL フォーマット不正 → 「GitHub のリポジトリ URL を入力してください」
-- [ ] ~~プライベートリポジトリ対応~~：V2.1 で `GITHUB_TOKEN` を削除したため未実装 → **V3 で実装予定**
+- [x] ~~プライベートリポジトリ対応~~：**V3 で実装済み**（ユーザー PAT を `/settings` で登録・AES-256-GCM 暗号化保存）→ [v3-01-private-repo.md](./v3-01-private-repo.md)
 
 ---
 
