@@ -22,6 +22,9 @@ export interface GenerateResponse {
   tweets: Tweet[];
 }
 
+export type GenerateErrorCode = "guest_limit" | "free_limit" | "paid_limit";
+
 export interface GenerateErrorResponse {
   error: string;
+  code?: GenerateErrorCode;
 }

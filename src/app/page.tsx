@@ -1,11 +1,27 @@
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import GenerateForm from "@/components/GenerateForm";
 import AuthOverlay from "@/components/AuthOverlay";
+import { hashIp } from "@/lib/rateLimit";
+import { getGuestUsage, getUserUsage } from "@/lib/usage";
+import type { UsageInfo } from "@/types/usage";
 
 export default async function Home() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const isAuthenticated = !!user;
+
+  let initialUsage: UsageInfo | null = null;
+  if (user) {
+    initialUsage = await getUserUsage(user.id);
+  } else {
+    const h = await headers();
+    const forwarded = h.get("x-forwarded-for");
+    const ip = forwarded?.split(",")[0]?.trim() ?? h.get("x-real-ip");
+    if (ip) {
+      initialUsage = await getGuestUsage(hashIp(ip));
+    }
+  }
 
   return (
     <main className="min-h-screen bg-gray-950 relative px-4 py-16">
@@ -27,7 +43,7 @@ export default async function Home() {
         </p>
 
         {!isAuthenticated && <AuthOverlay />}
-        <GenerateForm />
+        <GenerateForm initialUsage={initialUsage} />
       </div>
     </main>
   );

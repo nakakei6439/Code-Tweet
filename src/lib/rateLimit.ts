@@ -7,13 +7,20 @@ export const GUEST_MONTHLY_LIMIT = 3;
 export const USER_FREE_MONTHLY_LIMIT = 10;
 export const USER_PAID_MONTHLY_LIMIT = 100;
 
+import type { GenerateErrorCode } from "@/types/tweet";
+
 export type RateLimitResult =
   | { ok: true }
-  | { ok: false; status: 429; message: string };
+  | { ok: false; status: 429; message: string; code: GenerateErrorCode };
 
-function getMonthWindowStart(): string {
+export function getMonthWindowStart(): string {
   const now = new Date();
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+}
+
+export function getNextMonthStart(): string {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)).toISOString();
 }
 
 export function getClientIp(request: Request): string | null {
@@ -53,12 +60,14 @@ export async function checkUserLimit(
         ok: false,
         status: 429,
         message: `今月の生成上限（${limit}回）に達しました。来月 1 日にリセットされます。`,
+        code: "paid_limit",
       };
     }
     return {
       ok: false,
       status: 429,
       message: `今月の生成上限（${limit}回）に達しました。Pro プラン（月 980 円）で月 ${USER_PAID_MONTHLY_LIMIT} 回まで拡張されます。`,
+      code: "free_limit",
     };
   }
   return { ok: true };
@@ -89,7 +98,8 @@ export async function checkGuestLimit(ipHash: string): Promise<RateLimitResult> 
     return {
       ok: false,
       status: 429,
-      message: `今月の生成上限（${GUEST_MONTHLY_LIMIT}回）に達しました。Google ログインで月 ${USER_FREE_MONTHLY_LIMIT} 回まで拡張されます。`,
+      message: `今月の生成上限（${GUEST_MONTHLY_LIMIT}回）に達しました。GitHub ログインで月 ${USER_FREE_MONTHLY_LIMIT} 回まで拡張されます。`,
+      code: "guest_limit",
     };
   }
   return { ok: true };

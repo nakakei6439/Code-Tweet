@@ -38,9 +38,19 @@ V8 Phase A 完了（2026-05-04）：
 - ✅ 月単位制限導入（ゲスト 月3 / 無料 月10 / 有料 月100）
 - ✅ `subscriptions` テーブル + `tier` ベースの機能差別化
 - ✅ プライベートリポジトリを Pro 限定に巻き上げ（`/api/github` / `/api/tokens` / `SettingsForm` で tier チェック）
-- 保留: Stripe 統合（Phase B で実装）。Phase A 時点では中川さん本人を手動で `tier='paid'` にして利用
 
 詳細は [`devflow/completed/v8-01-freemium-phase-a.md`](./devflow/completed/v8-01-freemium-phase-a.md) を参照。
+
+V8 Phase A.5 完了（2026-05-06）：
+- ✅ 残り回数表示（`/api/usage` 新設・`UsageBadge`）
+- ✅ 上限到達エラーに CTA（GitHub ログイン / Pro アップグレード）
+- ✅ ヘッダー / 設定ページに Pro バッジとアップグレード導線
+- ✅ **Google ログイン廃止 → GitHub OAuth 一本化**（手動 PAT 登録 UI も削除）
+- ✅ リポジトリ選択 UI（`/api/repos` + `RepoSelectorModal`）
+- ✅ 要件定義書・事業計画書を `ideas/` に整備
+- 保留: Stripe 統合（Phase B で実装）。Phase A.5 時点では中川さん本人を手動で `tier='paid'` にして利用
+
+詳細は [`devflow/completed/v8-02-freemium-phase-a-5.md`](./devflow/completed/v8-02-freemium-phase-a-5.md) を参照。
 
 ## 基本情報
 

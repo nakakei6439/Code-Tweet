@@ -22,7 +22,7 @@ export async function POST(request: Request): Promise<Response> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  let hasPat = false;
+  let hasToken = false;
   let isPaid = false;
   if (user) {
     const tier = await getSubscriptionTier(user.id);
@@ -38,16 +38,16 @@ export async function POST(request: Request): Promise<Response> {
 
       if (tokenRow) {
         try {
-          const pat = decrypt(
+          const token = decrypt(
             tokenRow.github_pat_encrypted,
             tokenRow.github_pat_iv,
             tokenRow.github_pat_tag,
           );
-          headers["Authorization"] = `Bearer ${pat}`;
-          hasPat = true;
+          headers["Authorization"] = `Bearer ${token}`;
+          hasToken = true;
         } catch {
           return Response.json(
-            { error: "PAT の読み込みに失敗しました。設定ページから再登録してください。" },
+            { error: "GitHub アクセストークンの読み込みに失敗しました。再ログインしてください。" },
             { status: 500 },
           );
         }
@@ -64,14 +64,14 @@ export async function POST(request: Request): Promise<Response> {
 
   if (res.status === 401) {
     return Response.json(
-      { error: "Personal Access Token が無効です。設定ページから再登録してください。" },
+      { error: "GitHub アクセストークンが無効です。再ログインしてください。" },
       { status: 401 },
     );
   }
   if (res.status === 403) {
     if (!user) {
       return Response.json(
-        { error: "非公開リポジトリにはログインと Pro プラン（月 980 円）の登録が必要です。" },
+        { error: "非公開リポジトリには GitHub ログインと Pro プラン（月 980 円）が必要です。" },
         { status: 403 },
       );
     }
@@ -81,20 +81,20 @@ export async function POST(request: Request): Promise<Response> {
         { status: 403 },
       );
     }
-    if (!hasPat) {
+    if (!hasToken) {
       return Response.json(
-        { error: "非公開リポジトリには設定ページで PAT を登録してください。" },
+        { error: "GitHub アクセストークンが見つかりません。一度ログアウトして再ログインしてください。" },
         { status: 403 },
       );
     }
     return Response.json(
-      { error: "このリポジトリへのアクセス権がありません。PAT のスコープに repo が含まれているか確認してください。" },
+      { error: "このリポジトリへのアクセス権がありません。" },
       { status: 403 },
     );
   }
   if (res.status === 404) {
     // GitHub はプライベートリポジトリへのアクセス権がない場合も 404 を返す
-    if (hasPat) {
+    if (hasToken) {
       return Response.json(
         { error: "リポジトリが見つかりません。URL を確認してください。" },
         { status: 404 },
@@ -102,7 +102,7 @@ export async function POST(request: Request): Promise<Response> {
     }
     if (isPaid) {
       return Response.json(
-        { error: "リポジトリが見つかりません。非公開リポジトリの場合は設定ページで PAT を登録してください。" },
+        { error: "リポジトリが見つかりません。一度ログアウトして再ログインしてください。" },
         { status: 404 },
       );
     }
@@ -113,7 +113,7 @@ export async function POST(request: Request): Promise<Response> {
       );
     }
     return Response.json(
-      { error: "リポジトリが見つかりません。非公開リポジトリの場合はログインと Pro プラン（月 980 円）が必要です。" },
+      { error: "リポジトリが見つかりません。非公開リポジトリの場合は GitHub ログインと Pro プラン（月 980 円）が必要です。" },
       { status: 404 },
     );
   }

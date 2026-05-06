@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getSubscriptionTier } from "@/lib/subscription";
 import HeaderActions from "@/components/HeaderActions";
 
 export default async function Header() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const tier = user ? await getSubscriptionTier(user.id) : null;
 
   return (
     <header className="w-full border-b border-gray-900 bg-gray-950/80 backdrop-blur-md sticky top-0 z-30">
@@ -16,6 +18,7 @@ export default async function Header() {
           <HeaderActions
             isAuthenticated={!!user}
             email={user?.email ?? null}
+            tier={tier}
           />
         </div>
       </div>

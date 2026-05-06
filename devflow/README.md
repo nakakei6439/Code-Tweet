@@ -43,6 +43,7 @@ Code Tweet の企画・設計・実装・運用に関する記録の索引。
 | # | ファイル | 機能 |
 |---|---------|------|
 | V8 Phase A | [v8-01-freemium-phase-a.md](./completed/v8-01-freemium-phase-a.md) | 月単位制限・tier ベース機能差別化（Stripe 統合前の基盤） |
+| V8 Phase A.5 | [v8-02-freemium-phase-a-5.md](./completed/v8-02-freemium-phase-a-5.md) | UI 作り込み + GitHub OAuth 一本化 + リポジトリ選択 UI |
 
 ---
 

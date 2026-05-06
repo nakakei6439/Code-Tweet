@@ -17,9 +17,11 @@ README やプロジェクト説明を AI が分析し、X（旧 Twitter）向け
 - **推奨投稿日時の提案**：各ポストごとに翌日〜7 日以内の日時と選定理由を AI が提案
 - **weighted length チェック・自動短縮**：X の 280 ウェイト上限を `twitter-text` で計測し、超過時は最大 4 回まで AI に短縮を依頼
 - **ワンクリックコピー**：各ポストをそのままコピーして投稿
-- **Google ログイン（任意）**：Supabase Auth。ログインで利用上限が拡張される
+- **GitHub ログイン（任意）**：Supabase Auth + GitHub OAuth。ログインで利用上限が拡張される（V8 Phase A.5 で Google から切替）
 - **月単位の利用回数制限**（V8 Phase A）：ゲスト 月 3 / 無料 月 10 / Pro 月 100（IP ハッシュ・ユーザー ID で計測）
-- **プライベートリポジトリ対応**（V3 / Pro 限定）：GitHub PAT を `/settings` で登録すると非公開リポジトリの README も取得可能。PAT は AES-256-GCM で暗号化して Supabase に保存。**V8 Phase A 以降は Pro プラン限定**
+- **残り回数表示**（V8 Phase A.5）：フォーム上部に「今月あと X / Y 回」+ プランバッジ
+- **プライベートリポジトリ対応**（V3 / Pro 限定）：GitHub OAuth で取得したアクセストークンを AES-256-GCM 暗号化して Supabase に保存。Pro プランで非公開リポジトリの README も取得可能
+- **自分のリポジトリから選ぶ**（V8 Phase A.5）：GitHub の自分のリポジトリ一覧をモーダルで表示・検索。Pro は公開＋非公開、無料は公開のみ
 
 ---
 
@@ -32,7 +34,7 @@ README やプロジェクト説明を AI が分析し、X（旧 Twitter）向け
 | 言語 | TypeScript 5 |
 | スタイリング | Tailwind CSS v4 |
 | AI | Gemini API（`gemini-2.5-flash` / `@google/generative-ai`） |
-| 認証 | Supabase Auth + Google OAuth（`@supabase/ssr` + `@supabase/supabase-js`） |
+| 認証 | Supabase Auth + GitHub OAuth（`@supabase/ssr` + `@supabase/supabase-js`） |
 | 文字数計算 | `twitter-text`（weighted length） |
 | ホスティング | Vercel |
 
@@ -74,16 +76,17 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 > サーバー専用キー（`GEMINI_API_KEY` / `SUPABASE_SERVICE_ROLE_KEY` / `GITHUB_PAT_ENCRYPTION_KEY`）は `NEXT_PUBLIC_` を付けないこと。絶対にクライアントに渡さない。
 
-### 3. Supabase / Google OAuth の準備
+### 3. Supabase / GitHub OAuth の準備
 
 1. [Supabase](https://supabase.com/) でプロジェクトを作成し、Project URL / anon public key を取得
-2. Google Cloud Console で OAuth クライアント ID を発行し、リダイレクト URI に `https://<Project Ref>.supabase.co/auth/v1/callback` を追加
-3. Supabase ダッシュボード → Authentication → Providers → **Google** を有効化し、Client ID / Secret を貼り付け
+2. [GitHub の OAuth Apps](https://github.com/settings/developers) で新規 OAuth App を作成。Authorization callback URL に `https://<Project Ref>.supabase.co/auth/v1/callback` を設定
+3. Supabase ダッシュボード → Authentication → Providers → **GitHub** を有効化し、Client ID / Secret を貼り付け
 4. Authentication → URL Configuration の **Redirect URLs** に下記を追加：
    - `http://localhost:3000/auth/callback`
    - `https://code-tweet.vercel.app/auth/callback`
 
-詳しい手順は [`devflow/completed/v2-03-google-auth.md`](./devflow/completed/v2-03-google-auth.md) を参照。
+詳しい手順は [`devflow/completed/v8-02-freemium-phase-a-5.md`](./devflow/completed/v8-02-freemium-phase-a-5.md) を参照。
+※ V2 当時は Google OAuth を採用していました（[`v2-03-google-auth.md`](./devflow/completed/v2-03-google-auth.md)）。V8 Phase A.5（2026-05-06）で GitHub OAuth に一本化されています。
 
 ### 4. Supabase テーブルの作成
 
@@ -92,6 +95,8 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 **V3 PAT 保存用**（`user_tokens`）：SQL は [`devflow/completed/v3-01-private-repo.md`](./devflow/completed/v3-01-private-repo.md) を参照。
 
 **V8 Phase A サブスクリプション用**（`subscriptions`）：SQL は [`devflow/completed/v8-01-freemium-phase-a.md`](./devflow/completed/v8-01-freemium-phase-a.md) を参照。
+
+**V8 Phase A.5 OAuth トークン識別用**（`user_tokens.source` カラム）：SQL は [`devflow/completed/v8-02-freemium-phase-a-5.md`](./devflow/completed/v8-02-freemium-phase-a-5.md) を参照。
 
 ### 5. 起動
 
@@ -109,7 +114,7 @@ npm run dev
 2. 口調メモ・URL・ハッシュタグを入力（すべて任意）
 3. 「ポストを生成する」を押す
 4. 生成された 5 件のポストを推奨日時に合わせて投稿
-5. 利用上限を増やしたい場合は Google でログイン（月 3 回 → 月 10 回）。さらに月 100 回・プライベートリポジトリ対応の Pro プラン（V8 Phase B で導入予定）
+5. 利用上限を増やしたい場合は GitHub でログイン（月 3 回 → 月 10 回・「自分のリポジトリから選ぶ」機能も解放）。さらに月 100 回・プライベートリポジトリ対応の Pro プラン（V8 Phase B で導入予定）
 
 ---
 
@@ -144,26 +149,30 @@ src/
 │   ├── api/
 │   │   ├── generate/route.ts   # Gemini でポスト生成（利用回数チェック付き）
 │   │   ├── github/route.ts     # GitHub README 取得（公開・プライベート対応）
-│   │   └── tokens/route.ts     # ユーザー PAT の登録・削除（V3）
+│   │   ├── repos/route.ts      # ログインユーザーのリポジトリ一覧（V8 Phase A.5）
+│   │   ├── usage/route.ts      # 残り回数取得（V8 Phase A.5）
+│   │   └── tokens/route.ts     # （旧）PAT 登録 API。V8 Phase A.5 で UI から廃止
 │   ├── auth/
-│   │   ├── callback/route.ts   # OAuth コールバック
+│   │   ├── callback/route.ts   # GitHub OAuth コールバック（provider_token 暗号化保存）
 │   │   └── signout/route.ts    # ログアウト
 │   ├── settings/
-│   │   └── page.tsx            # 設定ページ（PAT 管理・取得ガイド）（V3）
+│   │   └── page.tsx            # 設定ページ（プラン表示・GitHub 連携状態）
 │   ├── layout.tsx              # 全体レイアウト（Header 差し込み）
 │   └── page.tsx                # トップ（Server Component）
 ├── components/
 │   ├── AuthOverlay.tsx         # 未ログイン時のソフト案内バナー
 │   ├── GenerateForm.tsx        # フォーム本体（Client Component）
 │   ├── Header.tsx              # ヘッダー（ログイン状態判定）
-│   ├── HeaderActions.tsx       # ハンバーガーメニュー（設定・ログイン/ログアウト）（V3）
-│   ├── SettingsForm.tsx        # PAT 登録・削除フォーム（V3）
+│   ├── HeaderActions.tsx       # ハンバーガーメニュー（プランバッジ・GitHub ログイン）
+│   ├── RepoSelectorModal.tsx   # 自分のリポジトリ選択モーダル（V8 Phase A.5）
+│   ├── SettingsForm.tsx        # GitHub 連携状態表示（V8 Phase A.5 で PAT 登録 UI 廃止）
 │   └── TweetCard.tsx           # 生成ポストカード
 ├── lib/
 │   ├── encryption.ts           # AES-256-GCM 暗号化/復号（V3）
 │   ├── gemini.ts               # プロンプト生成・パース・自動短縮
 │   ├── rateLimit.ts            # 月単位の利用回数制限（V8 Phase A 以降）
 │   ├── subscription.ts         # tier 取得ヘルパー（V8 Phase A）
+│   ├── usage.ts                # 残り回数取得ヘルパー（V8 Phase A.5）
 │   └── supabase/
 │       ├── admin.ts            # service role クライアント
 │       ├── client.ts           # ブラウザ用クライアント
@@ -207,12 +216,23 @@ V8 Phase A 完了（2026-05-04）：
 
 詳細は [`devflow/completed/v8-01-freemium-phase-a.md`](./devflow/completed/v8-01-freemium-phase-a.md) を参照。
 
+V8 Phase A.5 完了（2026-05-06）：
+
+- ✅ 残り回数表示・プランバッジ
+- ✅ 上限到達エラーに GitHub ログイン / Pro アップグレード CTA
+- ✅ Google ログイン → **GitHub OAuth に一本化**（手動 PAT 登録 UI も廃止）
+- ✅ 自分のリポジトリから選ぶモーダル UI
+- ✅ 要件定義書・事業計画書を `ideas/` に整備
+
+詳細は [`devflow/completed/v8-02-freemium-phase-a-5.md`](./devflow/completed/v8-02-freemium-phase-a-5.md) を参照。
+
 ### ロードマップ
 
 | バージョン | 機能 | 状態 |
 |-----------|------|------|
 | V3 | GitHub プライベートリポジトリ対応 | ✅ 完了 |
 | V8 Phase A | 月単位制限・tier ベース機能差別化 | ✅ 完了 |
+| V8 Phase A.5 | UI 作り込み + GitHub OAuth 一本化 + リポジトリ選択 UI | ✅ 完了 |
 | V8 Phase B | Stripe 統合（Checkout・Webhook・Customer Portal） | 未着手 |
 | V5 | Claude API も選択可能に | 未着手 |
 | V9 | Instagram・Threads など他 SNS 対応 | 保留 |

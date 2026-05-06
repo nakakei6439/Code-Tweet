@@ -49,7 +49,10 @@ export async function POST(request: Request): Promise<Response> {
     const tier = await getSubscriptionTier(user.id);
     const limit = await checkUserLimit(supabase, user.id, tier);
     if (!limit.ok) {
-      return Response.json({ error: limit.message } satisfies GenerateErrorResponse, { status: limit.status });
+      return Response.json(
+        { error: limit.message, code: limit.code } satisfies GenerateErrorResponse,
+        { status: limit.status },
+      );
     }
   } else {
     const ip = getClientIp(request);
@@ -59,7 +62,10 @@ export async function POST(request: Request): Promise<Response> {
     ipHash = hashIp(ip);
     const limit = await checkGuestLimit(ipHash);
     if (!limit.ok) {
-      return Response.json({ error: limit.message } satisfies GenerateErrorResponse, { status: limit.status });
+      return Response.json(
+        { error: limit.message, code: limit.code } satisfies GenerateErrorResponse,
+        { status: limit.status },
+      );
     }
   }
 
