@@ -86,6 +86,13 @@ export default function HeaderActions({ isAuthenticated, email, tier }: Props) {
                 </Link>
               )}
               <Link
+                href="/about"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+              >
+                Code Tweet とは
+              </Link>
+              <Link
                 href="/settings"
                 onClick={() => setIsOpen(false)}
                 className="flex items-center px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
@@ -102,7 +109,14 @@ export default function HeaderActions({ isAuthenticated, email, tier }: Props) {
               </form>
             </div>
           ) : (
-            <div className="p-2">
+            <div className="p-2 space-y-0.5">
+              <Link
+                href="/about"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+              >
+                Code Tweet とは
+              </Link>
               <button
                 onClick={handleLogin}
                 disabled={isPending}

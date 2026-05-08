@@ -1,8 +1,9 @@
-import { GoogleGenerativeAI, type GenerativeModel } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import twitterText from "twitter-text";
-import type { Tweet, RecommendedTime } from "@/types/tweet";
+import type { Tweet } from "@/types/tweet";
 
 const TWEET_LIMIT = 280;
+const GEMINI_MODEL = "gemini-2.5-flash";
 
 function formatScheduleLabel(dateStr: string, timeStr: string): string {
   const [year, month, day] = dateStr.split("-").map(Number);
@@ -131,12 +132,13 @@ async function regenerateOne(
   toneMemo: string,
   url: string,
   hashtags: string,
-  model: GenerativeModel
+  ai: GoogleGenAI
 ): Promise<string> {
-  const result = await model.generateContent(
-    buildShortenPrompt(originalText, currentWeight, projectText, toneMemo, url, hashtags)
-  );
-  return result.response.text().trim().replace(/^["「『]|["」』]$/g, "").trim();
+  const result = await ai.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: buildShortenPrompt(originalText, currentWeight, projectText, toneMemo, url, hashtags),
+  });
+  return (result.text ?? "").trim().replace(/^["「『]|["」』]$/g, "").trim();
 }
 
 export async function generateTweets(
@@ -147,14 +149,19 @@ export async function generateTweets(
 ): Promise<Tweet[]> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY が設定されていません。");
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const ai = new GoogleGenAI({ apiKey });
 
   const today = new Date();
   const todayStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
 
-  const result = await model.generateContent(buildPrompt(projectText, toneMemo, url, hashtags, todayStr));
-  const text = result.response.text();
+  const result = await ai.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: buildPrompt(projectText, toneMemo, url, hashtags, todayStr),
+  });
+  const text = result.text;
+  if (!text) {
+    throw new Error("Gemini API から本文が返りませんでした。もう一度お試しください。");
+  }
 
   const SCHEDULE_RE = /SCHEDULE:\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})\s*\/\s*([^\n]+)/g;
   const POST_MARKER_RE = /(?:^|\n)\s*\d+\.\s+/;
@@ -205,7 +212,7 @@ export async function generateTweets(
       attempts++;
       try {
         const shortened = reformatTweet(
-          await regenerateOne(current, weight, projectText, toneMemo, url, hashtags, model)
+          await regenerateOne(current, weight, projectText, toneMemo, url, hashtags, ai)
         );
         const shortenedWeight = countWeighted(shortened);
         if (shortenedWeight <= TWEET_LIMIT && shortened.length > 0) {
