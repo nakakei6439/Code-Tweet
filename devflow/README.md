@@ -29,7 +29,7 @@ Code Tweet の企画・設計・実装・運用に関する記録の索引。
 | Index | [v2-00-overview.md](./completed/v2-00-overview.md) | V2 概要・進捗インデックス |
 | Feature 1 | [v2-01-server-api-key.md](./completed/v2-01-server-api-key.md) | サーバー管理 API キー |
 | Feature 2 | [v2-02-github-url.md](./completed/v2-02-github-url.md) | GitHub URL 連携（公開リポジトリのみ） |
-| Feature 3 | [v2-03-google-auth.md](./completed/v2-03-google-auth.md) | Google ログイン（任意） |
+| Feature 3 | [v2-03-google-auth.md](./completed/v2-03-google-auth.md) | ユーザー認証（当時は Google、現在は GitHub OAuth に移行済み） |
 | V2.1 | [v2-1-rate-limit.md](./completed/v2-1-rate-limit.md) | 利用回数制限（ゲスト 5 回 / ログイン 10 回） |
 
 ### V3（プライベートリポジトリ対応）

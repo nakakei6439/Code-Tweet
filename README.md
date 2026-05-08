@@ -33,7 +33,7 @@ README やプロジェクト説明を AI が分析し、X（旧 Twitter）向け
 | ランタイム | React 19.2.4 |
 | 言語 | TypeScript 5 |
 | スタイリング | Tailwind CSS v4 |
-| AI | Gemini API（`gemini-2.5-flash` / `@google/generative-ai`） |
+| AI | Gemini API（`gemini-2.5-flash` / `@google/genai`） |
 | 認証 | Supabase Auth + GitHub OAuth（`@supabase/ssr` + `@supabase/supabase-js`） |
 | 文字数計算 | `twitter-text`（weighted length） |
 | ホスティング | Vercel |
@@ -130,7 +130,7 @@ npm run dev
     │                                  │ Server Component が getUser()  │
     │                                  │     ──────> Supabase Auth      │
     │ ② 未ログイン: AuthOverlay (ソフト案内) │                          │
-    │ ③ Google ログイン (任意)           │ /auth/callback で session 確立 │
+    │ ③ GitHub ログイン (任意)           │ /auth/callback で session 確立 │
     │ ④ GitHub URL → README 取得        │ POST /api/github              │
     │                                  │     ──────> GitHub REST API   │
     │ ⑤ ポスト生成                      │ POST /api/generate            │
@@ -195,7 +195,7 @@ V2 完了（2026-05-01〜02）：
 
 - ✅ Feature 1: サーバー管理 API キー
 - ✅ Feature 2: GitHub URL 連携（公開リポジトリのみ）
-- ✅ Feature 3: ユーザー認証（Google ログイン / Supabase Auth・任意）
+- ✅ Feature 3: ユーザー認証（当時は Google ログイン / Supabase Auth・任意、現在は GitHub OAuth に移行済み）
 - ✅ V2.1: 利用回数制限（ゲスト 5 回 / ログイン 10 回 / 日）・`GITHUB_TOKEN` 削除
 - 保留 Feature 4: ポスト保存・履歴（X 予約投稿で代替可能のため）
 - 保留 Feature 5: 検索・フィルタ

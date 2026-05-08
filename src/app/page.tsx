@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import GenerateForm from "@/components/GenerateForm";
 import AuthOverlay from "@/components/AuthOverlay";
@@ -40,6 +41,10 @@ export default async function Home() {
         </h1>
         <p className="text-gray-400 text-center mb-10">
           AIがプロジェクトを分析して5件のマーケティングポストを自動生成
+          <br />
+          <Link href="/about" className="text-cyan-300 hover:text-cyan-200 transition-colors">
+            Code Tweet とは？
+          </Link>
         </p>
 
         {!isAuthenticated && <AuthOverlay />}
