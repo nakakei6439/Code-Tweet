@@ -1,6 +1,6 @@
 # V8 Phase A: フリーミアム導入（Stripe 統合前の基盤）
 
-← [devflow 索引に戻る](../README.md)
+← [docs 索引に戻る](../index.md)
 
 **完了日**: 2026-05-04
 

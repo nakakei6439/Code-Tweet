@@ -4,6 +4,8 @@ README やプロジェクト説明を AI が分析し、X（旧 Twitter）向け
 
 本番 URL: **https://code-tweet.vercel.app/**
 
+ドキュメント索引: [`docs/index.md`](./docs/index.md)
+
 ---
 
 ## 機能
@@ -85,18 +87,18 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
    - `http://localhost:3000/auth/callback`
    - `https://code-tweet.vercel.app/auth/callback`
 
-詳しい手順は [`devflow/completed/v8-02-freemium-phase-a-5.md`](./devflow/completed/v8-02-freemium-phase-a-5.md) を参照。
-※ V2 当時は Google OAuth を採用していました（[`v2-03-google-auth.md`](./devflow/completed/v2-03-google-auth.md)）。V8 Phase A.5（2026-05-06）で GitHub OAuth に一本化されています。
+詳しい手順は [`docs/history/v8-02-freemium-phase-a-5.md`](./docs/history/v8-02-freemium-phase-a-5.md) を参照。
+※ V2 当時は Google OAuth を採用していました（[`v2-03-google-auth.md`](./docs/history/v2-03-google-auth.md)）。V8 Phase A.5（2026-05-06）で GitHub OAuth に一本化されています。
 
 ### 4. Supabase テーブルの作成
 
-**V2.1 利用制限用**（`usage_logs` / `ip_usage_logs`）：SQL は [`devflow/completed/v2-1-rate-limit.md`](./devflow/completed/v2-1-rate-limit.md) を参照。
+**V2.1 利用制限用**（`usage_logs` / `ip_usage_logs`）：SQL は [`docs/history/v2-04-rate-limit.md`](./docs/history/v2-04-rate-limit.md) を参照。
 
-**V3 PAT 保存用**（`user_tokens`）：SQL は [`devflow/completed/v3-01-private-repo.md`](./devflow/completed/v3-01-private-repo.md) を参照。
+**V3 PAT 保存用**（`user_tokens`）：SQL は [`docs/history/v3-01-private-repo.md`](./docs/history/v3-01-private-repo.md) を参照。
 
-**V8 Phase A サブスクリプション用**（`subscriptions`）：SQL は [`devflow/completed/v8-01-freemium-phase-a.md`](./devflow/completed/v8-01-freemium-phase-a.md) を参照。
+**V8 Phase A サブスクリプション用**（`subscriptions`）：SQL は [`docs/history/v8-01-freemium-phase-a.md`](./docs/history/v8-01-freemium-phase-a.md) を参照。
 
-**V8 Phase A.5 OAuth トークン識別用**（`user_tokens.source` カラム）：SQL は [`devflow/completed/v8-02-freemium-phase-a-5.md`](./devflow/completed/v8-02-freemium-phase-a-5.md) を参照。
+**V8 Phase A.5 OAuth トークン識別用**（`user_tokens.source` カラム）：SQL は [`docs/history/v8-02-freemium-phase-a-5.md`](./docs/history/v8-02-freemium-phase-a-5.md) を参照。
 
 ### 5. 起動
 
@@ -208,7 +210,7 @@ V3 完了（2026-05-04）：
 - ✅ `/settings` ページ：PAT 登録・削除・取得ガイド
 - ✅ ハンバーガーメニュー
 
-詳細は [`devflow/completed/v3-01-private-repo.md`](./devflow/completed/v3-01-private-repo.md) を参照。
+詳細は [`docs/history/v3-01-private-repo.md`](./docs/history/v3-01-private-repo.md) を参照。
 
 V8 Phase A 完了（2026-05-04）：
 
@@ -216,7 +218,7 @@ V8 Phase A 完了（2026-05-04）：
 - ✅ `subscriptions` テーブル + tier ベースの機能差別化
 - ✅ プライベートリポジトリを Pro 限定に巻き上げ
 
-詳細は [`devflow/completed/v8-01-freemium-phase-a.md`](./devflow/completed/v8-01-freemium-phase-a.md) を参照。
+詳細は [`docs/history/v8-01-freemium-phase-a.md`](./docs/history/v8-01-freemium-phase-a.md) を参照。
 
 V8 Phase A.5 完了（2026-05-06）：
 
@@ -224,9 +226,9 @@ V8 Phase A.5 完了（2026-05-06）：
 - ✅ 上限到達エラーに GitHub ログイン / Pro アップグレード CTA
 - ✅ Google ログイン → **GitHub OAuth に一本化**（手動 PAT 登録 UI も廃止）
 - ✅ 自分のリポジトリから選ぶモーダル UI
-- ✅ 要件定義書・事業計画書を `ideas/` に整備
+- ✅ 要件定義書・事業計画書を `docs/product/` に整備
 
-詳細は [`devflow/completed/v8-02-freemium-phase-a-5.md`](./devflow/completed/v8-02-freemium-phase-a-5.md) を参照。
+詳細は [`docs/history/v8-02-freemium-phase-a-5.md`](./docs/history/v8-02-freemium-phase-a-5.md) を参照。
 
 ### ロードマップ
 

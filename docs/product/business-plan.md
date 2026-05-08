@@ -188,7 +188,7 @@
 
 ## 11. 関連ドキュメント
 
-- 要件定義書：[`ideas/20260505-requirements.md`](./20260505-requirements.md)
-- 当初の企画メモ（V1 時点）：[`devflow/completed/v1-01-planning.md`](../devflow/completed/v1-01-planning.md)
-- フリーミアム実装記録：[`devflow/completed/v8-01-freemium-phase-a.md`](../devflow/completed/v8-01-freemium-phase-a.md)
+- 要件定義書：[`docs/product/requirements.md`](./requirements.md)
+- 当初の企画メモ（V1 時点）：[`docs/history/v1-01-planning.md`](../history/v1-01-planning.md)
+- フリーミアム実装記録：[`docs/history/v8-01-freemium-phase-a.md`](../history/v8-01-freemium-phase-a.md)
 - 競合調査・収益化方針（V1 時点）：上記企画メモ参照

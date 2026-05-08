@@ -1,6 +1,6 @@
 # V8 Phase A.5: 作り込み（UI 改善 + GitHub OAuth 一本化 + リポジトリ選択 UI + ドキュメント整備）
 
-← [devflow 索引に戻る](../README.md)
+← [docs 索引に戻る](../index.md)
 
 **完了日**: 2026-05-06
 
@@ -102,9 +102,9 @@ GitHub App はトークン 1 時間 expire・install 手順追加・refresh 実�
 
 | ファイル | 内容 |
 |---------|------|
-| `ideas/20260505-requirements.md` | 新規。要件定義書（機能要件・非機能要件・ロール・ユーザーストーリー） |
-| `ideas/20260505-business-plan.md` | 新規。事業計画書（市場分析・収益モデル・コスト試算・KPI） |
-| `devflow/completed/v8-02-freemium-phase-a-5.md` | 本ファイル（実装記録） |
+| `docs/product/requirements.md` | 新規。要件定義書（機能要件・非機能要件・ロール・ユーザーストーリー） |
+| `docs/product/business-plan.md` | 新規。事業計画書（市場分析・収益モデル・コスト試算・KPI） |
+| `docs/history/v8-02-freemium-phase-a-5.md` | 本ファイル（実装記録） |
 
 ---
 

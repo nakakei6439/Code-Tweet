@@ -21,7 +21,7 @@
 | ✅ 完了 | 1 | [v2-01-server-api-key.md](./v2-01-server-api-key.md) | サーバー管理 API キー |
 | ✅ 完了 | 2 | [v2-02-github-url.md](./v2-02-github-url.md) | GitHub URL 連携（公開リポジトリのみ） |
 | ✅ 完了 | 3 | [v2-03-google-auth.md](./v2-03-google-auth.md) | ユーザー認証（Google ログイン・任意） |
-| ✅ 完了 | 2.1 | [v2-1-rate-limit.md](./v2-1-rate-limit.md) | 利用回数制限（ゲスト 5 回 / ログイン 10 回） |
+| ✅ 完了 | 2.1 | [v2-04-rate-limit.md](./v2-04-rate-limit.md) | 利用回数制限（ゲスト 5 回 / ログイン 10 回） |
 | 見送り | 4 | ポスト保存・履歴 | X の予約投稿で代替可能なため |
 | 見送り | 5 | 検索・フィルタ | ポスト保存・履歴を見送ったため |
 
