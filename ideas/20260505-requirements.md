@@ -151,6 +151,6 @@ GitHub リポジトリの README やプロジェクト説明から、X（旧 Twi
 ## 8. 関連ドキュメント
 
 - 企画メモ（V1 当時）：[`devflow/completed/v1-01-planning.md`](../devflow/completed/v1-01-planning.md)
-- フリーミアム設計：[`ideas/20260504-v8-freemium.md`](./20260504-v8-freemium.md)
+- フリーミアム実装記録：[`devflow/completed/v8-01-freemium-phase-a.md`](../devflow/completed/v8-01-freemium-phase-a.md)
 - V8 Phase A 実装記録：[`devflow/completed/v8-01-freemium-phase-a.md`](../devflow/completed/v8-01-freemium-phase-a.md)
 - 事業計画書：[`ideas/20260505-business-plan.md`](./20260505-business-plan.md)

@@ -150,11 +150,14 @@ src/
 │   │   ├── generate/route.ts   # Gemini でポスト生成（利用回数チェック付き）
 │   │   ├── github/route.ts     # GitHub README 取得（公開・プライベート対応）
 │   │   ├── repos/route.ts      # ログインユーザーのリポジトリ一覧（V8 Phase A.5）
-│   │   ├── usage/route.ts      # 残り回数取得（V8 Phase A.5）
-│   │   └── tokens/route.ts     # （旧）PAT 登録 API。V8 Phase A.5 で UI から廃止
+│   │   └── usage/route.ts      # 残り回数取得（V8 Phase A.5）
 │   ├── auth/
 │   │   ├── callback/route.ts   # GitHub OAuth コールバック（provider_token 暗号化保存）
 │   │   └── signout/route.ts    # ログアウト
+│   ├── about/
+│   │   └── page.tsx            # Code Tweet の説明ページ
+│   ├── pricing/
+│   │   └── page.tsx            # 料金プラン（決済導入前の案内）
 │   ├── settings/
 │   │   └── page.tsx            # 設定ページ（プラン表示・GitHub 連携状態）
 │   ├── layout.tsx              # 全体レイアウト（Header 差し込み）
@@ -197,8 +200,7 @@ V2 完了（2026-05-01〜02）：
 - ✅ Feature 2: GitHub URL 連携（公開リポジトリのみ）
 - ✅ Feature 3: ユーザー認証（当時は Google ログイン / Supabase Auth・任意、現在は GitHub OAuth に移行済み）
 - ✅ V2.1: 利用回数制限（ゲスト 5 回 / ログイン 10 回 / 日）・`GITHUB_TOKEN` 削除
-- 保留 Feature 4: ポスト保存・履歴（X 予約投稿で代替可能のため）
-- 保留 Feature 5: 検索・フィルタ
+- 見送り Feature 4/5: ポスト保存・履歴・検索（X の予約投稿で代替可能なため）
 
 V3 完了（2026-05-04）：
 
@@ -236,6 +238,15 @@ V8 Phase A.5 完了（2026-05-06）：
 | V8 Phase B | Stripe 統合（Checkout・Webhook・Customer Portal） | 未着手 |
 | V5 | Claude API も選択可能に | 未着手 |
 | V9 | Instagram・Threads など他 SNS 対応 | 保留 |
+
+### 次にやること
+
+1. **V8 Phase B: Stripe 決済導入**
+   `/pricing` から Checkout へ進めるようにし、Webhook で `subscriptions.tier` を `paid` に更新する。
+2. **Pro 向け運用確認**
+   Customer Portal、解約時の無料プラン戻し、GitHub private repo 取得の動作確認を行う。
+3. **需要確認後の拡張**
+   Claude API 選択や他 SNS 対応は、Pro 導入後の利用状況を見て判断する。
 
 ---
 

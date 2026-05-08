@@ -190,5 +190,5 @@
 
 - 要件定義書：[`ideas/20260505-requirements.md`](./20260505-requirements.md)
 - 当初の企画メモ（V1 時点）：[`devflow/completed/v1-01-planning.md`](../devflow/completed/v1-01-planning.md)
-- フリーミアム設計：[`ideas/20260504-v8-freemium.md`](./20260504-v8-freemium.md)
+- フリーミアム実装記録：[`devflow/completed/v8-01-freemium-phase-a.md`](../devflow/completed/v8-01-freemium-phase-a.md)
 - 競合調査・収益化方針（V1 時点）：上記企画メモ参照

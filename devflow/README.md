@@ -47,19 +47,12 @@ Code Tweet の企画・設計・実装・運用に関する記録の索引。
 
 ---
 
-## ⏸ pending/ — 保留
-
-| # | ファイル | 機能 | 保留理由 |
-|---|---------|------|---------|
-| Feature 4 | [v2-04-history.md](./pending/v2-04-history.md) | ポスト保存・履歴 | X の予約投稿で代替可能なため不要 |
-| Feature 5 | [v2-05-search.md](./pending/v2-05-search.md) | 検索・フィルタ | Feature 4 に依存・同じく保留 |
-
----
-
 ## 次の候補（未着手）
 
 | バージョン | 機能 |
 |-----------|------|
-| V8 Phase B | Stripe 統合（Checkout・Webhook・Customer Portal・/pricing ページ） |
-| V5 | Claude API も選択可能に |
-| V9 | Instagram・Threads など他 SNS 対応（保留） |
+| V8 Phase B | Stripe 統合（Checkout・Webhook・Customer Portal） |
+| V5 | Claude API も選択可能に（Phase B 後に判断） |
+| V9 | Instagram・Threads など他 SNS 対応（需要確認後に判断） |
+
+最優先は **V8 Phase B**。ポスト保存・履歴・検索は、X の予約投稿で代替できるため見送り。

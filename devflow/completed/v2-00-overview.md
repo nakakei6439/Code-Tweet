@@ -22,8 +22,8 @@
 | ✅ 完了 | 2 | [v2-02-github-url.md](./v2-02-github-url.md) | GitHub URL 連携（公開リポジトリのみ） |
 | ✅ 完了 | 3 | [v2-03-google-auth.md](./v2-03-google-auth.md) | ユーザー認証（Google ログイン・任意） |
 | ✅ 完了 | 2.1 | [v2-1-rate-limit.md](./v2-1-rate-limit.md) | 利用回数制限（ゲスト 5 回 / ログイン 10 回） |
-| 保留 | 4 | [v2-04-history.md](../pending/v2-04-history.md) | ポスト保存・履歴 |
-| 保留 | 5 | [v2-05-search.md](../pending/v2-05-search.md) | 検索・フィルタ |
+| 見送り | 4 | ポスト保存・履歴 | X の予約投稿で代替可能なため |
+| 見送り | 5 | 検索・フィルタ | ポスト保存・履歴を見送ったため |
 
 ---
 
