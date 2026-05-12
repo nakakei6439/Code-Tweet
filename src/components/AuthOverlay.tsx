@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { PROJECT_TEXT_LIMITS } from "@/lib/generateLimits";
 
 export default function AuthOverlay() {
   const [isPending, setIsPending] = useState(false);
@@ -15,7 +16,7 @@ export default function AuthOverlay() {
       provider: "github",
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
-        scopes: "read:user user:email repo",
+        scopes: "read:user user:email",
       },
     });
     if (error) {
@@ -27,8 +28,12 @@ export default function AuthOverlay() {
   return (
     <div className="mb-6 bg-gray-900/60 backdrop-blur border border-gray-800 rounded-xl px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
       <div className="flex-1 text-sm text-gray-300">
-        <span className="text-white font-medium">そのまま月3回まで使えます。</span>{" "}
-        <span className="text-gray-400">GitHub ログインで月10回まで増え、公開リポジトリ一覧から選択できます。</span>
+        <span className="text-white font-medium">
+          そのまま3回まで、README上限 {PROJECT_TEXT_LIMITS.guest.toLocaleString("ja-JP")} 文字まで使えます。
+        </span>{" "}
+        <span className="text-gray-400">
+          GitHub ログインで月3回・README上限 {PROJECT_TEXT_LIMITS.free.toLocaleString("ja-JP")} 文字まで使え、公開リポジトリ一覧から選択できます。
+        </span>
       </div>
       <button
         onClick={handleLogin}

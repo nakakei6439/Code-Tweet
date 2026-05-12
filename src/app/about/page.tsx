@@ -175,7 +175,7 @@ export default function AboutPage() {
             利用枠
           </h2>
           <p className="mt-3 text-sm leading-7 text-gray-400">
-            Code Tweet は GitHub ログイン後、月 10 回まで無料で使えます。月 100 回まで使える Pro プランは準備中です。
+            Code Tweet は GitHub ログイン後、月 3 回まで無料で使えます。月 30 回まで使える Pro プランは準備中です。
           </p>
           <Link
             href="/pricing"

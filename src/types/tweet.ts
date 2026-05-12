@@ -23,8 +23,10 @@ export interface GenerateResponse {
 }
 
 export type GenerateErrorCode = "guest_limit" | "free_limit" | "paid_limit";
+export type GenerateErrorField = "projectText" | "toneMemo" | "url" | "hashtags";
 
 export interface GenerateErrorResponse {
   error: string;
   code?: GenerateErrorCode;
+  field?: GenerateErrorField;
 }

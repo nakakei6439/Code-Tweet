@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PROJECT_TEXT_LIMITS } from "@/lib/generateLimits";
 
 export const metadata: Metadata = {
   title: "料金プラン",
@@ -18,6 +19,7 @@ interface PlanTier {
   price: string;
   priceUnit?: string;
   monthlyLabel: string;
+  readmeLimitLabel: string;
   bestFor: string;
   features: PlanFeature[];
   cta: { label: string; href: string };
@@ -31,7 +33,8 @@ const PLAN_TIERS: PlanTier[] = [
     name: "無料",
     tagline: "GitHubで連携してはじめる",
     price: "¥0",
-    monthlyLabel: "月10回",
+    monthlyLabel: "月3回",
+    readmeLimitLabel: `${PROJECT_TEXT_LIMITS.free.toLocaleString("ja-JP")}文字`,
     bestFor: "公開リポジトリで継続的にXに発信したい個人開発者",
     features: [
       { label: "READMEの自動取得 + 5件生成", included: true },
@@ -39,7 +42,6 @@ const PLAN_TIERS: PlanTier[] = [
       { label: "280ウェイトの自動チェック", included: true },
       { label: "公開リポジトリ一覧から選択", included: true },
       { label: "プライベートリポジトリ対応", included: false },
-      { label: "優先サポート", included: false },
     ],
     cta: { label: "GitHubでログインして使う", href: "/" },
     available: true,
@@ -50,7 +52,8 @@ const PLAN_TIERS: PlanTier[] = [
     tagline: "本格運用するならこれ",
     price: "¥980",
     priceUnit: "/ 月",
-    monthlyLabel: "月100回",
+    monthlyLabel: "月30回",
+    readmeLimitLabel: `${PROJECT_TEXT_LIMITS.paid.toLocaleString("ja-JP")}文字`,
     bestFor: "プライベート開発を公開前から育てたい / 毎日発信したい人",
     features: [
       { label: "READMEの自動取得 + 5件生成", included: true },
@@ -58,7 +61,6 @@ const PLAN_TIERS: PlanTier[] = [
       { label: "280ウェイトの自動チェック", included: true },
       { label: "公開リポジトリ一覧から選択", included: true },
       { label: "プライベートリポジトリ対応", included: true },
-      { label: "優先サポート", included: true },
     ],
     cta: { label: "近日公開", href: "#" },
     available: false,
@@ -137,6 +139,19 @@ export default function PricingPage() {
                   </td>
                 ))}
               </tr>
+              <tr>
+                <th
+                  scope="row"
+                  className="px-5 py-4 text-left text-sm font-normal text-gray-300"
+                >
+                  README文字数上限
+                </th>
+                {PLAN_TIERS.map((plan) => (
+                  <td key={plan.slug} className="px-5 py-4 text-sm font-medium text-gray-200">
+                    {plan.readmeLimitLabel}
+                  </td>
+                ))}
+              </tr>
               {ALL_FEATURES.map((label) => (
                 <tr key={label}>
                   <th
@@ -197,7 +212,7 @@ export default function PricingPage() {
         </section>
 
         <p className="mt-8 text-center text-xs text-gray-500">
-          ログインなしでも、ホームから月3回まで生成できます。
+          ログインなしでも、ホームから3回まで生成できます。ゲストのREADME文字数上限は {PROJECT_TEXT_LIMITS.guest.toLocaleString("ja-JP")}文字です。
         </p>
       </div>
     </main>
