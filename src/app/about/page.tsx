@@ -2,175 +2,189 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Code Tweet とは | Code Tweet",
-  description: "READMEやGitHubリポジトリからX向けマーケティングポストを生成する個人開発者向けAIツールの説明ページ",
+  title: "Code Tweet とは",
+  description:
+    "READMEやGitHubリポジトリからX向けマーケティングポストを生成する個人開発者向けAIツールの説明ページ",
 };
 
 const steps = [
-  ["1", "READMEを入れる", "GitHub URLから取得、または説明文を貼り付けます。"],
-  ["2", "条件を足す", "口調、告知URL、ハッシュタグを必要に応じて指定します。"],
-  ["3", "5件を生成", "紹介、使い方、ユースケース、共感、CTAの流れで出力します。"],
-];
+  {
+    no: "1",
+    title: "GitHubリポジトリのURLを貼る",
+    body: "https://github.com/owner/repo を入力欄に貼り付けます。READMEはツール側で自動取得するので、自分で本文を貼り直す必要はありません。READMEがないリポジトリの場合だけ、説明文を直接ペーストできます。",
+  },
+  {
+    no: "2",
+    title: "条件を足す(任意)",
+    body: "口調・告知URL・ハッシュタグを指定したい場合だけ入力します。全部省略しても5件生成できます。",
+  },
+  {
+    no: "3",
+    title: "「ポストを生成する」を押す",
+    body: "紹介・使い方・ユースケース・共感・CTAの5件が、推奨投稿日時つきで一気に揃います。コピーしてXに貼れば投稿準備完了です。",
+  },
+] as const;
 
-const outputs = [
-  ["X向けポスト", "weighted lengthを確認し、280ウェイト以内に収めます。"],
-  ["投稿タイミング", "翌日から7日以内の推奨日時と理由を添えます。"],
-  ["URLリード文", "GitHub、Web、App Storeなどに合わせて文言を変えます。"],
-];
+const features = [
+  {
+    title: "READMEを自動で読み込む",
+    body: "URLを貼るだけで、リポジトリからREADMEを取得してプレビューします。本文を自分でコピペする手間はありません。",
+  },
+  {
+    title: "5本の切り口を一度に生成",
+    body: "紹介・使い方・ユースケース・共感・CTAの順で、投稿の役割を変えて5件出します。",
+  },
+  {
+    title: "推奨投稿日時つき",
+    body: "翌日から7日以内で、投稿の性質に合った曜日と時間帯を理由つきで提案します。",
+  },
+  {
+    title: "280ウェイトを自動チェック",
+    body: "twitter-textで重み付き文字数を計算。超過していれば赤色で警告します。",
+  },
+] as const;
 
-const plans = [
-  ["ゲスト", "月3回", "ログインなしで試せます。"],
-  ["無料", "月10回", "GitHubログインで公開リポジトリ一覧から選べます。"],
-  ["Pro", "月100回", "プライベートリポジトリ対応。決済機能は近日公開予定です。"],
-];
+const sampleTweet = {
+  text: "個人開発で作った『Code Tweet』を公開しました。\n\nGitHubのREADMEを貼るだけで、X向けの投稿下書きを5件まとめて作るツールです。\n\n「開発は終わったけど、告知が続かない」を解消するために作りました。",
+  weightedLength: 119,
+  recommendedTime: {
+    label: "2026-05-13 火 20:30",
+    reason: "平日夜の個人開発者がXを開く時間帯。新作の紹介投稿に最適です。",
+  },
+};
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-10 text-gray-200">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-6 flex items-center justify-between gap-4">
+    <main className="min-h-screen bg-gray-950 px-4 py-20 text-gray-200">
+      <article className="mx-auto max-w-2xl">
+        <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-400">
+          Code{" "}
+          <span className="bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-yellow-200 bg-clip-text text-transparent">
+            Tweet
+          </span>
+        </p>
+        <h1 className="mt-4 text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
+          GitHubのURLを貼るだけで、
+          <br />
+          <span className="bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-yellow-200 bg-clip-text text-transparent">
+            X投稿の下書きを5件作る。
+          </span>
+        </h1>
+        <p className="mt-6 text-base leading-7 text-gray-400">
+          リポジトリのURLを貼ると、READMEを自動で読み込んで、紹介・使い方・ユースケース・共感・CTAの5件を推奨投稿日時つきで生成します。
+        </p>
+
+        <div className="mt-10 flex flex-wrap gap-3">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-sm text-gray-400 transition-colors hover:text-white"
+            className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-gray-950 transition-colors hover:bg-gray-100"
           >
-            <span aria-hidden="true">←</span>
-            ホームに戻る
+            生成画面を開く
           </Link>
-          <Link
-            href="/pricing"
-            className="rounded-lg border border-gray-800 px-3 py-2 text-sm text-gray-300 transition-colors hover:border-gray-600 hover:bg-gray-900"
+          <a
+            href="#steps"
+            className="rounded-lg border border-gray-700 px-5 py-2.5 text-sm font-semibold text-gray-200 transition-colors hover:border-gray-500 hover:bg-gray-900"
           >
-            プラン
-          </Link>
+            使い方を見る
+          </a>
         </div>
 
-        <section className="grid gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
-          <div className="rounded-lg border border-gray-800 bg-gray-900/70 p-6 sm:p-8">
-            <p className="mb-3 text-sm font-medium text-cyan-300">Code Tweet とは</p>
-            <h1 className="text-2xl font-bold leading-tight text-white sm:text-4xl">
-              READMEから、X投稿の下書きを5件まとめて作るツールです。
-            </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-gray-400">
-              個人開発者が「作ったあとに発信を続ける」ための補助ツールです。
-              GitHubリポジトリやプロジェクト説明を読み取り、紹介からCTAまでの投稿案に分解します。
-            </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/"
-                className="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-gray-950 transition-colors hover:bg-gray-100"
-              >
-                生成画面へ
-              </Link>
-              <a
-                href="#flow"
-                className="inline-flex items-center justify-center rounded-lg border border-gray-700 px-4 py-2.5 text-sm font-semibold text-gray-200 transition-colors hover:border-gray-500 hover:bg-gray-800"
-              >
-                使い方を見る
-              </a>
-            </div>
-          </div>
+        <hr className="my-16 border-gray-800" />
 
-          <aside className="rounded-lg border border-gray-800 bg-gray-900/70 p-4">
-            <div className="mb-3 flex items-center justify-between border-b border-gray-800 pb-3">
-              <span className="text-sm font-semibold text-white">生成イメージ</span>
-              <span className="rounded border border-cyan-900 bg-cyan-950/40 px-2 py-0.5 text-xs text-cyan-300">
-                5 posts
-              </span>
-            </div>
-            <div className="space-y-3">
-              <div className="rounded-lg border border-gray-800 bg-gray-950/70 p-4">
-                <p className="text-xs font-semibold text-cyan-300">POST 1 / 紹介</p>
-                <p className="mt-2 text-sm leading-6 text-gray-300">
-                  READMEからプロダクトの強みを抽出して、最初の紹介文に整えます。
-                </p>
-              </div>
-              <div className="rounded-lg border border-gray-800 bg-gray-950/70 p-4">
-                <p className="text-xs font-semibold text-fuchsia-300">POST 4 / 共感</p>
-                <p className="mt-2 text-sm leading-6 text-gray-300">
-                  ユーザーの悩みに寄せた切り口で、投稿の反応点を作ります。
-                </p>
-              </div>
-              <div className="rounded-lg border border-gray-800 bg-gray-950/70 p-4">
-                <p className="text-xs font-semibold text-yellow-300">SCHEDULE</p>
-                <p className="mt-2 text-sm leading-6 text-gray-300">
-                  2026-05-09 20:30 / 平日夜の個人開発者が見やすい時間帯
-                </p>
-              </div>
-            </div>
-          </aside>
-        </section>
-
-        <section id="flow" className="mt-8 rounded-lg border border-gray-800 bg-gray-900/70 p-6">
-          <div className="mb-5 flex items-end justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Workflow</p>
-              <h2 className="mt-1 text-xl font-bold text-white">基本の流れ</h2>
-            </div>
-            <p className="hidden text-sm text-gray-500 sm:block">READMEがなくても直接入力できます。</p>
-          </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            {steps.map(([number, title, description]) => (
-              <div key={number} className="rounded-lg border border-gray-800 bg-gray-950/50 p-4">
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-700 text-sm font-semibold text-white">
-                  {number}
+        <section id="steps">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
+            使い方
+          </h2>
+          <ol className="mt-6 space-y-10">
+            {steps.map((step) => (
+              <li key={step.no} className="grid grid-cols-[44px_1fr] gap-5">
+                <span className="text-4xl font-light leading-none text-gray-700">
+                  {step.no}
                 </span>
-                <h3 className="mt-4 text-sm font-semibold text-white">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-gray-400">{description}</p>
-              </div>
+                <div className="pt-1">
+                  <h3 className="text-lg font-semibold text-white">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-7 text-gray-400">{step.body}</p>
+                </div>
+              </li>
             ))}
-          </div>
+          </ol>
+          <p className="mt-8 rounded-lg border border-gray-800 bg-gray-900/60 px-4 py-3 text-xs leading-6 text-gray-400">
+            ヒント: GitHubでログインすると、自分の公開リポジトリ一覧から選択できる「リポジトリを選ぶ」ボタンが使えるようになります。URLを毎回コピペする必要がなくなります。
+          </p>
         </section>
 
-        <section className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px]">
-          <div className="rounded-lg border border-gray-800 bg-gray-900/70 p-6">
-            <p className="text-sm font-medium text-gray-500">Output</p>
-            <h2 className="mt-1 text-xl font-bold text-white">生成されるもの</h2>
-            <div className="mt-5 divide-y divide-gray-800">
-              {outputs.map(([title, description]) => (
-                <div key={title} className="grid gap-2 py-4 sm:grid-cols-[160px_1fr]">
-                  <h3 className="text-sm font-semibold text-gray-200">{title}</h3>
-                  <p className="text-sm leading-6 text-gray-400">{description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+        <hr className="my-16 border-gray-800" />
 
-          <div className="rounded-lg border border-gray-800 bg-gray-900/70 p-6">
-            <p className="text-sm font-medium text-gray-500">Security</p>
-            <h2 className="mt-1 text-xl font-bold text-white">GitHub連携</h2>
-            <p className="mt-4 text-sm leading-6 text-gray-400">
-              GitHubログインで利用枠が増えます。ProではOAuthトークンを暗号化して保存し、
-              プライベートリポジトリのREADME取得に使います。
+        <section>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
+            できること
+          </h2>
+          <ul className="mt-6 space-y-3">
+            {features.map((f) => (
+              <li
+                key={f.title}
+                className="flex gap-3 border-b border-gray-800 pb-3 last:border-b-0 last:pb-0"
+              >
+                <span className="text-gray-600">·</span>
+                <div>
+                  <p className="text-sm font-medium text-white">{f.title}</p>
+                  <p className="mt-1 text-sm leading-6 text-gray-400">{f.body}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <hr className="my-16 border-gray-800" />
+
+        <section>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
+            出力サンプル
+          </h2>
+          <div className="mt-6 rounded-xl border border-gray-800 bg-gray-900 p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 shrink-0 text-cyan-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path strokeLinecap="round" d="M12 6v6l4 2" />
+                </svg>
+                <span className="text-sm font-medium text-gray-200">
+                  {sampleTweet.recommendedTime.label}
+                </span>
+              </div>
+              <span className="text-xs text-gray-400">{sampleTweet.weightedLength}/280</span>
+            </div>
+            <p className="mb-3 text-xs text-gray-400">{sampleTweet.recommendedTime.reason}</p>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-white">
+              {sampleTweet.text}
             </p>
           </div>
         </section>
 
-        <section className="mt-8 rounded-lg border border-gray-800 bg-gray-900/70 p-6">
-          <div className="mb-5 flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Plans</p>
-              <h2 className="mt-1 text-xl font-bold text-white">利用枠</h2>
-            </div>
-            <Link href="/pricing" className="text-sm font-medium text-cyan-300 hover:text-cyan-200">
-              詳しく見る
-            </Link>
-          </div>
-          <div className="overflow-hidden rounded-lg border border-gray-800">
-            {plans.map(([name, limit, description], index) => (
-              <div
-                key={name}
-                className={`grid gap-2 bg-gray-950/40 px-4 py-4 sm:grid-cols-[120px_120px_1fr] ${
-                  index > 0 ? "border-t border-gray-800" : ""
-                }`}
-              >
-                <p className="text-sm font-semibold text-white">{name}</p>
-                <p className="text-sm text-cyan-300">{limit}</p>
-                <p className="text-sm text-gray-400">{description}</p>
-              </div>
-            ))}
-          </div>
+        <hr className="my-16 border-gray-800" />
+
+        <section>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
+            利用枠
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-gray-400">
+            Code Tweet は GitHub ログイン後、月 10 回まで無料で使えます。月 100 回まで使える Pro プランは準備中です。
+          </p>
+          <Link
+            href="/pricing"
+            className="mt-5 inline-flex items-center gap-1 rounded-lg border border-gray-700 px-4 py-2 text-sm font-medium text-gray-200 transition-colors hover:border-gray-500 hover:bg-gray-900"
+          >
+            プラン詳細を見る →
+          </Link>
         </section>
-      </div>
+      </article>
     </main>
   );
 }

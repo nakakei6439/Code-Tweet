@@ -11,32 +11,143 @@ function formatScheduleLabel(dateStr: string, timeStr: string): string {
   return `${month}月${day}日（${dow}）${timeStr}`;
 }
 const MAX_REGENERATE_ATTEMPTS = 4;
+const URL_LEAD_RE =
+  /(App Storeで無料公開中|今すぐインストール|iPhoneで無料で使える|ダウンロードはこちら|詳しくはこちら|今すぐ試す|無料で使えます|コードを見る|OSSとして公開中|GitHubで公開中)/i;
+const POST_MARKER_RE = /(?:^|\n)\s*(?:\d+[.)．:：]|[（(]\d+[）)]|ポスト\s*\d+[:：]?)\s*/;
 
 function countWeighted(text: string): number {
   return twitterText.parseTweet(text).weightedLength;
 }
 
-function reformatTweet(text: string): string {
+function splitUrlLead(leadIn: string): { body: string; lead: string } {
+  const trimmed = leadIn.trim();
+  const ctaMatch = trimmed.match(new RegExp(`${URL_LEAD_RE.source}[^\\n]*$`, "i"));
+
+  if (!ctaMatch || ctaMatch.index === undefined) {
+    return { body: "", lead: trimmed };
+  }
+
+  return {
+    body: trimmed.slice(0, ctaMatch.index).trim(),
+    lead: trimmed.slice(ctaMatch.index).trim(),
+  };
+}
+
+function isUrlLeadLine(line: string): boolean {
+  const trimmed = line.trim();
+  return URL_LEAD_RE.test(trimmed) || /[→:：]$/.test(trimmed);
+}
+
+function uniqTags(tags: string[]): string {
+  return Array.from(new Set(tags.map((tag) => tag.trim()).filter(Boolean))).join(" ");
+}
+
+function extractHashtags(text: string): string[] {
+  return text.match(/#[^\s#]+/g) ?? [];
+}
+
+function getDefaultUrlLead(url: string): string {
+  if (/apps\.apple\.com/i.test(url)) return "App Storeで無料公開中 →";
+  if (/play\.google\.com/i.test(url)) return "今すぐインストール →";
+  if (/github\.com|github\.io/i.test(url)) return "GitHubで公開中 →";
+  return "詳しくはこちら →";
+}
+
+function reformatTweet(text: string, requiredHashtags = "", requiredUrl = ""): string {
   let rest = text.trim();
 
+  const requiredTags = extractHashtags(requiredHashtags);
+  const inlineTags = extractHashtags(rest);
+  const standaloneTags: string[] = [];
+  rest = rest
+    .split("\n")
+    .filter((line) => {
+      const trimmed = line.trim();
+      if (/^(?:#\S+\s*)+$/.test(trimmed)) {
+        standaloneTags.push(...trimmed.split(/\s+/));
+        return false;
+      }
+      return true;
+    })
+    .join("\n")
+    .trim();
+
   const hashtagMatch = rest.match(/(?:\s*#\S+)+\s*$/);
-  let hashtags = "";
+  let hashtags = uniqTags(standaloneTags);
   if (hashtagMatch) {
-    hashtags = hashtagMatch[0].trim().split(/\s+/).join(" ");
+    hashtags = uniqTags([...standaloneTags, ...hashtagMatch[0].trim().split(/\s+/)]);
     rest = rest.slice(0, hashtagMatch.index).trim();
   }
 
-  // リード文と URL を別行として取り出す
-  const urlLineMatch = rest.match(/([^\n]*?)\s*(https?:\/\/\S+?)([。、！？\s]*)$/);
+  if (requiredTags.length > 0) {
+    hashtags = uniqTags([...hashtags.split(/\s+/), ...requiredTags]);
+  } else if (!hashtags && inlineTags.length > 0) {
+    hashtags = uniqTags(inlineTags);
+  }
+
+  // リード文と URL を取り出し、AI が先頭や途中に置いた場合も末尾側へ正規化する
+  const urlLineMatch = rest.match(/https?:\/\/\S+/);
   let urlBlock = "";
   if (urlLineMatch) {
-    const leadIn = urlLineMatch[1].trim();
-    const urlStr = urlLineMatch[2];
-    urlBlock = leadIn ? `${leadIn}\n${urlStr}` : urlStr;
-    rest = rest.slice(0, urlLineMatch.index).trim();
+    const urlStr = urlLineMatch[0].replace(/[。、！？.,!?]+$/, "");
+    const lines = rest.split("\n");
+    const nextLines: string[] = [];
+    let consumedUrl = false;
+    let lead = "";
+
+    for (const line of lines) {
+      const match = line.match(/https?:\/\/\S+/);
+      if (!match || consumedUrl) {
+        nextLines.push(line);
+        continue;
+      }
+
+      consumedUrl = true;
+      const beforeUrl = line.slice(0, match.index).trim();
+      const afterUrl = line.slice((match.index ?? 0) + match[0].length).trim();
+
+      if (beforeUrl) {
+        const split = splitUrlLead(beforeUrl);
+        lead = split.lead;
+        if (split.body) nextLines.push(split.body);
+      } else {
+        const prevContentIndex = [...nextLines].map((item) => item.trim()).findLastIndex(Boolean);
+        if (prevContentIndex >= 0 && isUrlLeadLine(nextLines[prevContentIndex])) {
+          lead = nextLines[prevContentIndex].trim();
+          nextLines.splice(prevContentIndex, 1);
+        }
+      }
+
+      if (afterUrl && !/^[。、！？.,!?]+$/.test(afterUrl)) nextLines.push(afterUrl);
+    }
+
+    urlBlock = lead ? `${lead}\n${urlStr}` : urlStr;
+    rest = nextLines.join("\n").trim();
+  }
+
+  if (requiredUrl) {
+    const defaultLead = getDefaultUrlLead(requiredUrl);
+    if (!urlBlock) {
+      urlBlock = `${defaultLead}\n${requiredUrl}`;
+    } else if (!urlBlock.includes(requiredUrl)) {
+      const lead = urlBlock.split("\n")[0]?.trim();
+      urlBlock = `${lead || defaultLead}\n${requiredUrl}`;
+    }
   }
 
   return [rest, urlBlock, hashtags].filter(Boolean).join("\n\n");
+}
+
+function stripPostMarker(text: string): string {
+  const marker = text.match(POST_MARKER_RE);
+  if (!marker || marker.index === undefined) return text.trim();
+  return text.slice(marker.index + marker[0].length).trim();
+}
+
+function stripNextPost(text: string): string {
+  const marker = text.match(POST_MARKER_RE);
+  if (!marker || marker.index === undefined) return text.trim();
+  return text.slice(0, marker.index).trim();
 }
 
 // 対応URL: App Store / Google Play / GitHub Pages / GitHub / その他Web
@@ -68,6 +179,7 @@ ${hashtags
 - 余裕を持たせるため 260 ウェイトを目安に作成する（日本語のみなら約 130 文字、英語のみなら約 260 文字が目安）
 - 本文には読みやすさのために1〜2箇所の改行を入れる
 - ハッシュタグは本文・URLと改行して末尾に記載する（例：「本文\n#tag1 #tag2 #tag3」）
+- 本文中にハッシュタグを入れた場合でも、最後の行にハッシュタグ行を必ず作る
 - ハッシュタグはユーザー指定分を含め合計3〜5つにする（ハッシュタグ未指定の場合もプロダクトに関連するタグを3〜5つ生成する）
 ${url ? "" : "- URLが指定されていないため、URL・アプリストアURL・App Store・Google Play などのリンクや参照テキストを一切含めない"}
 - 以下のストーリーアークに沿って順番に生成する：
@@ -164,8 +276,6 @@ export async function generateTweets(
   }
 
   const SCHEDULE_RE = /SCHEDULE:\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})\s*\/\s*([^\n]+)/g;
-  const POST_MARKER_RE = /(?:^|\n)\s*\d+\.\s+/;
-
   const scheduleMatches = Array.from(text.matchAll(SCHEDULE_RE));
   if (scheduleMatches.length < 5) {
     throw new Error("5件のポストを生成できませんでした。もう一度お試しください。");
@@ -181,21 +291,12 @@ export async function generateTweets(
     const prevSchedEnd = i === 0 ? 0 : scheduleMatches[i - 1].index! + scheduleMatches[i - 1][0].length;
     const nextSchedStart = i + 1 < scheduleMatches.length ? scheduleMatches[i + 1].index! : text.length;
 
-    const beforeSched = text.slice(prevSchedEnd, schedStart);
-    const currentMarker = beforeSched.match(POST_MARKER_RE);
-    const bodyStart = currentMarker && currentMarker.index !== undefined
-      ? currentMarker.index + currentMarker[0].length
-      : 0;
-    const body = beforeSched.slice(bodyStart).trim();
-
-    const afterSched = text.slice(schedEnd, nextSchedStart);
-    const nextMarker = afterSched.match(POST_MARKER_RE);
-    const tailEnd = nextMarker && nextMarker.index !== undefined
-      ? nextMarker.index
-      : afterSched.length;
-    const tail = afterSched.slice(0, tailEnd).trim();
-
-    const content = tail ? body + "\n" + tail : body;
+    const body = stripPostMarker(text.slice(prevSchedEnd, schedStart));
+    const tail = stripNextPost(text.slice(schedEnd, nextSchedStart));
+    const content = [body, tail].filter(Boolean).join("\n");
+    if (!content) {
+      throw new Error("5件のポストを生成できませんでした。もう一度お試しください。");
+    }
 
     drafts.push(content);
     schedules.push({
@@ -205,14 +306,16 @@ export async function generateTweets(
   }
 
   for (let i = 0; i < drafts.length; i++) {
-    let current = reformatTweet(drafts[i]);
+    let current = reformatTweet(drafts[i], hashtags, url);
     let weight = countWeighted(current);
     let attempts = 0;
     while (weight > TWEET_LIMIT && attempts < MAX_REGENERATE_ATTEMPTS) {
       attempts++;
       try {
         const shortened = reformatTweet(
-          await regenerateOne(current, weight, projectText, toneMemo, url, hashtags, ai)
+          await regenerateOne(current, weight, projectText, toneMemo, url, hashtags, ai),
+          hashtags,
+          url
         );
         const shortenedWeight = countWeighted(shortened);
         if (shortenedWeight <= TWEET_LIMIT && shortened.length > 0) {

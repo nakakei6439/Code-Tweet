@@ -27,8 +27,8 @@ export default function AuthOverlay() {
   return (
     <div className="mb-6 bg-gray-900/60 backdrop-blur border border-gray-800 rounded-xl px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
       <div className="flex-1 text-sm text-gray-300">
-        <span className="text-white font-medium">そのまま使えます（月 3 回まで）。</span>{" "}
-        <span className="text-gray-400">GitHub ログインで月 10 回まで・リポジトリ一覧から選択も可能になります。</span>
+        <span className="text-white font-medium">そのまま月3回まで使えます。</span>{" "}
+        <span className="text-gray-400">GitHub ログインで月10回まで増え、公開リポジトリ一覧から選択できます。</span>
       </div>
       <button
         onClick={handleLogin}

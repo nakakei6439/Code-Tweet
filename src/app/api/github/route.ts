@@ -3,6 +3,37 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { decrypt } from "@/lib/encryption";
 import { getSubscriptionTier } from "@/lib/subscription";
 
+function parseGitHubRepoUrl(input: string): { owner: string; repo: string } | null {
+  let url: URL;
+  try {
+    url = new URL(input);
+  } catch {
+    return null;
+  }
+
+  if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+  if (url.hostname !== "github.com" && url.hostname !== "www.github.com") return null;
+
+  const [owner, rawRepo] = url.pathname.split("/").filter(Boolean);
+  if (!owner || !rawRepo) return null;
+
+  const repo = rawRepo.replace(/\.git$/i, "");
+  if (!repo) return null;
+
+  return { owner, repo };
+}
+
+async function publicRepoExists(owner: string, repo: string): Promise<boolean> {
+  try {
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+      headers: { Accept: "application/vnd.github+json" },
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(request: Request): Promise<Response> {
   let body: { url?: string };
   try {
@@ -11,12 +42,12 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "リクエストが不正です。" }, { status: 400 });
   }
 
-  const match = (body.url ?? "").match(/^https?:\/\/github\.com\/([^/]+)\/([^/?#]+)/);
-  if (!match) {
+  const parsed = parseGitHubRepoUrl(body.url ?? "");
+  if (!parsed) {
     return Response.json({ error: "GitHub のリポジトリ URL を入力してください。" }, { status: 400 });
   }
 
-  const [, owner, repo] = match;
+  const { owner, repo } = parsed;
   const headers: HeadersInit = { Accept: "application/vnd.github+json" };
 
   const supabase = await createClient();
@@ -71,19 +102,19 @@ export async function POST(request: Request): Promise<Response> {
   if (res.status === 403) {
     if (!user) {
       return Response.json(
-        { error: "非公開リポジトリには GitHub ログインと Pro プラン（月 980 円）が必要です。" },
+        { error: "非公開リポジトリの README 取得は Pro プランの機能です。現在は公開リポジトリをご利用ください。" },
         { status: 403 },
       );
     }
     if (!isPaid) {
       return Response.json(
-        { error: "非公開リポジトリは Pro プラン（月 980 円）でご利用いただけます。" },
+        { error: "非公開リポジトリの README 取得は Pro プランの機能です。現在は公開リポジトリをご利用ください。" },
         { status: 403 },
       );
     }
     if (!hasToken) {
       return Response.json(
-        { error: "GitHub アクセストークンが見つかりません。一度ログアウトして再ログインしてください。" },
+        { error: "GitHub アクセストークンが見つかりません。再ログインしてください。" },
         { status: 403 },
       );
     }
@@ -93,6 +124,13 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
   if (res.status === 404) {
+    if (await publicRepoExists(owner, repo)) {
+      return Response.json(
+        { error: "README が見つかりません。公開リポジトリに README ファイルがあるか確認してください。" },
+        { status: 404 },
+      );
+    }
+
     // GitHub はプライベートリポジトリへのアクセス権がない場合も 404 を返す
     if (hasToken) {
       return Response.json(
@@ -102,18 +140,18 @@ export async function POST(request: Request): Promise<Response> {
     }
     if (isPaid) {
       return Response.json(
-        { error: "リポジトリが見つかりません。一度ログアウトして再ログインしてください。" },
+        { error: "リポジトリが見つかりません。非公開リポジトリの場合は再ログインしてください。" },
         { status: 404 },
       );
     }
     if (user) {
       return Response.json(
-        { error: "リポジトリが見つかりません。非公開リポジトリの場合は Pro プラン（月 980 円）が必要です。" },
+        { error: "リポジトリが見つかりません。非公開リポジトリは Pro プランの機能です。" },
         { status: 404 },
       );
     }
     return Response.json(
-      { error: "リポジトリが見つかりません。非公開リポジトリの場合は GitHub ログインと Pro プラン（月 980 円）が必要です。" },
+      { error: "リポジトリが見つかりません。非公開リポジトリは Pro プランの機能です。" },
       { status: 404 },
     );
   }

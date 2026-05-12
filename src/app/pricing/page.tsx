@@ -2,167 +2,203 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "料金プラン | Code Tweet",
-  description: "Code Tweetの無料枠とProプランの違いを確認できます。Pro決済機能は近日公開予定です。",
+  title: "料金プラン",
+  description: "Code Tweetの無料プランとProプランの違いを機能比較表で確認できます。Proプランの決済機能は準備中です。",
 };
 
-const plans = [
+interface PlanFeature {
+  label: string;
+  included: boolean;
+}
+
+interface PlanTier {
+  slug: "free" | "pro";
+  name: string;
+  tagline: string;
+  price: string;
+  priceUnit?: string;
+  monthlyLabel: string;
+  bestFor: string;
+  features: PlanFeature[];
+  cta: { label: string; href: string };
+  available: boolean;
+  badge?: string;
+}
+
+const PLAN_TIERS: PlanTier[] = [
   {
-    name: "ゲスト",
-    price: "¥0",
-    limit: "月3回",
-    target: "まず試したい人",
-    features: ["説明文から生成", "公開GitHub URLからREADME取得", "5件のポストと推奨日時"],
-    action: "ホームで試す",
-    href: "/",
-    current: false,
-  },
-  {
+    slug: "free",
     name: "無料",
+    tagline: "GitHubで連携してはじめる",
     price: "¥0",
-    limit: "月10回",
-    target: "継続利用を試したい人",
-    features: ["ゲスト機能すべて", "GitHubログイン", "公開リポジトリ一覧から選択"],
-    action: "ログインして使う",
-    href: "/",
-    current: false,
+    monthlyLabel: "月10回",
+    bestFor: "公開リポジトリで継続的にXに発信したい個人開発者",
+    features: [
+      { label: "READMEの自動取得 + 5件生成", included: true },
+      { label: "推奨投稿日時 + 理由", included: true },
+      { label: "280ウェイトの自動チェック", included: true },
+      { label: "公開リポジトリ一覧から選択", included: true },
+      { label: "プライベートリポジトリ対応", included: false },
+      { label: "優先サポート", included: false },
+    ],
+    cta: { label: "GitHubでログインして使う", href: "/" },
+    available: true,
   },
   {
+    slug: "pro",
     name: "Pro",
+    tagline: "本格運用するならこれ",
     price: "¥980",
-    limit: "月100回",
-    target: "毎週発信する個人開発者",
-    features: ["無料機能すべて", "プライベートリポジトリ対応", "公開・非公開リポジトリ一覧から選択"],
-    action: "近日公開",
-    href: "#",
-    current: true,
+    priceUnit: "/ 月",
+    monthlyLabel: "月100回",
+    bestFor: "プライベート開発を公開前から育てたい / 毎日発信したい人",
+    features: [
+      { label: "READMEの自動取得 + 5件生成", included: true },
+      { label: "推奨投稿日時 + 理由", included: true },
+      { label: "280ウェイトの自動チェック", included: true },
+      { label: "公開リポジトリ一覧から選択", included: true },
+      { label: "プライベートリポジトリ対応", included: true },
+      { label: "優先サポート", included: true },
+    ],
+    cta: { label: "近日公開", href: "#" },
+    available: false,
+    badge: "準備中",
   },
 ];
 
+const ALL_FEATURES = Array.from(
+  new Set(PLAN_TIERS.flatMap((p) => p.features.map((f) => f.label))),
+);
+
+function planHasFeature(planSlug: string, label: string): boolean {
+  const plan = PLAN_TIERS.find((p) => p.slug === planSlug);
+  return plan?.features.find((f) => f.label === label)?.included ?? false;
+}
+
 export default function PricingPage() {
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-10 text-gray-200">
+    <main className="min-h-screen bg-gray-950 px-4 py-16 text-gray-200">
       <div className="mx-auto max-w-5xl">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-sm text-gray-400 transition-colors hover:text-white"
-          >
-            <span aria-hidden="true">←</span>
-            ホームに戻る
-          </Link>
-          <Link
-            href="/about"
-            className="rounded-lg border border-gray-800 px-3 py-2 text-sm text-gray-300 transition-colors hover:border-gray-600 hover:bg-gray-900"
-          >
-            Code Tweet とは
-          </Link>
-        </div>
+        <header>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
+            Pricing · Feature Comparison
+          </p>
+          <h1 className="mt-4 text-3xl font-bold text-white sm:text-5xl">
+            機能で比べる、
+            <br className="sm:hidden" />
+            <span className="bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-yellow-200 bg-clip-text text-transparent">
+              プランの違い。
+            </span>
+          </h1>
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-gray-400">
+            無料と Pro の違いを機能単位で並べました。何ができて何ができないか、表で確認してから判断できます。
+          </p>
+        </header>
 
-        <section className="rounded-lg border border-gray-800 bg-gray-900/70 p-6 sm:p-8">
-          <div className="grid gap-6 lg:grid-cols-[1fr_320px] lg:items-end">
-            <div>
-              <p className="mb-3 text-sm font-medium text-fuchsia-300">料金プラン</p>
-              <h1 className="text-2xl font-bold leading-tight text-white sm:text-4xl">
-                無料で試して、必要になったらProへ。
-              </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-gray-400">
-                ゲストでも生成できます。GitHubログインで月10回まで利用でき、Proでは月100回とプライベートリポジトリ対応を予定しています。
-              </p>
-            </div>
-            <div className="rounded-lg border border-fuchsia-900/70 bg-fuchsia-950/20 p-4">
-              <p className="text-sm font-semibold text-fuchsia-200">Pro決済は準備中です</p>
-              <p className="mt-2 text-sm leading-6 text-gray-400">
-                Stripe Checkout、Webhook、Customer Portalは次のPhase Bで追加します。
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="mt-6 grid gap-4 lg:grid-cols-3">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className={`rounded-lg border bg-gray-900/70 p-5 ${
-                plan.current ? "border-fuchsia-700/70" : "border-gray-800"
-              }`}
-            >
-              <div className="flex min-h-16 items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-bold text-white">{plan.name}</h2>
-                  <p className="mt-1 text-sm text-gray-500">{plan.target}</p>
-                </div>
-                {plan.current && (
-                  <span className="rounded border border-fuchsia-800 bg-fuchsia-950/50 px-2 py-1 text-xs font-semibold text-fuchsia-300">
-                    予定
-                  </span>
-                )}
-              </div>
-
-              <div className="mt-5 border-t border-gray-800 pt-5">
-                <p className="text-3xl font-bold text-white">
-                  {plan.price}
-                  {plan.name === "Pro" && <span className="text-sm font-medium text-gray-500"> / 月</span>}
-                </p>
-                <p className="mt-1 text-sm font-medium text-cyan-300">{plan.limit}</p>
-              </div>
-
-              {plan.current ? (
-                <button
-                  disabled
-                  className="mt-5 w-full rounded-lg border border-gray-700 px-4 py-2.5 text-sm font-semibold text-gray-500 cursor-not-allowed"
-                >
-                  {plan.action}
-                </button>
-              ) : (
-                <Link
-                  href={plan.href}
-                  className="mt-5 inline-flex w-full items-center justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-gray-950 transition-colors hover:bg-gray-100"
-                >
-                  {plan.action}
-                </Link>
-              )}
-
-              <div className="mt-5 space-y-3 border-t border-gray-800 pt-5">
-                {plan.features.map((feature) => (
-                  <div key={feature} className="flex gap-2 text-sm leading-6 text-gray-400">
-                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-300" aria-hidden="true" />
-                    <span>{feature}</span>
-                  </div>
+        <section className="mt-12 overflow-x-auto rounded-2xl border border-gray-800 bg-gray-900/60">
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead>
+              <tr className="border-b border-gray-800 bg-gray-900/80">
+                <th className="px-5 py-5 align-bottom text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  比較項目
+                </th>
+                {PLAN_TIERS.map((plan) => (
+                  <th key={plan.slug} className="px-5 py-5 align-bottom">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-bold text-white">{plan.name}</span>
+                      {plan.badge && (
+                        <span className="rounded-full border border-amber-700/60 bg-amber-950/40 px-2 py-0.5 text-[10px] font-semibold text-amber-200">
+                          {plan.badge}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-1 flex items-baseline gap-1">
+                      <span className="text-2xl font-bold text-white">{plan.price}</span>
+                      {plan.priceUnit && (
+                        <span className="text-xs text-gray-400">{plan.priceUnit}</span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs font-normal text-emerald-300">{plan.monthlyLabel}</p>
+                  </th>
                 ))}
-              </div>
-            </div>
-          ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-800">
+              <tr>
+                <th
+                  scope="row"
+                  className="px-5 py-4 text-left text-xs font-medium text-gray-500"
+                >
+                  向いている人
+                </th>
+                {PLAN_TIERS.map((plan) => (
+                  <td key={plan.slug} className="px-5 py-4 text-xs leading-5 text-gray-300">
+                    {plan.bestFor}
+                  </td>
+                ))}
+              </tr>
+              {ALL_FEATURES.map((label) => (
+                <tr key={label}>
+                  <th
+                    scope="row"
+                    className="px-5 py-4 text-left text-sm font-normal text-gray-300"
+                  >
+                    {label}
+                  </th>
+                  {PLAN_TIERS.map((plan) => {
+                    const included = planHasFeature(plan.slug, label);
+                    return (
+                      <td key={plan.slug} className="px-5 py-4">
+                        {included ? (
+                          <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-300">
+                            <span aria-hidden>✓</span>
+                            <span className="text-xs text-gray-400">含まれます</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 text-sm text-gray-600">
+                            <span aria-hidden>—</span>
+                            <span className="text-xs">対象外</span>
+                          </span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+              <tr className="bg-gray-900/40">
+                <th
+                  scope="row"
+                  className="px-5 py-5 text-left text-xs font-medium text-gray-500"
+                >
+                  はじめる
+                </th>
+                {PLAN_TIERS.map((plan) => (
+                  <td key={plan.slug} className="px-5 py-5">
+                    {plan.available ? (
+                      <Link
+                        href={plan.cta.href}
+                        className="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2 text-xs font-semibold text-gray-950 transition-colors hover:bg-gray-100"
+                      >
+                        {plan.cta.label}
+                      </Link>
+                    ) : (
+                      <button
+                        disabled
+                        className="cursor-not-allowed rounded-lg border border-gray-800 px-4 py-2 text-xs font-semibold text-gray-500"
+                      >
+                        {plan.cta.label}
+                      </button>
+                    )}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
         </section>
 
-        <section className="mt-6 overflow-hidden rounded-lg border border-gray-800 bg-gray-900/70">
-          <div className="grid grid-cols-[120px_1fr] border-b border-gray-800 px-4 py-3 text-sm font-semibold text-gray-300 sm:grid-cols-[140px_1fr_1fr_1fr]">
-            <span>項目</span>
-            <span>ゲスト</span>
-            <span className="hidden sm:block">無料</span>
-            <span className="hidden sm:block">Pro</span>
-          </div>
-          <div className="divide-y divide-gray-800 text-sm text-gray-400">
-            <div className="grid grid-cols-[120px_1fr] px-4 py-3 sm:grid-cols-[140px_1fr_1fr_1fr]">
-              <span className="text-gray-300">生成回数</span>
-              <span>月3回</span>
-              <span className="hidden sm:block">月10回</span>
-              <span className="hidden sm:block">月100回</span>
-            </div>
-            <div className="grid grid-cols-[120px_1fr] px-4 py-3 sm:grid-cols-[140px_1fr_1fr_1fr]">
-              <span className="text-gray-300">リポジトリ選択</span>
-              <span>なし</span>
-              <span className="hidden sm:block">公開のみ</span>
-              <span className="hidden sm:block">公開・非公開</span>
-            </div>
-            <div className="grid grid-cols-[120px_1fr] px-4 py-3 sm:grid-cols-[140px_1fr_1fr_1fr]">
-              <span className="text-gray-300">決済</span>
-              <span>不要</span>
-              <span className="hidden sm:block">不要</span>
-              <span className="hidden sm:block">近日公開</span>
-            </div>
-          </div>
-        </section>
+        <p className="mt-8 text-center text-xs text-gray-500">
+          ログインなしでも、ホームから月3回まで生成できます。
+        </p>
       </div>
     </main>
   );
