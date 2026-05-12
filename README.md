@@ -23,7 +23,7 @@ README やプロジェクト説明を AI が分析し、X（旧 Twitter）向け
 - **GitHub ログイン（任意）**：Supabase Auth + GitHub OAuth。ログインで利用上限が拡張される（V8 Phase A.5 で Google から切替）
 - **利用回数制限**（V8 Phase A）：ゲスト 3 回まで / 無料 月 3 / Pro 月 30（IP ハッシュ・ユーザー ID で計測）
 - **残り回数表示**（V8 Phase A.5）：フォーム上部に「あと X / Y 回」または「今月あと X / Y 回」+ プランバッジ
-- **プライベートリポジトリ対応**（Pro プラン、準備中）：GitHub OAuth で取得したアクセストークンを AES-256-GCM 暗号化して Supabase に保存し、Pro プラン公開後に非公開リポジトリの README 取得へ対応予定
+- **プライベートリポジトリ対応**（Pro プラン）：`/settings` で GitHub Personal Access Token (PAT) を登録すると、非公開リポジトリの README も取得できる。トークンは AES-256-GCM で暗号化して Supabase に保存。fine-grained PAT（Repository access を絞り、Contents: Read-only のみ付与）を推奨
 - **自分のリポジトリから選ぶ**（V8 Phase A.5）：GitHub の自分のリポジトリ一覧をモーダルで表示・検索。Pro は公開＋非公開、無料は公開のみ
 
 ---

@@ -49,18 +49,17 @@ export async function GET(): Promise<Response> {
     );
   }
 
-  const type = tier === "paid" ? "all" : "public";
+  const query = tier === "paid"
+    ? "visibility=all&affiliation=owner,collaborator,organization_member&sort=updated&per_page=100"
+    : "visibility=public&affiliation=owner&sort=updated&per_page=100";
   let res: Response;
   try {
-    res = await fetch(
-      `https://api.github.com/user/repos?type=${type}&sort=updated&per_page=100`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/vnd.github+json",
-        },
+    res = await fetch(`https://api.github.com/user/repos?${query}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
       },
-    );
+    });
   } catch {
     return Response.json({ error: "GitHub への接続に失敗しました。" }, { status: 502 });
   }
