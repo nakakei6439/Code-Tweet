@@ -7,6 +7,7 @@ import { getMonthWindowStart } from "@/lib/rateLimit";
 import type { SubscriptionTier } from "@/lib/subscription";
 import AuthOverlay from "@/components/AuthOverlay";
 import HomeLinkButton from "@/components/HomeLinkButton";
+import AdminConfirmActionForm from "@/components/AdminConfirmActionForm";
 import { resetGuestUsage, setUserTier } from "./actions";
 
 export const metadata: Metadata = {
@@ -294,14 +295,11 @@ export default async function AdminPage() {
                 新しい順に表示。ボタンを押すとそのユーザーのプランを切り替えます。
               </p>
             </div>
-            <form action={resetGuestUsage}>
-              <button
-                type="submit"
-                className="rounded-md border border-amber-500/60 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-200 transition-colors hover:bg-amber-500/20"
-              >
-                ゲストテスト回数を0にする
-              </button>
-            </form>
+            <AdminConfirmActionForm
+              action={resetGuestUsage}
+              buttonLabel="ゲストテスト回数を0にする"
+              confirmMessage="全ゲストの利用履歴を削除し、ゲストテスト回数を0にします。この操作は元に戻せません。実行しますか？"
+            />
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-left text-sm">
