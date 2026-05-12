@@ -1,9 +1,9 @@
 import type { UsageTier } from "@/types/usage";
 
 export const PROJECT_TEXT_LIMITS: Record<UsageTier, number> = {
-  guest: 1_500,
-  free: 1_500,
-  paid: 5_000,
+  guest: 1_000,
+  free: 1_000,
+  paid: 10_000,
 };
 
 export const MAX_TONE_MEMO_LENGTH = 100;

@@ -39,18 +39,17 @@ Webアプリは大きく3つの部品でできています。
 | バージョン | 追加する機能 | 使う外部サービス | なぜこの順番？ |
 |-----------|------------|----------------|-------------|
 | V1 | テキスト貼り付け → ポスト生成 | Gemini API | まず「動くもの」を作って公開する |
-| V2 | GitHub URL からコードを自動取得 | GitHub API | 手で貼り付ける手間をなくす（UX 改善） |
-| V3 | 生成したポストを保存できる | Supabase（DB） | 使い続けてもらうための履歴機能 |
-| V4 | スケジュール管理（投稿日時を設定） | なし | 保存できてから初めて意味を持つ |
-| V5 | Claude API も選択可能に | Claude API | AI の選択肢を広げてユーザーを増やす |
-| V6 | ログイン機能（Google 認証） | Supabase Auth | 誰のデータかを区別するために必要 |
-| V7 | 広告の実装（Google AdSense） | AdSense | ユーザーが集まってから収益化する |
-| V8 | フリーミアム導入（月額プラン） | Stripe | 広告の次のステップとして課金を追加 |
+| V2 | GitHub URL から README を自動取得 + 利用制限 | GitHub API / Supabase | 手で貼り付ける手間をなくし、利用枠を管理する |
+| V3 | プライベートリポジトリ対応 | Supabase（DB） | Pro の差別化につながる機能を作る |
+| V8 Phase A | 月単位のフリーミアム制限 | Supabase | ゲスト 3 回まで / 無料 月3 / Pro 月30 の土台を作る |
+| V8 Phase A.5 | GitHub OAuth + リポジトリ選択 UI | Supabase Auth / GitHub API | ログインと公開リポジトリ選択の体験を整える |
+| V8 Phase B | Stripe 決済 | Stripe | Pro プランを実際に購入できるようにする |
+| V5 | Claude API も選択可能に | Claude API | AI の選択肢を広げる |
 | V9 | Instagram・Threads など他 SNS 対応 | なし | ユーザーから「欲しい」と言われたら |
 
 > **初心者向けポイント：**
-> - V3（保存）→ V6（ログイン）の順番に注目。「誰が保存したか」を管理するにはログインが必要なので、保存機能を先に作ってからログインを追加する、という順番には理由があります。
-> - V7（広告）→ V8（課金）の順番も同様。まず広告で収益化の実績を作ってから、サブスクへ移行するのが自然な流れです。
+> - Code Tweet は当初ロードマップから順番を入れ替え、保存機能より先に GitHub OAuth とフリーミアム制限を実装しました。課金前に「誰がどれだけ使ったか」を管理する必要があったためです。
+> - 広告より先に Pro プランを設計しています。個人開発者向けの小さなツールでは、広告よりも機能差のあるサブスクの方がプロダクト価値と合わせやすいためです。
 
 ---
 
@@ -186,20 +185,20 @@ npm run dev
 
 STEP 8 はゴールではなく、**ここからが本当のスタート**です。STEP 1 で作ったロードマップに沿って、V2・V3 と順番に機能を追加していきましょう。
 
-**Code Tweet の次のステップ（V2 以降）：**
+**Code Tweet の現在のロードマップ：**
 
 | バージョン | 追加する機能 |
 |-----------|------------|
-| **V2** | GitHub URL からコードを自動取得（現在進行中） |
-| V3 | 生成したポストを保存できる |
-| V4 | スケジュール管理（投稿日時を設定） |
+| V1 | MVP（手入力 + Gemini 生成）完了 |
+| V2 | GitHub URL 連携 + 利用制限完了 |
+| V3 | プライベートリポジトリ対応完了 |
+| V8 Phase A | 月単位制限・tier ベース機能差別化完了 |
+| V8 Phase A.5 | GitHub OAuth 一本化・リポジトリ選択 UI 完了 |
+| V8 Phase B | Stripe 統合（Checkout / Webhook / Customer Portal） |
 | V5 | Claude API も選択可能に |
-| V6 | ログイン機能（Google 認証） |
-| V7 | 広告の実装（Google AdSense） |
-| V8 | フリーミアム導入（月額プラン） |
 | V9 | Instagram・Threads など他 SNS 対応 |
 
-> V2 の詳細タスクは [`step6-v2-todo.md`](./step6-v2-todo.md) にまとめています。
+> 現在仕様は [`current-requirements-status.md`](./current-requirements-status.md) と [`product/requirements.md`](./product/requirements.md) にまとめています。
 
 ---
 

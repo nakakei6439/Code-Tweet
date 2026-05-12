@@ -19,7 +19,8 @@ V3 まで完了した時点では全機能が無料・全員に開放されて�
 
 | 項目 | ゲスト（未ログイン） | 無料（ログイン） | 有料（Pro） |
 |------|------|------|------|
-| 月間生成回数 | 3 回 | 10 回 | 100 回 |
+| 生成回数 | 3 回まで | 月 3 回 | 月 30 回 |
+| README 上限 | 1,000 文字 | 1,000 文字 | 10,000 文字 |
 | 公開リポジトリ | ✅ | ✅ | ✅ |
 | プライベートリポジトリ（PAT） | ❌ | ❌ | ✅ |
 | AI モデル | Gemini Flash | Gemini Flash | Gemini Flash |
@@ -84,7 +85,7 @@ Stripe 用の `STRIPE_SECRET_KEY` などは Phase B で追加。
 | ファイル | 変更 | 内容 |
 |---------|------|------|
 | `src/lib/subscription.ts` | 新規 | `getSubscriptionTier(userId)` ヘルパー。admin client で `subscriptions` を引いて `'free' \| 'paid'` を返す。レコードなしは `'free'` |
-| `src/lib/rateLimit.ts` | 変更 | 定数を月単位に：`GUEST_MONTHLY_LIMIT=3` / `USER_FREE_MONTHLY_LIMIT=10` / `USER_PAID_MONTHLY_LIMIT=100`。`getDayWindowStart()` → `getMonthWindowStart()`（UTC カレンダー月の 1 日 0 時）。`checkUserLimit()` 第 3 引数に `tier` 追加 |
+| `src/lib/rateLimit.ts` | 変更 | 定数を月単位に：ゲスト 3 回まで / 無料 月 3 回 / Pro 月 30 回。`getDayWindowStart()` → `getMonthWindowStart()`（UTC カレンダー月の 1 日 0 時）。`checkUserLimit()` 第 3 引数に `tier` 追加 |
 | `src/app/api/generate/route.ts` | 変更 | ログインユーザーは `getSubscriptionTier()` を呼んで `checkUserLimit()` に渡す |
 | `src/app/api/github/route.ts` | 変更 | PAT 取得前に `tier === 'paid'` をチェック。無料ユーザーは PAT を読み込まず public 扱い。403/404 のエラーメッセージを「Pro プラン必要」に分岐追加 |
 | `src/app/api/tokens/route.ts` | 変更 | POST で `tier !== 'paid'` の場合 403 を返す（無料ユーザーが直接 API を叩いて PAT 登録するのを防ぐ） |

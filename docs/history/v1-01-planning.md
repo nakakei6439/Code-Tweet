@@ -35,13 +35,15 @@
 
 | 順番 | 機能 | 追加する外部サービス |
 |------|------|-------------------|
-| V2 | GitHub URL からコードを自動取得（公開リポジトリ）+ Google ログイン + 利用制限 | GitHub API / Supabase Auth |
+| V2 | GitHub URL から README を自動取得（公開リポジトリ）+ ログイン + 利用制限 | GitHub API / Supabase Auth |
 | V3 | GitHub プライベートリポジトリ対応 | GitHub API（トークン連携） |
 | V5 | Claude API も選択可能に | Claude API |
-| V8 | フリーミアム導入（ゲスト 5回/日・無料 10回/日・有料 30回/日） | Stripe |
+| V8 | フリーミアム導入（現行: ゲスト 3 回まで / 無料 月3 / Pro 月30。Stripe は Phase B 予定） | Supabase / Stripe |
 | V9 | Instagram・Threads など他 SNS 対応（保留） | なし |
 
 ---
+
+> この企画メモは V1 開始時点の記録です。現在は Google ログインではなく GitHub OAuth を採用し、生成数も 7 件ではなく 5 件に変更しています。最新仕様は [`../product/requirements.md`](../product/requirements.md) を参照してください。
 
 ## 基本的な使い方の流れ（V1）
 

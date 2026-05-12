@@ -36,7 +36,7 @@ Code Tweet の現在仕様、事業計画、実装履歴をまとめたドキュ
 | Feature 1 | [v2-01-server-api-key.md](./history/v2-01-server-api-key.md) | サーバー管理 API キー |
 | Feature 2 | [v2-02-github-url.md](./history/v2-02-github-url.md) | GitHub URL 連携（公開リポジトリのみ） |
 | Feature 3 | [v2-03-google-auth.md](./history/v2-03-google-auth.md) | ユーザー認証（当時は Google、現在は GitHub OAuth に移行済み） |
-| V2.1 | [v2-04-rate-limit.md](./history/v2-04-rate-limit.md) | 利用回数制限（ゲスト 5 回 / ログイン 10 回） |
+| V2.1 | [v2-04-rate-limit.md](./history/v2-04-rate-limit.md) | 利用回数制限（当時はゲスト 5 回 / ログイン 10 回、現在は V8 の月単位制限へ移行済み） |
 
 ### V3 / V8
 
@@ -45,6 +45,7 @@ Code Tweet の現在仕様、事業計画、実装履歴をまとめたドキュ
 | V3 | [v3-01-private-repo.md](./history/v3-01-private-repo.md) | GitHub PAT 暗号化保存・プライベートリポジトリ対応 |
 | V8 Phase A | [v8-01-freemium-phase-a.md](./history/v8-01-freemium-phase-a.md) | 月単位制限・tier ベース機能差別化（Stripe 統合前の基盤） |
 | V8 Phase A.5 | [v8-02-freemium-phase-a-5.md](./history/v8-02-freemium-phase-a-5.md) | UI 作り込み + GitHub OAuth 一本化 + リポジトリ選択 UI |
+| 現在 | [current-requirements-status.md](./current-requirements-status.md) | 管理画面、規約、プライバシーポリシー、問い合わせ導線を含む現状チェック |
 
 ---
 
@@ -53,7 +54,8 @@ Code Tweet の現在仕様、事業計画、実装履歴をまとめたドキュ
 | 優先度 | 内容 |
 |---|---|
 | 1 | V8 Phase B: Stripe 統合（Checkout・Webhook・Customer Portal） |
-| 2 | Pro 向け運用確認（解約時の無料プラン戻し、private repo 取得確認） |
-| 3 | Claude API 選択や他 SNS 対応は、Pro 導入後の利用状況で判断 |
+| 2 | Pro 向け運用確認（Customer Portal、解約時の無料プラン戻し、private repo 取得確認） |
+| 3 | 生成履歴保存、エラー監視、問い合わせフォームは利用状況を見て優先度判断 |
+| 4 | Claude API 選択や他 SNS 対応は、Pro 導入後の利用状況で判断 |
 
-ポスト保存・履歴・検索は、X の予約投稿で代替できるため見送り。
+生成履歴保存は未実装。初期は見送りだったが、継続利用や再利用の価値があるため、Stripe 導入後または利用状況を見て再検討する。

@@ -22,9 +22,12 @@ README やプロジェクト説明を AI が分析し、X（旧 Twitter）向け
 - **ワンクリックコピー**：各ポストをそのままコピーして投稿
 - **GitHub ログイン（任意）**：Supabase Auth + GitHub OAuth。ログインで利用上限が拡張される（V8 Phase A.5 で Google から切替）
 - **利用回数制限**（V8 Phase A）：ゲスト 3 回まで / 無料 月 3 / Pro 月 30（IP ハッシュ・ユーザー ID で計測）
+- **README 文字数上限**：ゲスト・無料 1,000 文字 / Pro 10,000 文字
 - **残り回数表示**（V8 Phase A.5）：フォーム上部に「あと X / Y 回」または「今月あと X / Y 回」+ プランバッジ
 - **プライベートリポジトリ対応**（Pro プラン）：`/settings` で GitHub Personal Access Token (PAT) を登録すると、非公開リポジトリの README も取得できる。トークンは AES-256-GCM で暗号化して Supabase に保存。fine-grained PAT（Repository access を絞り、Contents: Read-only のみ付与）を推奨
-- **自分のリポジトリから選ぶ**（V8 Phase A.5）：GitHub の自分のリポジトリ一覧をモーダルで表示・検索。Pro は公開＋非公開、無料は公開のみ
+- **自分のリポジトリから選ぶ**（V8 Phase A.5）：保存済み GitHub アクセストークンでリポジトリ一覧を表示・検索。無料は公開リポジトリのみ、Pro は公開＋非公開
+- **管理画面**：`ADMIN_EMAILS` の管理者のみ、登録ユーザー数、今月の生成数、直近7日の生成数、Pro/連携数、ユーザー別プラン変更、ゲスト利用回数リセットを確認・操作できる
+- **法務・問い合わせページ**：`/terms`、`/privacy`、`/contact` を用意
 
 ---
 
@@ -164,7 +167,16 @@ src/
 │   ├── pricing/
 │   │   └── page.tsx            # 料金プラン（D2 採用 / 無料と Pro の機能比較表が主役、決済は準備中）
 │   ├── settings/
-│   │   └── page.tsx            # 設定ページ（プラン表示・GitHub 連携状態）
+│   │   └── page.tsx            # 設定ページ（プラン表示・Pro向けPAT管理・アカウント削除）
+│   ├── admin/
+│   │   ├── page.tsx            # 管理ダッシュボード（利用状況・プラン変更）
+│   │   └── actions.ts          # 管理者向け Server Actions
+│   ├── terms/
+│   │   └── page.tsx            # 利用規約
+│   ├── privacy/
+│   │   └── page.tsx            # プライバシーポリシー
+│   ├── contact/
+│   │   └── page.tsx            # 問い合わせ導線
 │   ├── layout.tsx              # 全体レイアウト（Header 差し込み）
 │   └── page.tsx                # トップ（Server Component）
 ├── components/
@@ -173,7 +185,7 @@ src/
 │   ├── Header.tsx              # ヘッダー（ログイン状態判定）
 │   ├── HeaderActions.tsx       # ハンバーガーメニュー（プランバッジ・GitHub ログイン）
 │   ├── RepoSelectorModal.tsx   # 自分のリポジトリ選択モーダル（V8 Phase A.5）
-│   ├── SettingsForm.tsx        # GitHub 連携状態表示（V8 Phase A.5 で PAT 登録 UI 廃止）
+│   ├── SettingsForm.tsx        # Pro向けPAT登録・削除、無料向けPro案内、アカウント削除
 │   └── TweetCard.tsx           # 生成ポストカード
 ├── lib/
 │   ├── encryption.ts           # AES-256-GCM 暗号化/復号（V3）
@@ -204,7 +216,7 @@ V2 完了（2026-05-01〜02）：
 - ✅ Feature 1: サーバー管理 API キー
 - ✅ Feature 2: GitHub URL 連携（公開リポジトリのみ）
 - ✅ Feature 3: ユーザー認証（当時は Google ログイン / Supabase Auth・任意、現在は GitHub OAuth に移行済み）
-- ✅ V2.1: 利用回数制限（ゲスト 5 回 / ログイン 10 回 / 日）・`GITHUB_TOKEN` 削除
+- ✅ V2.1: 利用回数制限（当時はゲスト 5 回 / ログイン 10 回 / 日、現在はゲスト 3 回まで / 無料 月3 / Pro 月30）・`GITHUB_TOKEN` 削除
 - 見送り Feature 4/5: ポスト保存・履歴・検索（X の予約投稿で代替可能なため）
 
 V3 完了（2026-05-04）：
@@ -227,9 +239,11 @@ V8 Phase A.5 完了（2026-05-06）：
 
 - ✅ 残り回数表示・プランバッジ
 - ✅ 上限到達エラーに GitHub ログイン / Pro プラン CTA（準備中）
-- ✅ Google ログイン → **GitHub OAuth に一本化**（手動 PAT 登録 UI も廃止）
+- ✅ Google ログイン → **GitHub OAuth に一本化**
 - ✅ 自分のリポジトリから選ぶモーダル UI
 - ✅ 要件定義書・事業計画書を `docs/product/` に整備
+
+現行実装では、Pro ユーザー向けの手動 PAT 登録 UI は `/settings` に残している。GitHub OAuth の provider token が使えない・期限切れになる場合でも、fine-grained PAT を登録してプライベートリポジトリを取得できるようにするため。
 
 詳細は [`docs/history/v8-02-freemium-phase-a-5.md`](./docs/history/v8-02-freemium-phase-a-5.md) を参照。
 

@@ -168,28 +168,13 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "README が見つかりません。" }, { status: 404 });
   }
 
-  const readmeCharLimit = getProjectTextLimit(usageTier);
-  const readmeByteLimit = readmeCharLimit * 4;
-  if (typeof data.size === "number" && data.size > readmeByteLimit) {
-    return Response.json(
-      {
-        error: `README が長すぎます。現在のプランでは ${readmeCharLimit.toLocaleString("ja-JP")} 文字以内のREADMEを利用できます。`,
-        field: "projectText",
-      },
-      { status: 413 },
-    );
-  }
-
   const content = Buffer.from(data.content, "base64").toString("utf-8");
-  if (content.length > readmeCharLimit) {
-    return Response.json(
-      {
-        error: `README が長すぎます。現在のプランでは ${readmeCharLimit.toLocaleString("ja-JP")} 文字以内のREADMEを利用できます。`,
-        field: "projectText",
-      },
-      { status: 413 },
-    );
-  }
+  const readmeCharLimit = getProjectTextLimit(usageTier);
 
-  return Response.json({ content });
+  return Response.json({
+    content,
+    contentLength: content.length,
+    projectTextLimit: readmeCharLimit,
+    isOverLimit: content.length > readmeCharLimit,
+  });
 }

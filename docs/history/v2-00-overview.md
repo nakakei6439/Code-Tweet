@@ -89,5 +89,9 @@
 | V4 | 推奨投稿日時（AI 自動生成） | ✅ V2 内で実装済み |
 | V3 | GitHub プライベートリポジトリ対応 | ✅ 完了（2026-05-04） |
 | V5 | Claude API も選択可能に | 未着手 |
-| V8 | フリーミアム導入（ゲスト 5回/日・無料ログイン 10回/日・有料 30回/日）・Stripe | 未着手 |
+| V8 Phase A | フリーミアム基盤（ゲスト 3 回まで / 無料 月3 / Pro 月30） | ✅ 完了（2026-05-04） |
+| V8 Phase A.5 | GitHub OAuth 一本化 + リポジトリ選択 UI | ✅ 完了（2026-05-06） |
+| V8 Phase B | Stripe 統合（Checkout・Webhook・Customer Portal） | 未着手 |
 | V9 | Instagram・Threads など他 SNS 対応 | 保留 |
+
+> このファイルは V2 時点の履歴です。V2 当時の Google ログインと日単位制限は、現在は GitHub OAuth と月単位制限に置き換わっています。

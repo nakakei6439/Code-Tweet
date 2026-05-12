@@ -8,10 +8,10 @@
 
 ## 目的
 
-V8 Phase A 完了後、無料/有料の差を体感させる UI が弱く、PAT フローの UX も悪かった。本フェーズでは以下を達成：
+V8 Phase A 完了後、無料/有料の差を体感させる UI が弱く、GitHub 連携フローの UX も弱かった。本フェーズでは以下を達成：
 
 1. 無料/有料の差を可視化（残り回数表示・上限到達 CTA・プランバッジ）
-2. PAT 手動登録フローを廃止し、GitHub OAuth ログインに **完全一本化**
+2. ログインを GitHub OAuth に一本化
 3. 「自分のリポジトリから選ぶ」モーダル UI を実装
 4. 要件定義書・事業計画書を整備
 
@@ -21,7 +21,8 @@ V8 Phase A 完了後、無料/有料の差を体感させる UI が弱く、PAT 
 
 | 項目 | ゲスト（未ログイン） | 無料（ログイン） | Pro 980円/月 |
 |------|------|------|------|
-| 月間生成回数 | 3 回 | 10 回 | 100 回 |
+| 生成回数 | 3 回まで | 月 3 回 | 月 30 回 |
+| README 上限 | 1,000 文字 | 1,000 文字 | 10,000 文字 |
 | 公開リポジトリ | ✅ | ✅ | ✅ |
 | プライベートリポジトリ | ❌ | ❌ | ✅ |
 | 自分のリポジトリ一覧から選択 | ❌ | ✅（公開のみ） | ✅（公開＋非公開） |
@@ -34,7 +35,8 @@ V8 Phase A 完了後、無料/有料の差を体感させる UI が弱く、PAT 
 
 **理由**：
 - ターゲット（個人開発者）は全員 GitHub アカウントを持っている
-- GitHub OAuth でログインすれば PAT 登録不要で即 private repo にアクセス可能（最大の UX 改善）
+- GitHub OAuth でログインすれば、無料ユーザーでも公開リポジトリ一覧から選択できる
+- Pro のプライベートリポジトリ対応は、現行実装では `/settings` の fine-grained PAT 登録を併用する
 - 認証プロバイダが 2 つある場合の identity linking 複雑性を排除
 - 既存ユーザーは中川さん本人のみで移行コストはゼロ
 
@@ -81,20 +83,20 @@ GitHub App はトークン 1 時間 expire・install 手順追加・refresh 実�
 | ファイル | 内容 |
 |---------|------|
 | `src/app/auth/callback/route.ts` | OAuth セッションから `provider_token` を取り出し、AES-256-GCM で暗号化して `user_tokens` に保存（`source='github_oauth'`） |
-| `src/components/AuthOverlay.tsx` | `provider: 'github'` + scope `read:user user:email repo` |
+| `src/components/AuthOverlay.tsx` | `provider: 'github'` + scope `read:user user:email` |
 | `src/components/HeaderActions.tsx` | 「Google でログイン」→「GitHub でログイン」に置換（GitHub アイコン付き） |
 | `src/components/GenerateForm.tsx` | `GuestLimitCTA` を「GitHub でログイン」に置換 |
 | `src/lib/rateLimit.ts` | エラーメッセージの「Google ログイン」を「GitHub ログイン」に |
-| `src/components/SettingsForm.tsx` | 手動 PAT 登録 UI を削除。「GitHub 連携状態」表示のみに |
-| `src/app/settings/page.tsx` | `PAT_STEPS`（PAT 取得ガイド 8 ステップ）を削除 |
+| `src/components/SettingsForm.tsx` | 無料ユーザーには Pro ロック画面を表示。Pro ユーザーには fine-grained PAT 登録・削除 UI とアカウント削除 UI を表示 |
+| `src/app/settings/page.tsx` | プラン表示、支払い管理プレースホルダー、Pro 向け PAT 管理の入口を表示 |
 | `src/app/api/github/route.ts` | エラーメッセージを「再ログインしてください」系に統一 |
-| `src/app/api/tokens/route.ts` | 手動 PAT 登録は廃止。DELETE は残置（無効化判断は将来） |
+| `src/app/api/tokens/route.ts` | Pro ユーザーのみ PAT 登録・削除可能。保存前に GitHub `/user` で検証 |
 
 ### 5. リポジトリ選択 UI
 
 | ファイル | 内容 |
 |---------|------|
-| `src/app/api/repos/route.ts` | GET。保存済み OAuth トークンで GitHub `/user/repos?type=all\|public&sort=updated&per_page=100` を叩いて返す |
+| `src/app/api/repos/route.ts` | GET。保存済みアクセストークンで GitHub `/user/repos` を叩いて返す。無料は `visibility=public&affiliation=owner`、Pro は `visibility=all&affiliation=owner,collaborator,organization_member` |
 | `src/components/RepoSelectorModal.tsx` | 検索可能なモーダル。private repo に鍵バッジ |
 | `src/components/GenerateForm.tsx` | GitHub URL 入力欄の下に「自分のリポジトリから選ぶ」リンク。クリックで `/api/repos` を叩いてモーダル表示 |
 
@@ -143,9 +145,10 @@ DELETE FROM usage_logs WHERE user_id = '<old_google_user_id>';
 
 - ✅ ホーム：プランバッジ + 残り回数表示
 - ✅ ヘッダー：Pro / Free バッジ
-- ✅ リポジトリ選択モーダル：自分の公開＋非公開リポジトリが一覧表示・検索可能
+- ✅ リポジトリ選択モーダル：無料は公開リポジトリ、Pro は公開＋非公開リポジトリが一覧表示・検索可能
 - ✅ リポジトリ選択 → URL 自動補完 → README 自動取得 → 生成成功
-- ✅ 無料切替時：CTA ボタン表示・PAT 入力ロック画面
+- ✅ 無料切替時：CTA ボタン表示・Pro ロック画面
+- ✅ Pro 切替時：PAT 登録・削除 UI 表示
 - ✅ ゲスト：「GitHub でログイン」CTA
 
 ---
