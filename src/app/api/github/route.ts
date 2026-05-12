@@ -3,7 +3,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { decrypt } from "@/lib/encryption";
 import { getSubscriptionTier } from "@/lib/subscription";
 import { getProjectTextLimit } from "@/lib/generateLimits";
+import type { GenerateErrorResponse } from "@/types/tweet";
 import type { UsageTier } from "@/types/usage";
+
+const MAX_README_BYTES = 64 * 1024;
 
 function parseGitHubRepoUrl(input: string): { owner: string; repo: string } | null {
   let url: URL;
@@ -168,8 +171,26 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "README が見つかりません。" }, { status: 404 });
   }
 
-  const content = Buffer.from(data.content, "base64").toString("utf-8");
   const readmeCharLimit = getProjectTextLimit(usageTier);
+  const readmeBytes = typeof data.size === "number" ? data.size : Buffer.byteLength(data.content, "base64");
+  if (readmeBytes > MAX_README_BYTES) {
+    return Response.json(
+      {
+        error: `README が大きすぎます。現在のプランでは ${readmeCharLimit.toLocaleString("ja-JP")} 文字以内にしてください。`,
+        field: "projectText",
+        contentLength: readmeBytes,
+        projectTextLimit: readmeCharLimit,
+        isOverLimit: true,
+      } satisfies GenerateErrorResponse & {
+        contentLength: number;
+        projectTextLimit: number;
+        isOverLimit: boolean;
+      },
+      { status: 413 },
+    );
+  }
+
+  const content = Buffer.from(data.content, "base64").toString("utf-8");
 
   return Response.json({
     content,
