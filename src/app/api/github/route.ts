@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { decrypt } from "@/lib/encryption";
 import { getSubscriptionTier } from "@/lib/subscription";
+import { getProjectTextLimit } from "@/lib/generateLimits";
+import type { UsageTier } from "@/types/usage";
 
 function parseGitHubRepoUrl(input: string): { owner: string; repo: string } | null {
   let url: URL;
@@ -53,10 +55,12 @@ export async function POST(request: Request): Promise<Response> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  let usageTier: UsageTier = "guest";
   let hasToken = false;
   let isPaid = false;
   if (user) {
     const tier = await getSubscriptionTier(user.id);
+    usageTier = tier;
     isPaid = tier === "paid";
 
     if (isPaid) {
@@ -164,6 +168,28 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "README が見つかりません。" }, { status: 404 });
   }
 
+  const readmeCharLimit = getProjectTextLimit(usageTier);
+  const readmeByteLimit = readmeCharLimit * 4;
+  if (typeof data.size === "number" && data.size > readmeByteLimit) {
+    return Response.json(
+      {
+        error: `README が長すぎます。現在のプランでは ${readmeCharLimit.toLocaleString("ja-JP")} 文字以内のREADMEを利用できます。`,
+        field: "projectText",
+      },
+      { status: 413 },
+    );
+  }
+
   const content = Buffer.from(data.content, "base64").toString("utf-8");
+  if (content.length > readmeCharLimit) {
+    return Response.json(
+      {
+        error: `README が長すぎます。現在のプランでは ${readmeCharLimit.toLocaleString("ja-JP")} 文字以内のREADMEを利用できます。`,
+        field: "projectText",
+      },
+      { status: 413 },
+    );
+  }
+
   return Response.json({ content });
 }

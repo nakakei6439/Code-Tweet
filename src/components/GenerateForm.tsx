@@ -5,12 +5,43 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import TweetCard from "@/components/TweetCard";
 import RepoSelectorModal from "@/components/RepoSelectorModal";
-import type { Tweet, GenerateRequest, GenerateResponse, GenerateErrorResponse, GenerateErrorCode } from "@/types/tweet";
+import {
+  PROJECT_TEXT_LIMITS,
+  MAX_HASHTAGS_LENGTH,
+  MAX_TONE_MEMO_LENGTH,
+  MAX_URL_LENGTH,
+  getProjectTextLimit,
+} from "@/lib/generateLimits";
+import type {
+  Tweet,
+  GenerateRequest,
+  GenerateResponse,
+  GenerateErrorResponse,
+  GenerateErrorCode,
+  GenerateErrorField,
+} from "@/types/tweet";
 import type { UsageInfo } from "@/types/usage";
 
 type Props = {
   initialUsage: UsageInfo | null;
 };
+
+const STATIC_FIELD_LIMITS = {
+  toneMemo: MAX_TONE_MEMO_LENGTH,
+  url: MAX_URL_LENGTH,
+  hashtags: MAX_HASHTAGS_LENGTH,
+};
+
+const FIELD_LABELS: Record<GenerateErrorField, string> = {
+  projectText: "プロジェクト説明（README）",
+  toneMemo: "追加プロンプト",
+  url: "URL",
+  hashtags: "ハッシュタグ",
+};
+
+function formatCount(value: number) {
+  return value.toLocaleString("ja-JP");
+}
 
 function GuestLimitCTA() {
   const [isPending, setIsPending] = useState(false);
@@ -21,7 +52,7 @@ function GuestLimitCTA() {
       provider: "github",
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
-        scopes: "read:user user:email repo",
+        scopes: "read:user user:email",
       },
     });
   }
@@ -78,13 +109,13 @@ function UsageBadge({ usage }: { usage: UsageInfo }) {
           {tierLabel}
         </span>
         <span className="whitespace-nowrap">
-          今月あと <span className={`font-bold text-sm ${remainClass}`}>{usage.remaining}</span>
+          {usage.tier === "guest" ? "あと" : "今月あと"} <span className={`font-bold text-sm ${remainClass}`}>{usage.remaining}</span>
           <span className="text-gray-400"> / {usage.limit} 回</span>
         </span>
       </div>
       {usage.tier === "guest" && (
         <p className="mt-2 leading-5 text-gray-400 sm:whitespace-nowrap">
-          ログインなしで月3回、GitHubログインなら月10回まで無料で生成できます。
+          ログインなしは3回まで、GitHubログインなら月3回まで使えます。README上限はどちらも {PROJECT_TEXT_LIMITS.free.toLocaleString("ja-JP")} 文字です。
         </p>
       )}
     </div>
@@ -101,6 +132,7 @@ export default function GenerateForm({ initialUsage }: Props) {
   const [isFetchingReadme, setIsFetchingReadme] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<GenerateErrorCode | null>(null);
+  const [errorField, setErrorField] = useState<GenerateErrorField | null>(null);
   const [usage, setUsage] = useState<UsageInfo | null>(initialUsage);
   const [isRepoModalOpen, setIsRepoModalOpen] = useState(false);
   const [repos, setRepos] = useState<import("@/app/api/repos/route").RepoItem[] | null>(null);
@@ -109,8 +141,8 @@ export default function GenerateForm({ initialUsage }: Props) {
   const resultsRef = useRef<HTMLDivElement>(null);
   const [githubUrl, setGithubUrl] = useState("");
   const isLoggedIn = usage?.tier === "free" || usage?.tier === "paid";
-  const [showDetails, setShowDetails] = useState(false);
-  const isDetailsVisible = isLoggedIn || showDetails;
+  const isDetailsVisible = isLoggedIn;
+  const projectTextLimit = getProjectTextLimit(usage?.tier ?? "guest");
 
   async function handleOpenRepoModal() {
     setIsRepoModalOpen(true);
@@ -148,6 +180,57 @@ export default function GenerateForm({ initialUsage }: Props) {
   const formDisabled = isLoading || isFetchingReadme;
   const isDisabled = formDisabled || projectText.trim() === "";
 
+  function clearErrorState() {
+    setError(null);
+    setErrorCode(null);
+    setErrorField(null);
+  }
+
+  function clearFieldError(field: GenerateErrorField) {
+    if (errorField === field) {
+      setError(null);
+      setErrorField(null);
+    }
+  }
+
+  function setValidationError(field: GenerateErrorField, message: string) {
+    setError(message);
+    setErrorCode(null);
+    setErrorField(field);
+  }
+
+  function getFieldError(field: GenerateErrorField) {
+    return errorField === field ? error : null;
+  }
+
+  function getFieldLimit(field: GenerateErrorField) {
+    if (field === "projectText") return projectTextLimit;
+    return STATIC_FIELD_LIMITS[field];
+  }
+
+  function inputClass(field: GenerateErrorField, focusClass: string, extraClass = "") {
+    const errorClass = errorField === field
+      ? "border-red-500 bg-red-950/20 ring-1 ring-red-500 focus:ring-red-500"
+      : focusClass;
+    return `${inputBase} ${errorClass} ${extraClass}`;
+  }
+
+  function fieldMeta(field: GenerateErrorField, currentLength: number, helperText: string) {
+    const fieldMessage = getFieldError(field);
+    const limit = getFieldLimit(field);
+    const isOverLimit = currentLength > limit;
+    return (
+      <div className="mt-1.5 flex items-start justify-between gap-3 text-xs">
+        <p className={fieldMessage ? "font-semibold text-red-300" : "text-gray-400"}>
+          {fieldMessage ?? helperText}
+        </p>
+        <span className={`shrink-0 tabular-nums ${isOverLimit ? "font-semibold text-red-300" : "text-gray-500"}`}>
+          {formatCount(currentLength)} / {formatCount(limit)}
+        </span>
+      </div>
+    );
+  }
+
   async function fetchReadmeContent(targetUrl: string): Promise<string | null> {
     try {
       const res = await fetch("/api/github", {
@@ -157,23 +240,31 @@ export default function GenerateForm({ initialUsage }: Props) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "README の取得に失敗しました。");
+        const err = data as GenerateErrorResponse;
+        setError(err.error ?? "README の取得に失敗しました。");
+        setErrorCode(null);
+        setErrorField(err.field ?? null);
         return null;
       }
       return data.content;
     } catch {
       setError("ネットワークエラーが発生しました。接続を確認してください。");
+      setErrorCode(null);
+      setErrorField(null);
       return null;
     }
   }
 
   async function loadReadmeIntoProjectText(targetUrl: string) {
-    setError(null);
-    setErrorCode(null);
+    clearErrorState();
     setIsFetchingReadme(true);
     try {
       const content = await fetchReadmeContent(targetUrl);
-      if (content) setProjectText(content);
+      if (!content) return;
+      setProjectText(content);
+      if (content.length > projectTextLimit) {
+        setValidationError("projectText", `READMEが長すぎます。現在のプランでは ${formatCount(projectTextLimit)} 文字以内にしてください。`);
+      }
     } finally {
       setIsFetchingReadme(false);
     }
@@ -181,8 +272,7 @@ export default function GenerateForm({ initialUsage }: Props) {
 
   async function handleReadmeImport() {
     const trimmedUrl = githubUrl.trim();
-    setError(null);
-    setErrorCode(null);
+    clearErrorState();
     if (isLoggedIn) {
       await handleOpenRepoModal();
       return;
@@ -192,13 +282,14 @@ export default function GenerateForm({ initialUsage }: Props) {
       return;
     }
     setError("GitHubリポジトリURLを入力してください。");
+    setErrorCode(null);
+    setErrorField(null);
   }
 
   async function handleGenerate(projectTextOverride?: string, urlOverride?: string) {
     const textToGenerate = projectTextOverride ?? projectText;
     const urlToGenerate = urlOverride ?? url;
-    setError(null);
-    setErrorCode(null);
+    clearErrorState();
     setIsLoading(true);
     setTweets([]);
     try {
@@ -212,6 +303,7 @@ export default function GenerateForm({ initialUsage }: Props) {
         const err = data as GenerateErrorResponse;
         setError(err.error ?? "エラーが発生しました。");
         setErrorCode(err.code ?? null);
+        setErrorField(err.field ?? null);
         return;
       }
       setTweets((data as GenerateResponse).tweets);
@@ -219,6 +311,8 @@ export default function GenerateForm({ initialUsage }: Props) {
       refreshUsage();
     } catch {
       setError("ネットワークエラーが発生しました。接続を確認してください。");
+      setErrorCode(null);
+      setErrorField(null);
     } finally {
       setIsLoading(false);
     }
@@ -226,8 +320,7 @@ export default function GenerateForm({ initialUsage }: Props) {
 
   async function handleQuickGenerate() {
     const trimmedUrl = githubUrl.trim();
-    setError(null);
-    setErrorCode(null);
+    clearErrorState();
     if (!trimmedUrl) {
       setError("GitHubリポジトリURLを入力してください。");
       return;
@@ -239,6 +332,10 @@ export default function GenerateForm({ initialUsage }: Props) {
     if (!content) return;
 
     setProjectText(content);
+    if (content.length > projectTextLimit) {
+      setValidationError("projectText", `READMEが長すぎます。現在のプランでは ${formatCount(projectTextLimit)} 文字以内にしてください。`);
+      return;
+    }
     if (!url.trim()) {
       setUrl(trimmedUrl);
     }
@@ -299,14 +396,14 @@ export default function GenerateForm({ initialUsage }: Props) {
               </button>
             </div>
             <div className="mt-4 flex justify-center">
-              <button
-                type="button"
-                onClick={() => setShowDetails(true)}
-                disabled={formDisabled}
-                className="text-xs font-medium text-gray-400 transition-colors hover:text-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
+              <a
+                href="https://github.com/"
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-medium text-gray-400 transition-colors hover:text-gray-200"
               >
-                READMEがない場合は説明文を直接入力する
-              </button>
+                GitHubを開いてリポジトリURLをコピーする
+              </a>
             </div>
           </>
         )}
@@ -318,6 +415,11 @@ export default function GenerateForm({ initialUsage }: Props) {
           <div>
             <p className="font-semibold text-red-200">処理できませんでした</p>
             <p className="mt-1 text-red-300">{error}</p>
+            {errorField && (
+              <p className="mt-2 inline-flex rounded-md border border-red-700/80 bg-red-900/40 px-2 py-1 text-xs font-semibold text-red-100">
+                該当項目：{FIELD_LABELS[errorField]}
+              </p>
+            )}
           </div>
           {errorCode === "guest_limit" && <GuestLimitCTA />}
           {errorCode === "free_limit" && <FreeLimitCTA />}
@@ -337,14 +439,6 @@ export default function GenerateForm({ initialUsage }: Props) {
                   口調、投稿URL、ハッシュタグ、説明文を調整できます。
                 </p>
               </div>
-              {!isLoggedIn && (
-                <button
-                  onClick={() => setShowDetails(false)}
-                  className="text-xs text-gray-400 transition-colors hover:text-gray-200"
-                >
-                  閉じる
-                </button>
-              )}
             </div>
 
           <div>
@@ -389,7 +483,9 @@ export default function GenerateForm({ initialUsage }: Props) {
                   <input
                     type="url"
                     value={githubUrl}
-                    onChange={(e) => setGithubUrl(e.target.value)}
+                    onChange={(e) => {
+                      setGithubUrl(e.target.value);
+                    }}
                     placeholder="例：https://github.com/owner/repo"
                     disabled={formDisabled}
                     className={`${inputBase} focus:ring-cyan-500 flex-1`}
@@ -409,14 +505,15 @@ export default function GenerateForm({ initialUsage }: Props) {
             <textarea
               rows={8}
               value={projectText}
-              onChange={(e) => setProjectText(e.target.value)}
+              onChange={(e) => {
+                setProjectText(e.target.value);
+                clearFieldError("projectText");
+              }}
               placeholder="例：個人開発者向けのタスク管理アプリです。GitHub Issue と連携し、毎日の進捗を見える化できます。"
               disabled={formDisabled}
-              className={`${inputBase} focus:ring-cyan-500 resize-none`}
+              className={inputClass("projectText", "focus:ring-cyan-500", "resize-none")}
             />
-            <p className="text-xs text-gray-400 mt-1.5">
-              README全文、リリースノート、機能説明のどれでも使えます。
-            </p>
+            {fieldMeta("projectText", projectText.length, "README全文、リリースノート、機能説明のどれでも使えます。")}
           </div>
 
           <div>
@@ -426,11 +523,15 @@ export default function GenerateForm({ initialUsage }: Props) {
             <input
               type="text"
               value={toneMemo}
-              onChange={(e) => setToneMemo(e.target.value)}
+              onChange={(e) => {
+                setToneMemo(e.target.value);
+                clearFieldError("toneMemo");
+              }}
               placeholder="例：個人開発者向けに、少しフランクで、絵文字は控えめ"
               disabled={formDisabled}
-              className={`${inputBase} focus:ring-fuchsia-500`}
+              className={inputClass("toneMemo", "focus:ring-fuchsia-500")}
             />
+            {fieldMeta("toneMemo", toneMemo.length, "生成時の口調や避けたい表現を短く指定できます。")}
           </div>
 
           <div>
@@ -440,14 +541,15 @@ export default function GenerateForm({ initialUsage }: Props) {
             <input
               type="url"
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={(e) => {
+                setUrl(e.target.value);
+                clearFieldError("url");
+              }}
               placeholder="例：https://example.com または https://github.com/owner/repo"
               disabled={formDisabled}
-              className={`${inputBase} focus:ring-fuchsia-500`}
+              className={inputClass("url", "focus:ring-fuchsia-500")}
             />
-            <p className="text-xs text-gray-400 mt-1.5">
-              App Store / Google Play / GitHub / Web に対応。種別に合ったリード文が自動で付きます
-            </p>
+            {fieldMeta("url", url.length, "App Store / Google Play / GitHub / Web に対応。種別に合ったリード文が自動で付きます。")}
           </div>
 
           <div>
@@ -457,14 +559,15 @@ export default function GenerateForm({ initialUsage }: Props) {
             <input
               type="text"
               value={hashtags}
-              onChange={(e) => setHashtags(e.target.value)}
+              onChange={(e) => {
+                setHashtags(e.target.value);
+                clearFieldError("hashtags");
+              }}
               placeholder="例：#個人開発 #Webアプリ #SaaS"
               disabled={formDisabled}
-              className={`${inputBase} focus:ring-fuchsia-500`}
+              className={inputClass("hashtags", "focus:ring-fuchsia-500")}
             />
-            <p className="text-xs text-gray-400 mt-1.5">
-              入力したハッシュタグに加え、関連タグが最大5つ付きます
-            </p>
+            {fieldMeta("hashtags", hashtags.length, "入力したハッシュタグに加え、関連タグが最大5つ付きます。")}
           </div>
 
           <button

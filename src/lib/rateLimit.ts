@@ -3,9 +3,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { SubscriptionTier } from "@/lib/subscription";
 
-export const GUEST_MONTHLY_LIMIT = 3;
-export const USER_FREE_MONTHLY_LIMIT = 10;
-export const USER_PAID_MONTHLY_LIMIT = 100;
+export const GUEST_TOTAL_LIMIT = 3;
+export const USER_FREE_MONTHLY_LIMIT = 3;
+export const USER_PAID_MONTHLY_LIMIT = 30;
 
 import type { GenerateErrorCode } from "@/types/tweet";
 
@@ -86,19 +86,18 @@ export async function checkGuestLimit(ipHash: string): Promise<RateLimitResult> 
   const { count, error } = await admin
     .from("ip_usage_logs")
     .select("id", { count: "exact", head: true })
-    .eq("ip_hash", ipHash)
-    .gte("generated_at", getMonthWindowStart());
+    .eq("ip_hash", ipHash);
 
   if (error) {
     console.error("[rateLimit] ip_usage_logs count error:", error);
     return { ok: true };
   }
 
-  if ((count ?? 0) >= GUEST_MONTHLY_LIMIT) {
+  if ((count ?? 0) >= GUEST_TOTAL_LIMIT) {
     return {
       ok: false,
       status: 429,
-      message: `今月の生成上限（${GUEST_MONTHLY_LIMIT}回）に達しました。GitHub ログインで月 ${USER_FREE_MONTHLY_LIMIT} 回まで拡張されます。`,
+      message: `ログインなしで使える生成上限（${GUEST_TOTAL_LIMIT}回）に達しました。GitHub ログインで月 ${USER_FREE_MONTHLY_LIMIT} 回まで使えます。`,
       code: "guest_limit",
     };
   }

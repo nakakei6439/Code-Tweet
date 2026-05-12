@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSubscriptionTier } from "@/lib/subscription";
+import { PROJECT_TEXT_LIMITS } from "@/lib/generateLimits";
 import AuthOverlay from "@/components/AuthOverlay";
 import HomeLinkButton from "@/components/HomeLinkButton";
 import SettingsForm from "@/components/SettingsForm";
@@ -66,8 +67,8 @@ export default async function SettingsPage() {
           )}
           <p className="text-gray-400 text-xs mt-1">
             {isPaid
-              ? "月 100 回まで生成・プライベートリポジトリ対応・リポジトリ一覧から選択"
-              : "月 10 回まで生成・公開リポジトリのみ"}
+              ? `月 30 回まで生成・README上限 ${PROJECT_TEXT_LIMITS.paid.toLocaleString("ja-JP")} 文字・プライベートリポジトリ対応`
+              : `月 3 回まで生成・README上限 ${PROJECT_TEXT_LIMITS.free.toLocaleString("ja-JP")} 文字・公開リポジトリのみ`}
           </p>
         </div>
         {isPaid ? (

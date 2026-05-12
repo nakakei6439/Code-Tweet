@@ -9,7 +9,58 @@ import {
   recordUserUsage,
 } from "@/lib/rateLimit";
 import { getSubscriptionTier } from "@/lib/subscription";
-import type { GenerateRequest, GenerateResponse, GenerateErrorResponse } from "@/types/tweet";
+import {
+  MAX_HASHTAGS_LENGTH,
+  MAX_TONE_MEMO_LENGTH,
+  MAX_URL_LENGTH,
+  getProjectTextLimit,
+} from "@/lib/generateLimits";
+import type { GenerateRequest, GenerateResponse, GenerateErrorResponse, GenerateErrorField } from "@/types/tweet";
+import type { UsageTier } from "@/types/usage";
+
+const MAX_REQUEST_BYTES = 256 * 1024;
+
+function validateRequestSize(request: Request): Response | null {
+  const contentLength = request.headers.get("content-length");
+  if (!contentLength) return null;
+
+  const bytes = Number(contentLength);
+  if (Number.isFinite(bytes) && bytes > MAX_REQUEST_BYTES) {
+    return Response.json(
+      { error: "リクエストが大きすぎます。入力内容を短くしてください。" } satisfies GenerateErrorResponse,
+      { status: 413 },
+    );
+  }
+
+  return null;
+}
+
+function fieldError(field: GenerateErrorField, error: string, status = 400): Response {
+  return Response.json({ error, field } satisfies GenerateErrorResponse, { status });
+}
+
+function validateGenerateRequest(body: GenerateRequest, tier: UsageTier): Response | null {
+  const projectTextLimit = getProjectTextLimit(tier);
+
+  if (!body.projectText?.trim()) {
+    return fieldError("projectText", "プロジェクト説明を入力してください。");
+  }
+
+  if (body.projectText.length > projectTextLimit) {
+    return fieldError("projectText", `現在のプランでは、プロジェクト説明は ${projectTextLimit.toLocaleString("ja-JP")} 文字以内にしてください。`);
+  }
+  if ((body.toneMemo ?? "").length > MAX_TONE_MEMO_LENGTH) {
+    return fieldError("toneMemo", `追加プロンプトは ${MAX_TONE_MEMO_LENGTH.toLocaleString("ja-JP")} 文字以内にしてください。`);
+  }
+  if ((body.url ?? "").length > MAX_URL_LENGTH) {
+    return fieldError("url", `URL は ${MAX_URL_LENGTH.toLocaleString("ja-JP")} 文字以内にしてください。`);
+  }
+  if ((body.hashtags ?? "").length > MAX_HASHTAGS_LENGTH) {
+    return fieldError("hashtags", `ハッシュタグは ${MAX_HASHTAGS_LENGTH.toLocaleString("ja-JP")} 文字以内にしてください。`);
+  }
+
+  return null;
+}
 
 function mapGeminiError(err: unknown): { message: string; status: number } {
   const raw = err instanceof Error ? err.message : "";
@@ -41,12 +92,17 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "現在サービスが利用できません。しばらくお待ちください。" } satisfies GenerateErrorResponse, { status: 503 });
   }
 
+  const sizeError = validateRequestSize(request);
+  if (sizeError) return sizeError;
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   let ipHash: string | null = null;
+  let usageTier: UsageTier = "guest";
   if (user) {
     const tier = await getSubscriptionTier(user.id);
+    usageTier = tier;
     const limit = await checkUserLimit(supabase, user.id, tier);
     if (!limit.ok) {
       return Response.json(
@@ -76,9 +132,8 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "リクエストが不正です。" } satisfies GenerateErrorResponse, { status: 400 });
   }
 
-  if (!body.projectText?.trim()) {
-    return Response.json({ error: "プロジェクト説明を入力してください。" } satisfies GenerateErrorResponse, { status: 400 });
-  }
+  const validationError = validateGenerateRequest(body, usageTier);
+  if (validationError) return validationError;
 
   try {
     const tweets = await generateTweets(body.projectText, body.toneMemo ?? "", body.url ?? "", body.hashtags ?? "");

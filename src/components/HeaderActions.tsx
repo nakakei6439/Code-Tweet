@@ -9,9 +9,10 @@ type Props = {
   isAuthenticated: boolean;
   email: string | null;
   tier: SubscriptionTier | null;
+  isAdmin: boolean;
 };
 
-export default function HeaderActions({ isAuthenticated, email, tier }: Props) {
+export default function HeaderActions({ isAuthenticated, email, tier, isAdmin }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -34,7 +35,7 @@ export default function HeaderActions({ isAuthenticated, email, tier }: Props) {
       provider: "github",
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
-        scopes: "read:user user:email repo",
+        scopes: "read:user user:email",
       },
     });
   }
@@ -99,6 +100,22 @@ export default function HeaderActions({ isAuthenticated, email, tier }: Props) {
             >
               ホーム
             </Link>
+            <Link
+              href="/settings"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+            >
+              設定
+            </Link>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+              >
+                管理
+              </Link>
+            )}
             {tier !== "paid" && (
               <Link
                 href="/pricing"
@@ -117,13 +134,6 @@ export default function HeaderActions({ isAuthenticated, email, tier }: Props) {
                 プラン
               </Link>
             )}
-            <Link
-              href="/settings"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
-            >
-              設定
-            </Link>
             <form action="/auth/signout" method="post">
               <button
                 type="submit"

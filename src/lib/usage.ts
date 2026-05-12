@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSubscriptionTier } from "@/lib/subscription";
 import {
-  GUEST_MONTHLY_LIMIT,
+  GUEST_TOTAL_LIMIT,
   USER_FREE_MONTHLY_LIMIT,
   USER_PAID_MONTHLY_LIMIT,
   getMonthWindowStart,
@@ -28,8 +28,7 @@ async function countGuestUsage(ipHash: string): Promise<number> {
   const { count, error } = await admin
     .from("ip_usage_logs")
     .select("id", { count: "exact", head: true })
-    .eq("ip_hash", ipHash)
-    .gte("generated_at", getMonthWindowStart());
+    .eq("ip_hash", ipHash);
   if (error) {
     console.error("[usage] ip_usage_logs count error:", error);
     return 0;
@@ -55,8 +54,8 @@ export async function getGuestUsage(ipHash: string): Promise<UsageInfo> {
   return {
     tier: "guest",
     used,
-    limit: GUEST_MONTHLY_LIMIT,
-    remaining: Math.max(0, GUEST_MONTHLY_LIMIT - used),
+    limit: GUEST_TOTAL_LIMIT,
+    remaining: Math.max(0, GUEST_TOTAL_LIMIT - used),
     resetAt: getNextMonthStart(),
   };
 }
