@@ -47,7 +47,7 @@ Code Tweet は、MVP として必要な中核機能はかなり揃っていま�
 | GitHub README 取得 | 完了 | GitHub リポジトリ URL から README を取得 | `src/app/api/github/route.ts` |
 | GitHub ログイン | 完了 | Supabase Auth + GitHub OAuth でログインできる | `src/app/auth/callback/route.ts`, `src/components/HeaderActions.tsx` |
 | OAuth トークン保存 | 完了 | GitHub provider token を暗号化して保存 | `src/app/auth/callback/route.ts`, `src/lib/encryption.ts` |
-| 利用回数制限 | 完了 | ゲスト月 3 回、無料月 10 回、Pro 月 100 回を判定 | `src/lib/rateLimit.ts` |
+| 利用回数制限 | 完了 | ゲスト 3 回まで、無料月 3 回、Pro 月 30 回を判定 | `src/lib/rateLimit.ts` |
 | 残り回数表示 | 完了 | フォーム上部に今月の残り回数を表示 | `src/lib/usage.ts`, `src/components/GenerateForm.tsx` |
 | 上限到達 CTA | 完了 | ゲストにはログイン、無料には Pro プランを案内 | `src/components/GenerateForm.tsx` |
 | リポジトリ選択 UI | 完了 | ログインユーザーが自分のリポジトリ一覧から選択できる | `src/app/api/repos/route.ts`, `src/components/RepoSelectorModal.tsx` |

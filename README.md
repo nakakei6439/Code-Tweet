@@ -21,8 +21,8 @@ README やプロジェクト説明を AI が分析し、X（旧 Twitter）向け
 - **weighted length チェック・自動短縮**：X の 280 ウェイト上限を `twitter-text` で計測し、超過時は最大 4 回まで AI に短縮を依頼
 - **ワンクリックコピー**：各ポストをそのままコピーして投稿
 - **GitHub ログイン（任意）**：Supabase Auth + GitHub OAuth。ログインで利用上限が拡張される（V8 Phase A.5 で Google から切替）
-- **月単位の利用回数制限**（V8 Phase A）：ゲスト 月 3 / 無料 月 10 / Pro 月 100（IP ハッシュ・ユーザー ID で計測）
-- **残り回数表示**（V8 Phase A.5）：フォーム上部に「今月あと X / Y 回」+ プランバッジ
+- **利用回数制限**（V8 Phase A）：ゲスト 3 回まで / 無料 月 3 / Pro 月 30（IP ハッシュ・ユーザー ID で計測）
+- **残り回数表示**（V8 Phase A.5）：フォーム上部に「あと X / Y 回」または「今月あと X / Y 回」+ プランバッジ
 - **プライベートリポジトリ対応**（Pro プラン、準備中）：GitHub OAuth で取得したアクセストークンを AES-256-GCM 暗号化して Supabase に保存し、Pro プラン公開後に非公開リポジトリの README 取得へ対応予定
 - **自分のリポジトリから選ぶ**（V8 Phase A.5）：GitHub の自分のリポジトリ一覧をモーダルで表示・検索。Pro は公開＋非公開、無料は公開のみ
 
@@ -61,6 +61,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
 GITHUB_PAT_ENCRYPTION_KEY=your_32byte_hex_key
+ADMIN_EMAILS=you@example.com
 ```
 
 `GITHUB_PAT_ENCRYPTION_KEY` は以下のコマンドで生成：
@@ -76,8 +77,9 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase の anon public key（同上） | 必須 |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase の service role key。利用ログ書き込みに使用 | 必須 |
 | `GITHUB_PAT_ENCRYPTION_KEY` | ユーザーの GitHub PAT を暗号化するサーバー秘密鍵（V3） | 必須 |
+| `ADMIN_EMAILS` | `/admin` に入れる管理者メールアドレス。複数の場合はカンマ区切り | 任意 |
 
-> サーバー専用キー（`GEMINI_API_KEY` / `SUPABASE_SERVICE_ROLE_KEY` / `GITHUB_PAT_ENCRYPTION_KEY`）は `NEXT_PUBLIC_` を付けないこと。絶対にクライアントに渡さない。
+> サーバー専用キー（`GEMINI_API_KEY` / `SUPABASE_SERVICE_ROLE_KEY` / `GITHUB_PAT_ENCRYPTION_KEY` / `ADMIN_EMAILS`）は `NEXT_PUBLIC_` を付けないこと。絶対にクライアントに渡さない。
 
 ### 3. Supabase / GitHub OAuth の準備
 
@@ -117,7 +119,7 @@ npm run dev
 2. 口調メモ・URL・ハッシュタグを入力（すべて任意）
 3. 「ポストを生成する」を押す
 4. 生成された 5 件のポストを推奨日時に合わせて投稿
-5. 利用上限を増やしたい場合は GitHub でログイン（月 3 回 → 月 10 回・「自分のリポジトリから選ぶ」機能も解放）。月 100 回・プライベートリポジトリ対応の Pro プラン（¥980 / 月）は V8 Phase B で導入予定
+5. 利用上限を増やしたい場合は GitHub でログイン（3 回まで → 月 3 回・「自分のリポジトリから選ぶ」機能も解放）。月 30 回・プライベートリポジトリ対応の Pro プラン（¥980 / 月）は V8 Phase B で導入予定
 
 ---
 
@@ -215,7 +217,7 @@ V3 完了（2026-05-04）：
 
 V8 Phase A 完了（2026-05-04）：
 
-- ✅ 月単位制限導入（ゲスト 月3 / 無料 月10 / Pro 月100）
+- ✅ 利用回数制限導入（ゲスト 3回まで / 無料 月3 / Pro 月30）
 - ✅ `subscriptions` テーブル + tier ベースの機能差別化
 - ✅ プライベートリポジトリを Pro 限定に巻き上げ
 
