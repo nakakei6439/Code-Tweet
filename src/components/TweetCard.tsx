@@ -36,18 +36,19 @@ export default function TweetCard({ tweet }: TweetCardProps) {
           className={
             tweet.isOverLimit
               ? "text-red-500 text-xs font-medium"
-              : "text-gray-500 text-xs"
+              : "text-gray-400 text-xs"
           }
           title={tweet.isOverLimit ? "X の上限 280 ウェイトを超過しています" : undefined}
         >
           {tweet.weightedLength}/280
         </span>
       </div>
-      <p className="text-xs text-gray-500 mb-3">{tweet.recommendedTime.reason}</p>
+      <p className="text-xs text-gray-400 mb-3">{tweet.recommendedTime.reason}</p>
       <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">{tweet.text}</p>
       <div className="flex justify-end mt-4">
         <button
           onClick={handleCopy}
+          aria-live="polite"
           className={
             copied
               ? "border border-green-500 text-green-400 text-xs px-3 py-1 rounded-md"

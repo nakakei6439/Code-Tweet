@@ -10,9 +10,55 @@ type Props = {
   error: string | null;
   onClose: () => void;
   onSelect: (htmlUrl: string) => void;
+  onRepoUrlSubmit: (htmlUrl: string) => void;
 };
 
-export default function RepoSelectorModal({ isOpen, isLoading, repos, error, onClose, onSelect }: Props) {
+function ManualRepoUrlInput({ onClose, onRepoUrlSubmit }: Pick<Props, "onClose" | "onRepoUrlSubmit">) {
+  const [manualRepoUrl, setManualRepoUrl] = useState("");
+  const trimmedManualRepoUrl = manualRepoUrl.trim();
+
+  return (
+    <div className="flex flex-col gap-2 sm:flex-row">
+      <input
+        type="url"
+        value={manualRepoUrl}
+        onChange={(e) => setManualRepoUrl(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && trimmedManualRepoUrl) {
+            e.preventDefault();
+            onRepoUrlSubmit(trimmedManualRepoUrl);
+            onClose();
+          }
+        }}
+        placeholder="例：https://github.com/owner/repo"
+        className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500
+          focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+      />
+      <button
+        onClick={() => {
+          onRepoUrlSubmit(trimmedManualRepoUrl);
+          onClose();
+        }}
+        disabled={!trimmedManualRepoUrl}
+        className="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-700 px-4 text-sm font-medium
+          bg-gray-800 text-gray-100 transition-colors hover:border-gray-600 hover:bg-gray-700
+          disabled:cursor-not-allowed disabled:opacity-50 sm:whitespace-nowrap"
+      >
+        READMEを読み込む
+      </button>
+    </div>
+  );
+}
+
+export default function RepoSelectorModal({
+  isOpen,
+  isLoading,
+  repos,
+  error,
+  onClose,
+  onSelect,
+  onRepoUrlSubmit,
+}: Props) {
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -47,7 +93,7 @@ export default function RepoSelectorModal({ isOpen, isLoading, repos, error, onC
       >
         <div className="h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-          <h3 className="text-white font-semibold">自分のリポジトリから選ぶ</h3>
+          <h3 className="text-white font-semibold">READMEを読み込むリポジトリを選ぶ</h3>
           <button
             onClick={onClose}
             aria-label="閉じる"
@@ -78,7 +124,7 @@ export default function RepoSelectorModal({ isOpen, isLoading, repos, error, onC
             <p className="text-red-400 text-sm text-center py-12">{error}</p>
           )}
           {!isLoading && !error && filtered.length === 0 && (
-            <p className="text-gray-500 text-sm text-center py-12">
+            <p className="text-gray-400 text-sm text-center py-12">
               {query ? "該当するリポジトリがありません" : "リポジトリが見つかりません"}
             </p>
           )}
@@ -102,13 +148,20 @@ export default function RepoSelectorModal({ isOpen, isLoading, repos, error, onC
                       )}
                     </div>
                     {r.description && (
-                      <p className="text-gray-500 text-xs mt-0.5 truncate">{r.description}</p>
+                      <p className="text-gray-400 text-xs mt-0.5 truncate">{r.description}</p>
                     )}
                   </button>
                 </li>
               ))}
             </ul>
           )}
+        </div>
+
+        <div className="border-t border-gray-800 bg-gray-900 px-6 py-4">
+          <label className="block text-xs font-medium text-gray-300 mb-2">
+            リポジトリURLを入力
+          </label>
+          <ManualRepoUrlInput onClose={onClose} onRepoUrlSubmit={onRepoUrlSubmit} />
         </div>
       </div>
     </div>

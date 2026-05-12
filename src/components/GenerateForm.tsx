@@ -50,7 +50,7 @@ function FreeLimitCTA() {
         bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400
         text-white shadow-lg shadow-fuchsia-500/20 hover:opacity-90 transition-opacity"
     >
-      Pro プランへアップグレード（月 980 円）
+      Pro プランを見る（¥980 / 月）
     </Link>
   );
 }
@@ -64,7 +64,7 @@ function UsageBadge({ usage }: { usage: UsageInfo }) {
       ? "text-fuchsia-300 bg-fuchsia-950/40 border-fuchsia-800/60"
       : usage.tier === "free"
         ? "text-cyan-300 bg-cyan-950/40 border-cyan-800/60"
-        : "text-gray-300 bg-gray-800/60 border-gray-700";
+        : "text-white bg-white/10 border-white/45";
   const remainClass = isEmpty
     ? "text-red-400"
     : isLow
@@ -72,14 +72,21 @@ function UsageBadge({ usage }: { usage: UsageInfo }) {
       : "text-white";
 
   return (
-    <div className="mb-4 flex items-center justify-between gap-3 px-4 py-2.5 bg-gray-900/60 backdrop-blur border border-gray-800 rounded-xl text-sm">
-      <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${tierClass}`}>
-        {tierLabel}
-      </span>
-      <span className="text-gray-400 text-xs">
-        今月あと <span className={`font-semibold text-base ${remainClass}`}>{usage.remaining}</span>
-        <span className="text-gray-500"> / {usage.limit} 回</span>
-      </span>
+    <div className="mx-auto mb-2 max-w-xl text-center text-xs text-gray-300">
+      <div className="inline-flex items-center justify-center gap-2">
+        <span className={`font-bold px-2 py-px rounded-full border text-[10px] leading-4 tracking-wide ${tierClass}`}>
+          {tierLabel}
+        </span>
+        <span className="whitespace-nowrap">
+          今月あと <span className={`font-bold text-sm ${remainClass}`}>{usage.remaining}</span>
+          <span className="text-gray-400"> / {usage.limit} 回</span>
+        </span>
+      </div>
+      {usage.tier === "guest" && (
+        <p className="mt-2 leading-5 text-gray-400 sm:whitespace-nowrap">
+          ログインなしで月3回、GitHubログインなら月10回まで無料で生成できます。
+        </p>
+      )}
     </div>
   );
 }
@@ -102,6 +109,8 @@ export default function GenerateForm({ initialUsage }: Props) {
   const resultsRef = useRef<HTMLDivElement>(null);
   const [githubUrl, setGithubUrl] = useState("");
   const isLoggedIn = usage?.tier === "free" || usage?.tier === "paid";
+  const [showDetails, setShowDetails] = useState(false);
+  const isDetailsVisible = isLoggedIn || showDetails;
 
   async function handleOpenRepoModal() {
     setIsRepoModalOpen(true);
@@ -139,30 +148,55 @@ export default function GenerateForm({ initialUsage }: Props) {
   const formDisabled = isLoading || isFetchingReadme;
   const isDisabled = formDisabled || projectText.trim() === "";
 
-  async function handleFetchReadme() {
-    setError(null);
-    setErrorCode(null);
-    setIsFetchingReadme(true);
+  async function fetchReadmeContent(targetUrl: string): Promise<string | null> {
     try {
       const res = await fetch("/api/github", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: githubUrl }),
+        body: JSON.stringify({ url: targetUrl }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "README の取得に失敗しました。");
-        return;
+        return null;
       }
-      setProjectText(data.content);
+      return data.content;
     } catch {
       setError("ネットワークエラーが発生しました。接続を確認してください。");
+      return null;
+    }
+  }
+
+  async function loadReadmeIntoProjectText(targetUrl: string) {
+    setError(null);
+    setErrorCode(null);
+    setIsFetchingReadme(true);
+    try {
+      const content = await fetchReadmeContent(targetUrl);
+      if (content) setProjectText(content);
     } finally {
       setIsFetchingReadme(false);
     }
   }
 
-  async function handleGenerate() {
+  async function handleReadmeImport() {
+    const trimmedUrl = githubUrl.trim();
+    setError(null);
+    setErrorCode(null);
+    if (isLoggedIn) {
+      await handleOpenRepoModal();
+      return;
+    }
+    if (trimmedUrl) {
+      await loadReadmeIntoProjectText(trimmedUrl);
+      return;
+    }
+    setError("GitHubリポジトリURLを入力してください。");
+  }
+
+  async function handleGenerate(projectTextOverride?: string, urlOverride?: string) {
+    const textToGenerate = projectTextOverride ?? projectText;
+    const urlToGenerate = urlOverride ?? url;
     setError(null);
     setErrorCode(null);
     setIsLoading(true);
@@ -171,7 +205,7 @@ export default function GenerateForm({ initialUsage }: Props) {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectText, toneMemo, url, hashtags } satisfies GenerateRequest),
+        body: JSON.stringify({ projectText: textToGenerate, toneMemo, url: urlToGenerate, hashtags } satisfies GenerateRequest),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -188,6 +222,27 @@ export default function GenerateForm({ initialUsage }: Props) {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function handleQuickGenerate() {
+    const trimmedUrl = githubUrl.trim();
+    setError(null);
+    setErrorCode(null);
+    if (!trimmedUrl) {
+      setError("GitHubリポジトリURLを入力してください。");
+      return;
+    }
+
+    setIsFetchingReadme(true);
+    const content = await fetchReadmeContent(trimmedUrl);
+    setIsFetchingReadme(false);
+    if (!content) return;
+
+    setProjectText(content);
+    if (!url.trim()) {
+      setUrl(trimmedUrl);
+    }
+    await handleGenerate(content, url.trim() || trimmedUrl);
   }
 
   const inputBase =
@@ -212,76 +267,146 @@ export default function GenerateForm({ initialUsage }: Props) {
         </div>
       )}
 
-      {usage && <UsageBadge usage={usage} />}
-
-      <div className="bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden">
-        <div className="h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
-        <div className="p-8 space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              GitHub URL <span className="text-gray-500 font-normal">（任意）</span>
-            </label>
-            <div className="flex gap-2">
+      <section className="mx-auto">
+        {!isLoggedIn && (
+          <>
+            <div className="mx-auto flex min-h-14 max-w-2xl items-center rounded-full bg-gray-700/80 px-6 shadow-lg shadow-black/20 ring-1 ring-white/10 transition-shadow focus-within:shadow-xl focus-within:ring-gray-500/80">
               <input
                 type="url"
                 value={githubUrl}
                 onChange={(e) => setGithubUrl(e.target.value)}
-                placeholder="例：https://github.com/owner/repo"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleQuickGenerate();
+                  }
+                }}
+                placeholder="https://github.com/owner/repo"
                 disabled={formDisabled}
-                className={`${inputBase} focus:ring-cyan-500 flex-1`}
+                className="w-full bg-transparent text-base text-white placeholder-gray-400 outline-none disabled:cursor-not-allowed disabled:opacity-50"
               />
+            </div>
+
+            <div className="mt-7 flex justify-center">
               <button
-                data-fetch-readme
-                onClick={handleFetchReadme}
-                disabled={formDisabled || githubUrl.trim() === ""}
-                className="px-4 py-3 rounded-lg text-sm font-semibold transition-all cursor-pointer
-                  bg-gray-700 border border-gray-600 text-gray-200
-                  hover:bg-gray-600
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                  whitespace-nowrap flex items-center gap-2"
+                onClick={handleQuickGenerate}
+                disabled={formDisabled}
+                className="inline-flex min-h-9 items-center justify-center rounded-lg border border-gray-700
+                  bg-gray-800 px-5 text-sm font-medium text-gray-100 transition-colors
+                  hover:border-gray-600 hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isFetchingReadme ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                    </svg>
-                    取得中...
-                  </>
-                ) : (
-                  "README を取得"
-                )}
+                {isFetchingReadme ? "READMEを読んでいます..." : isLoading ? "生成中..." : "READMEからポストを作る"}
               </button>
             </div>
-            {isLoggedIn && (
-              <button
-                onClick={handleOpenRepoModal}
-                disabled={formDisabled}
-                className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
-                </svg>
-                自分のリポジトリから選ぶ
-              </button>
-            )}
-            <p className="text-xs text-gray-500 mt-1.5">
-              リポジトリ URL を入力すると README をプロジェクト説明に自動挿入します
-            </p>
+          </>
+        )}
+
+      </section>
+
+      {error && (
+        <div className="mt-6 border border-red-800 bg-red-950/50 rounded-lg px-4 py-3 text-red-300 text-sm space-y-3">
+          <div>
+            <p className="font-semibold text-red-200">処理できませんでした</p>
+            <p className="mt-1 text-red-300">{error}</p>
+          </div>
+          {errorCode === "guest_limit" && <GuestLimitCTA />}
+          {errorCode === "free_limit" && <FreeLimitCTA />}
+        </div>
+      )}
+
+      {usage && <div className="mt-6"><UsageBadge usage={usage} /></div>}
+
+      {isDetailsVisible && (
+        <div className="mt-4 bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden">
+          <div className="h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
+          <div className="p-8 space-y-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-white">詳細設定</p>
+                <p className="mt-1 text-xs text-gray-400">
+                  口調、投稿URL、ハッシュタグ、説明文を調整できます。
+                </p>
+              </div>
+              {!isLoggedIn && (
+                <button
+                  onClick={() => setShowDetails(false)}
+                  className="text-xs text-gray-400 transition-colors hover:text-gray-200"
+                >
+                  閉じる
+                </button>
+              )}
+            </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              READMEを読み込む
+            </label>
+            <div className="rounded-2xl border border-cyan-400/25 bg-cyan-400/10 p-4">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-2 text-xs leading-5 text-gray-300">
+                    <svg className="mt-0.5 h-4 w-4 shrink-0 text-cyan-200" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+                    </svg>
+                    <span>
+                      {isLoggedIn
+                        ? "GitHubからリポジトリを選ぶか、モーダル下部にURLを入力してREADMEを読み込めます。"
+                        : "GitHubリポジトリURLを貼ると、READMEを説明欄に読み込めます。"}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <button
+                    onClick={handleReadmeImport}
+                    disabled={formDisabled}
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-cyan-300/70 px-5 text-sm font-semibold
+                      bg-cyan-300 text-gray-950 shadow-lg shadow-cyan-500/25 transition-all
+                      hover:bg-cyan-200 hover:shadow-cyan-500/40
+                      disabled:cursor-not-allowed disabled:opacity-50 sm:whitespace-nowrap"
+                  >
+                    {isFetchingReadme ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                        </svg>
+                        取得中...
+                      </>
+                    ) : (
+                      "GitHubからREADMEを選ぶ"
+                    )}
+                  </button>
+                  <input
+                    type="url"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    placeholder="例：https://github.com/owner/repo"
+                    disabled={formDisabled}
+                    className={`${inputBase} focus:ring-cyan-500 flex-1`}
+                  />
+                </div>
+                <p className="text-xs text-gray-400">
+                  公開リポジトリはURLだけで取得できます。非公開リポジトリは Pro プランの機能です。
+                </p>
+              </div>
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              プロジェクト説明 <span className="text-red-400">*</span>
+              プロジェクト説明（README） <span className="text-red-400">*</span>
             </label>
             <textarea
               rows={8}
               value={projectText}
               onChange={(e) => setProjectText(e.target.value)}
-              placeholder="README や機能説明をここに貼り付けてください..."
+              placeholder="例：個人開発者向けのタスク管理アプリです。GitHub Issue と連携し、毎日の進捗を見える化できます。"
               disabled={formDisabled}
               className={`${inputBase} focus:ring-cyan-500 resize-none`}
             />
+            <p className="text-xs text-gray-400 mt-1.5">
+              README全文、リリースノート、機能説明のどれでも使えます。
+            </p>
           </div>
 
           <div>
@@ -292,7 +417,7 @@ export default function GenerateForm({ initialUsage }: Props) {
               type="text"
               value={toneMemo}
               onChange={(e) => setToneMemo(e.target.value)}
-              placeholder="例：フランクな感じで、絵文字あり"
+              placeholder="例：個人開発者向けに、少しフランクで、絵文字は控えめ"
               disabled={formDisabled}
               className={`${inputBase} focus:ring-fuchsia-500`}
             />
@@ -306,11 +431,11 @@ export default function GenerateForm({ initialUsage }: Props) {
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="例：https://example.com"
+              placeholder="例：https://example.com または https://github.com/owner/repo"
               disabled={formDisabled}
               className={`${inputBase} focus:ring-fuchsia-500`}
             />
-            <p className="text-xs text-gray-500 mt-1.5">
+            <p className="text-xs text-gray-400 mt-1.5">
               App Store / Google Play / GitHub / Web に対応。種別に合ったリード文が自動で付きます
             </p>
           </div>
@@ -323,19 +448,20 @@ export default function GenerateForm({ initialUsage }: Props) {
               type="text"
               value={hashtags}
               onChange={(e) => setHashtags(e.target.value)}
-              placeholder="例：#個人開発 #Webアプリ"
+              placeholder="例：#個人開発 #Webアプリ #SaaS"
               disabled={formDisabled}
               className={`${inputBase} focus:ring-fuchsia-500`}
             />
-            <p className="text-xs text-gray-500 mt-1.5">
+            <p className="text-xs text-gray-400 mt-1.5">
               入力したハッシュタグに加え、関連タグが最大5つ付きます
             </p>
           </div>
 
           <button
-            onClick={handleGenerate}
+            onClick={() => handleGenerate()}
             disabled={isDisabled}
-            className="w-full py-3 rounded-lg font-semibold text-sm transition-all cursor-pointer
+            className="mx-auto w-full py-3 rounded-lg font-semibold text-sm transition-all cursor-pointer
+              sm:w-1/3 sm:min-w-52
               bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400
               text-white shadow-lg shadow-cyan-500/20
               hover:opacity-90
@@ -355,15 +481,12 @@ export default function GenerateForm({ initialUsage }: Props) {
             )}
           </button>
 
-          {error && (
-            <div className="border border-red-800 bg-red-950/50 rounded-lg px-4 py-3 text-red-400 text-sm space-y-3">
-              <p>{error}</p>
-              {errorCode === "guest_limit" && <GuestLimitCTA />}
-              {errorCode === "free_limit" && <FreeLimitCTA />}
-            </div>
-          )}
+          <p className="text-xs leading-5 text-gray-400">
+            生成結果は投稿前に必ず確認してください。URL、価格、機能名などの事実関係はご自身でのチェックをお願いします。
+          </p>
         </div>
       </div>
+      )}
 
       {tweets.length > 0 && (
         <div ref={resultsRef} className="mt-12">
@@ -384,10 +507,17 @@ export default function GenerateForm({ initialUsage }: Props) {
         onClose={() => setIsRepoModalOpen(false)}
         onSelect={(htmlUrl) => {
           setGithubUrl(htmlUrl);
-          setTimeout(() => {
-            const btn = document.querySelector<HTMLButtonElement>("[data-fetch-readme]");
-            btn?.click();
-          }, 50);
+          if (!url.trim()) {
+            setUrl(htmlUrl);
+          }
+          void loadReadmeIntoProjectText(htmlUrl);
+        }}
+        onRepoUrlSubmit={(htmlUrl) => {
+          setGithubUrl(htmlUrl);
+          if (!url.trim()) {
+            setUrl(htmlUrl);
+          }
+          void loadReadmeIntoProjectText(htmlUrl);
         }}
       />
     </>

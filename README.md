@@ -5,6 +5,7 @@ README やプロジェクト説明を AI が分析し、X（旧 Twitter）向け
 本番 URL: **https://code-tweet.vercel.app/**
 
 ドキュメント索引: [`docs/index.md`](./docs/index.md)
+公開前チェックリスト: [`docs/launch-checklist.md`](./docs/launch-checklist.md)
 
 ---
 
@@ -22,7 +23,7 @@ README やプロジェクト説明を AI が分析し、X（旧 Twitter）向け
 - **GitHub ログイン（任意）**：Supabase Auth + GitHub OAuth。ログインで利用上限が拡張される（V8 Phase A.5 で Google から切替）
 - **月単位の利用回数制限**（V8 Phase A）：ゲスト 月 3 / 無料 月 10 / Pro 月 100（IP ハッシュ・ユーザー ID で計測）
 - **残り回数表示**（V8 Phase A.5）：フォーム上部に「今月あと X / Y 回」+ プランバッジ
-- **プライベートリポジトリ対応**（V3 / Pro 限定）：GitHub OAuth で取得したアクセストークンを AES-256-GCM 暗号化して Supabase に保存。Pro プランで非公開リポジトリの README も取得可能
+- **プライベートリポジトリ対応**（Pro プラン、準備中）：GitHub OAuth で取得したアクセストークンを AES-256-GCM 暗号化して Supabase に保存し、Pro プラン公開後に非公開リポジトリの README 取得へ対応予定
 - **自分のリポジトリから選ぶ**（V8 Phase A.5）：GitHub の自分のリポジトリ一覧をモーダルで表示・検索。Pro は公開＋非公開、無料は公開のみ
 
 ---
@@ -116,7 +117,7 @@ npm run dev
 2. 口調メモ・URL・ハッシュタグを入力（すべて任意）
 3. 「ポストを生成する」を押す
 4. 生成された 5 件のポストを推奨日時に合わせて投稿
-5. 利用上限を増やしたい場合は GitHub でログイン（月 3 回 → 月 10 回・「自分のリポジトリから選ぶ」機能も解放）。さらに月 100 回・プライベートリポジトリ対応の Pro プラン（V8 Phase B で導入予定）
+5. 利用上限を増やしたい場合は GitHub でログイン（月 3 回 → 月 10 回・「自分のリポジトリから選ぶ」機能も解放）。月 100 回・プライベートリポジトリ対応の Pro プラン（¥980 / 月）は V8 Phase B で導入予定
 
 ---
 
@@ -157,9 +158,9 @@ src/
 │   │   ├── callback/route.ts   # GitHub OAuth コールバック（provider_token 暗号化保存）
 │   │   └── signout/route.ts    # ログアウト
 │   ├── about/
-│   │   └── page.tsx            # Code Tweet の説明ページ
+│   │   └── page.tsx            # Code Tweet の説明ページ（V1 採用 / 縦1カラムの使い方ガイド + 利用枠要約）
 │   ├── pricing/
-│   │   └── page.tsx            # 料金プラン（決済導入前の案内）
+│   │   └── page.tsx            # 料金プラン（D2 採用 / 無料と Pro の機能比較表が主役、決済は準備中）
 │   ├── settings/
 │   │   └── page.tsx            # 設定ページ（プラン表示・GitHub 連携状態）
 │   ├── layout.tsx              # 全体レイアウト（Header 差し込み）
@@ -223,7 +224,7 @@ V8 Phase A 完了（2026-05-04）：
 V8 Phase A.5 完了（2026-05-06）：
 
 - ✅ 残り回数表示・プランバッジ
-- ✅ 上限到達エラーに GitHub ログイン / Pro アップグレード CTA
+- ✅ 上限到達エラーに GitHub ログイン / Pro プラン CTA（準備中）
 - ✅ Google ログイン → **GitHub OAuth に一本化**（手動 PAT 登録 UI も廃止）
 - ✅ 自分のリポジトリから選ぶモーダル UI
 - ✅ 要件定義書・事業計画書を `docs/product/` に整備
@@ -260,6 +261,8 @@ V8 Phase A.5 完了（2026-05-06）：
 | `npm run build` | 本番ビルド |
 | `npm start` | 本番ビルドの起動 |
 | `npm run lint` | ESLint 実行 |
+
+公開前は [`docs/launch-checklist.md`](./docs/launch-checklist.md) に沿って、環境変数・外部サービス・主要画面を確認する。
 
 ---
 

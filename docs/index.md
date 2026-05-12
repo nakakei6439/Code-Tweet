@@ -8,8 +8,10 @@ Code Tweet の現在仕様、事業計画、実装履歴をまとめたドキュ
 
 | ファイル | 内容 |
 |---|---|
+| [current-requirements-status.md](./current-requirements-status.md) | 現在の Code Tweet と一般的な Web アプリ要件の達成状況 |
 | [product/requirements.md](./product/requirements.md) | 現在の要件定義。機能、ロール、制約、ユーザーストーリー |
 | [product/business-plan.md](./product/business-plan.md) | 事業計画。ターゲット、収益モデル、KPI、ロードマップ |
+| [launch-checklist.md](./launch-checklist.md) | 一般公開前の環境変数・外部サービス・手動確認チェックリスト |
 | [development-guide.md](./development-guide.md) | 開発フローの参照ガイド |
 
 ---
