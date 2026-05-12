@@ -4,8 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminEmail } from "@/lib/admin";
 import { getMonthWindowStart } from "@/lib/rateLimit";
+import type { SubscriptionTier } from "@/lib/subscription";
 import AuthOverlay from "@/components/AuthOverlay";
 import HomeLinkButton from "@/components/HomeLinkButton";
+import { setUserTier } from "./actions";
 
 export const metadata: Metadata = {
   title: "管理",
@@ -94,6 +96,23 @@ async function countPaidUsers(admin: ReturnType<typeof createAdminClient>): Prom
   return count ?? 0;
 }
 
+async function fetchTierMap(admin: ReturnType<typeof createAdminClient>): Promise<Map<string, SubscriptionTier>> {
+  const { data, error } = await admin
+    .from("subscriptions")
+    .select("user_id, tier");
+
+  if (error) {
+    console.error("[admin] subscriptions fetch error:", error);
+    return new Map();
+  }
+
+  const map = new Map<string, SubscriptionTier>();
+  for (const row of (data ?? []) as { user_id: string; tier: string | null }[]) {
+    map.set(row.user_id, row.tier === "paid" ? "paid" : "free");
+  }
+  return map;
+}
+
 async function getGeneratedRowsSince(
   admin: ReturnType<typeof createAdminClient>,
   table: "usage_logs" | "ip_usage_logs",
@@ -161,6 +180,7 @@ export default async function AdminPage() {
     connectedUsers,
     recentUserRows,
     recentGuestRows,
+    tierMap,
   ] = await Promise.all([
     admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
     countRowsSince(admin, "usage_logs", monthStart),
@@ -169,6 +189,7 @@ export default async function AdminPage() {
     countAllRows(admin, "user_tokens"),
     getGeneratedRowsSince(admin, "usage_logs", recentStart),
     getGeneratedRowsSince(admin, "ip_usage_logs", recentStart),
+    fetchTierMap(admin),
   ]);
 
   if (usersResult.error) {
@@ -192,6 +213,19 @@ export default async function AdminPage() {
     ? usersResult.data.total ?? usersResult.data.users.length
     : usersResult.data.users.length;
   const monthlyTotal = monthlyUserGenerations + monthlyGuestGenerations;
+
+  const userRows = [...usersResult.data.users]
+    .sort((a, b) => {
+      const aDate = a.created_at ?? "";
+      const bDate = b.created_at ?? "";
+      return bDate.localeCompare(aDate);
+    })
+    .map((u) => ({
+      id: u.id,
+      email: u.email ?? "(no email)",
+      createdAt: u.created_at ?? null,
+      tier: tierMap.get(u.id) ?? "free",
+    }));
 
   return (
     <main className="min-h-screen bg-gray-950 px-4 py-12 text-gray-200">
@@ -252,8 +286,85 @@ export default async function AdminPage() {
           </div>
         </section>
 
+        <section className="mt-8 overflow-hidden rounded-xl border border-gray-800 bg-gray-900/60">
+          <div className="border-b border-gray-800 px-5 py-4">
+            <h2 className="text-sm font-semibold text-white">ユーザー一覧 / プラン変更</h2>
+            <p className="mt-1 text-xs text-gray-500">
+              新しい順に表示。ボタンを押すとそのユーザーのプランを切り替えます。
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[680px] text-left text-sm">
+              <thead className="border-b border-gray-800 text-xs text-gray-500">
+                <tr>
+                  <th className="px-5 py-3 font-medium">メール</th>
+                  <th className="px-5 py-3 font-medium">登録日</th>
+                  <th className="px-5 py-3 font-medium">現在のプラン</th>
+                  <th className="px-5 py-3 font-medium">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800">
+                {userRows.map((row) => {
+                  const isPaid = row.tier === "paid";
+                  const nextTier: SubscriptionTier = isPaid ? "free" : "paid";
+                  const nextLabel = isPaid ? "Free に戻す" : "Pro に変更";
+                  const buttonClass = isPaid
+                    ? "border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700"
+                    : "border-fuchsia-500/60 bg-fuchsia-500/10 text-fuchsia-200 hover:bg-fuchsia-500/20";
+                  const isSelf = row.id === user.id;
+                  return (
+                    <tr key={row.id}>
+                      <td className="px-5 py-3 text-gray-300">
+                        <span className="break-all">{row.email}</span>
+                        {isSelf && (
+                          <span className="ml-2 inline-flex rounded border border-gray-700 px-1.5 py-0.5 text-[10px] text-gray-400">
+                            自分
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3 text-gray-400">
+                        {row.createdAt ? row.createdAt.slice(0, 10) : "-"}
+                      </td>
+                      <td className="px-5 py-3">
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
+                            isPaid
+                              ? "bg-fuchsia-500/20 text-fuchsia-200"
+                              : "bg-gray-800 text-gray-300"
+                          }`}
+                        >
+                          {isPaid ? "Pro" : "Free"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <form action={setUserTier}>
+                          <input type="hidden" name="userId" value={row.id} />
+                          <input type="hidden" name="tier" value={nextTier} />
+                          <button
+                            type="submit"
+                            className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${buttonClass}`}
+                          >
+                            {nextLabel}
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {userRows.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-5 py-6 text-center text-xs text-gray-500">
+                      ユーザーがいません。
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         <p className="mt-6 text-xs leading-6 text-gray-500">
-          `ADMIN_EMAILS` に含まれるメールアドレスでログインした場合のみ表示されます。ユーザー一覧やプラン変更などの操作機能は意図的に含めていません。
+          `ADMIN_EMAILS` に含まれるメールアドレスでログインした場合のみ表示されます。
         </p>
       </div>
     </main>
