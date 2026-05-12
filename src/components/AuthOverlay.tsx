@@ -4,7 +4,11 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { PROJECT_TEXT_LIMITS } from "@/lib/generateLimits";
 
-export default function AuthOverlay() {
+type Props = {
+  callbackPath?: string;
+};
+
+export default function AuthOverlay({ callbackPath = "/auth/callback" }: Props) {
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,7 +19,7 @@ export default function AuthOverlay() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}${callbackPath}`,
         scopes: "read:user user:email",
       },
     });

@@ -1,17 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isAdminEmail } from "@/lib/admin";
+import { requireVerifiedAdminUser } from "@/lib/adminServerAuth";
 import type { SubscriptionTier } from "@/lib/subscription";
 
 async function requireAdmin(): Promise<void> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user || !isAdminEmail(user.email)) {
-    throw new Error("Unauthorized");
-  }
+  await requireVerifiedAdminUser();
 }
 
 export async function setUserTier(formData: FormData): Promise<void> {

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminEmail } from "@/lib/admin";
+import { redirectIfNotVerifiedAdmin } from "@/lib/adminServerAuth";
 import { getMonthWindowStart } from "@/lib/rateLimit";
 import type { SubscriptionTier } from "@/lib/subscription";
 import AuthOverlay from "@/components/AuthOverlay";
@@ -167,6 +168,8 @@ export default async function AdminPage() {
   if (!isAdminEmail(user.email)) {
     redirect("/");
   }
+
+  await redirectIfNotVerifiedAdmin("/admin");
 
   const admin = createAdminClient();
   const monthStart = getMonthWindowStart();
