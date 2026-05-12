@@ -298,6 +298,16 @@ export default function GenerateForm({ initialUsage }: Props) {
                 {isFetchingReadme ? "READMEを読んでいます..." : isLoading ? "生成中..." : "READMEからポストを作る"}
               </button>
             </div>
+            <div className="mt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setShowDetails(true)}
+                disabled={formDisabled}
+                className="text-xs font-medium text-gray-400 transition-colors hover:text-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                READMEがない場合は説明文を直接入力する
+              </button>
+            </div>
           </>
         )}
 
