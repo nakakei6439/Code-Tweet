@@ -312,15 +312,23 @@ function PatSection({ initialHasToken }: { initialHasToken: boolean }) {
             <li>
               <span className="text-gray-200">Repository access</span> は{" "}
               <code className="text-cyan-400 bg-gray-800/80 px-1 py-0.5 rounded">Only select repositories</code>{" "}
-              で必要なものだけ選ぶ
+              で必要なものだけ選ぶ（<code className="text-cyan-400 bg-gray-800/80 px-1 py-0.5 rounded">All repositories</code> でも可）
             </li>
-            <li>
-              <span className="text-gray-200">Repository permissions</span> は{" "}
-              <code className="text-cyan-400 bg-gray-800/80 px-1 py-0.5 rounded">Contents: Read-only</code>{" "}
-              のみ付与
+            <li className="text-amber-200">
+              <span className="font-semibold">【必須】</span>
+              <span className="text-gray-200">Repository permissions</span> →{" "}
+              <code className="text-amber-300 bg-gray-800/80 px-1 py-0.5 rounded">Contents: Read-only</code>{" "}
+              を必ず付与する
+              <p className="ml-5 mt-1 text-[11px] text-amber-300/80 leading-5">
+                ※ これを付け忘れると、トークン自体は有効になりますが「自分のリポジトリから選ぶ」で
+                プライベートリポジトリが一覧に出ません。Metadata は Contents を選ぶと自動付与されます。
+              </p>
             </li>
             <li>
               <span className="text-gray-200">Expiration</span> は 90 日など短めを推奨
+            </li>
+            <li>
+              生成された <code className="text-cyan-400 bg-gray-800/80 px-1 py-0.5 rounded">github_pat_...</code> を下の入力欄に貼り付けて保存
             </li>
           </ol>
           <p className="text-gray-400 text-xs leading-5">
