@@ -110,6 +110,7 @@ export default function HeaderActions({ isAuthenticated, email, tier, isAdmin }:
             {isAdmin && (
               <Link
                 href="/admin"
+                prefetch={false}
                 onClick={() => setIsOpen(false)}
                 className="flex items-center px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
               >

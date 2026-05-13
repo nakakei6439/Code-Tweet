@@ -1,4 +1,5 @@
 export const ADMIN_SESSION_COOKIE = "code_tweet_admin_session";
+export const ADMIN_LOGIN_SESSION_COOKIE = "code_tweet_admin_login_session";
 
 type AdminSecurityConfig = {
   basicUser: string;
@@ -79,30 +80,13 @@ export function timingSafeEqualString(a: string, b: string): boolean {
   return diff === 0;
 }
 
-export function parseBasicAuth(value: string | null): { username: string; password: string } | null {
-  if (!value?.startsWith("Basic ")) return null;
-
-  try {
-    const decoded = atob(value.slice("Basic ".length));
-    const separatorIndex = decoded.indexOf(":");
-    if (separatorIndex < 0) return null;
-    return {
-      username: decoded.slice(0, separatorIndex),
-      password: decoded.slice(separatorIndex + 1),
-    };
-  } catch {
-    return null;
-  }
-}
-
-export function verifyBasicAuth(value: string | null): boolean {
+export function verifyAdminCredentials(username: string, password: string): boolean {
   const config = getAdminSecurityConfig();
-  const credentials = parseBasicAuth(value);
-  if (!config || !credentials) return false;
+  if (!config) return false;
 
   return (
-    timingSafeEqualString(credentials.username, config.basicUser) &&
-    timingSafeEqualString(credentials.password, config.basicPassword)
+    timingSafeEqualString(username, config.basicUser) &&
+    timingSafeEqualString(password, config.basicPassword)
   );
 }
 
@@ -140,6 +124,49 @@ export async function verifyAdminSessionCookieValue(
     return (
       payload.exp > now &&
       timingSafeEqualString(payload.email, email.trim().toLowerCase())
+    );
+  } catch {
+    return false;
+  }
+}
+
+type AdminLoginSessionPayload = {
+  user: string;
+  exp: number;
+  iat: number;
+};
+
+export async function createAdminLoginSessionCookieValue(username: string): Promise<string> {
+  const config = getAdminSecurityConfig();
+  if (!config) throw new Error("Admin security environment variables are missing");
+
+  const now = Math.floor(Date.now() / 1000);
+  const payload: AdminLoginSessionPayload = {
+    user: username,
+    iat: now,
+    exp: now + 60 * 60,
+  };
+  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
+  const signature = await signAdminSession(encodedPayload, config.sessionSecret);
+  return `${encodedPayload}.${signature}`;
+}
+
+export async function verifyAdminLoginSessionCookieValue(value: string | undefined): Promise<boolean> {
+  const config = getAdminSecurityConfig();
+  if (!config || !value) return false;
+
+  const [encodedPayload, signature, extra] = value.split(".");
+  if (!encodedPayload || !signature || extra) return false;
+
+  const expectedSignature = await signAdminSession(encodedPayload, config.sessionSecret);
+  if (!timingSafeEqualString(signature, expectedSignature)) return false;
+
+  try {
+    const payload = JSON.parse(base64UrlDecode(encodedPayload)) as AdminLoginSessionPayload;
+    const now = Math.floor(Date.now() / 1000);
+    return (
+      payload.exp > now &&
+      timingSafeEqualString(payload.user, config.basicUser)
     );
   } catch {
     return false;
