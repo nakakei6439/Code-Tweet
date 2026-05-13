@@ -4,6 +4,7 @@ import { PROJECT_TEXT_LIMITS } from "@/lib/generateLimits";
 import { createClient } from "@/lib/supabase/server";
 import { getSubscriptionTier } from "@/lib/subscription";
 import StripeActionButton from "@/components/StripeActionButton";
+import { getMissingStripeCheckoutEnv } from "@/lib/stripe";
 
 export const metadata: Metadata = {
   title: "料金プラン",
@@ -85,6 +86,7 @@ export default async function PricingPage() {
   const tier = user ? await getSubscriptionTier(user.id) : null;
   const isPaid = tier === "paid";
   const isAuthenticated = !!user;
+  const stripeReady = getMissingStripeCheckoutEnv().length === 0;
 
   return (
     <main className="min-h-screen bg-gray-950 px-4 py-16 text-gray-200">
@@ -197,7 +199,15 @@ export default async function PricingPage() {
                 </th>
                 {PLAN_TIERS.map((plan) => (
                   <td key={plan.slug} className="px-5 py-5">
-                    {plan.slug === "pro" && isPaid ? (
+                    {plan.slug === "pro" && !stripeReady ? (
+                      <button
+                        disabled
+                        title="決済機能は近日公開予定です"
+                        className="cursor-not-allowed rounded-lg border border-gray-800 px-4 py-2 text-xs font-semibold text-gray-500"
+                      >
+                        準備中
+                      </button>
+                    ) : plan.slug === "pro" && isPaid ? (
                       <Link
                         href="/settings"
                         className="inline-flex items-center justify-center rounded-lg border border-gray-700 px-4 py-2 text-xs font-semibold text-gray-100 transition-colors hover:border-gray-600 hover:bg-gray-800"

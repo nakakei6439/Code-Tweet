@@ -8,6 +8,7 @@ import AuthOverlay from "@/components/AuthOverlay";
 import HomeLinkButton from "@/components/HomeLinkButton";
 import SettingsForm from "@/components/SettingsForm";
 import StripeActionButton from "@/components/StripeActionButton";
+import { getMissingStripeCheckoutEnv } from "@/lib/stripe";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -37,6 +38,7 @@ export default async function SettingsPage() {
 
   const tier = await getSubscriptionTier(user.id);
   const isPaid = tier === "paid";
+  const stripeReady = getMissingStripeCheckoutEnv().length === 0;
 
   const admin = createAdminClient();
   const { data } = await admin
@@ -72,13 +74,21 @@ export default async function SettingsPage() {
               : `月 3 回まで生成・README上限 ${PROJECT_TEXT_LIMITS.free.toLocaleString("ja-JP")} 文字・公開リポジトリのみ`}
           </p>
         </div>
-        {isPaid ? (
+        {isPaid && stripeReady ? (
           <StripeActionButton
             action="portal"
             className="shrink-0 px-4 py-2 rounded-lg text-xs font-medium border border-gray-700 text-gray-100 transition-colors hover:border-gray-600 hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             解約・支払い管理
           </StripeActionButton>
+        ) : isPaid ? (
+          <button
+            disabled
+            title="決済機能は近日公開予定です"
+            className="shrink-0 px-4 py-2 rounded-lg text-xs font-medium border border-gray-700 text-gray-500 cursor-not-allowed"
+          >
+            解約・支払い管理
+          </button>
         ) : (
           <Link
             href="/pricing"
