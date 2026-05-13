@@ -1,65 +1,64 @@
 # Code Tweet
 
-README やプロジェクト説明を AI が分析し、X（旧 Twitter）向けマーケティングポストを 5 件自動生成する個人開発者向け Web アプリ。
+README やプロジェクト説明を AI が分析し、X（旧 Twitter）向けのマーケティングポストを 5 件生成する個人開発者向け Web アプリ。
 
-本番 URL: **https://code-tweet.vercel.app/**
+- 本番 URL: https://code-tweet.vercel.app/
+- ドキュメント索引: [`docs/index.md`](./docs/index.md)
+- 公開前チェックリスト: [`docs/launch-checklist.md`](./docs/launch-checklist.md)
 
-ドキュメント索引: [`docs/index.md`](./docs/index.md)
-公開前チェックリスト: [`docs/launch-checklist.md`](./docs/launch-checklist.md)
+## 主な機能
 
----
+- GitHub リポジトリ URL から README を取得
+- テキスト直接入力で README や機能説明を貼り付け
+- 紹介、使い方、ユースケース、共感、CTA の流れで 5 件生成
+- 口調メモ、URL、ハッシュタグの任意指定
+- App Store / Google Play / GitHub / Web URL のリード文を自動付与
+- 関連ハッシュタグを最大 5 件まで補完
+- 各ポストの推奨投稿日時と理由を提案
+- `twitter-text` による X の 280 weighted length チェックと自動短縮
+- GitHub OAuth ログイン、リポジトリ一覧選択、残り回数表示
+- Pro プランでプライベートリポジトリ対応
+- Stripe Checkout / Webhook / Customer Portal による Pro 課金
+- 管理画面で利用状況、プラン変更、ゲスト利用回数リセットを操作
+- `/terms`、`/privacy`、`/contact`、`/about` を提供
 
-## 機能
+## プランと制限
 
-- **GitHub URL 連携**：公開リポジトリの URL を貼り付けて README を自動取得
-- **テキスト直接入力**：README や機能説明をそのまま貼り付け可能
-- **5 件のストーリーアーク生成**：紹介 → 使い方 → ユースケース → 共感 → CTA の流れで一貫したポストを生成
-- **口調・トーン指示**（任意）：「フランクな感じで」など自然文で指定
-- **URL リード文の自動付与**（任意）：App Store / Google Play / GitHub / Web を自動判定し、種別に応じたリード文（「App Store で無料公開中 →」など）を毎回違う言い回しで付ける
-- **ハッシュタグ補完**（任意）：指定タグに加え、関連タグを最大 5 つまで自動追加
-- **推奨投稿日時の提案**：各ポストごとに翌日〜7 日以内の日時と選定理由を AI が提案
-- **weighted length チェック・自動短縮**：X の 280 ウェイト上限を `twitter-text` で計測し、超過時は最大 4 回まで AI に短縮を依頼
-- **ワンクリックコピー**：各ポストをそのままコピーして投稿
-- **GitHub ログイン（任意）**：Supabase Auth + GitHub OAuth。ログインで利用上限が拡張される（V8 Phase A.5 で Google から切替）
-- **利用回数制限**（V8 Phase A）：ゲスト 3 回まで / 無料 月 3 / Pro 月 30（IP ハッシュ・ユーザー ID で計測）
-- **README 文字数上限**：ゲスト・無料 1,000 文字 / Pro 10,000 文字
-- **残り回数表示**（V8 Phase A.5）：フォーム上部に「あと X / Y 回」または「今月あと X / Y 回」+ プランバッジ
-- **プライベートリポジトリ対応**（Pro プラン）：`/settings` で GitHub Personal Access Token (PAT) を登録すると、非公開リポジトリの README も取得できる。トークンは AES-256-GCM で暗号化して Supabase に保存。fine-grained PAT（Repository access を絞り、Contents: Read-only のみ付与）を推奨
-- **自分のリポジトリから選ぶ**（V8 Phase A.5）：保存済み GitHub アクセストークンでリポジトリ一覧を表示・検索。無料は公開リポジトリのみ、Pro は公開＋非公開
-- **管理画面**：`ADMIN_EMAILS` の管理者のみ、登録ユーザー数、今月の生成数、直近7日の生成数、Pro/連携数、ユーザー別プラン変更、ゲスト利用回数リセットを確認・操作できる
-- **法務・問い合わせページ**：`/terms`、`/privacy`、`/contact` を用意
+| 区分 | 生成回数 | README 文字数 | リポジトリ |
+|---|---:|---:|---|
+| ゲスト | 3 回まで | 1,000 文字 | 公開リポジトリ |
+| 無料ログイン | 月 3 回 | 1,000 文字 | 公開リポジトリ、リポジトリ一覧選択 |
+| Pro | 月 30 回 | 10,000 文字 | 公開・非公開リポジトリ |
 
----
+Pro は月額 980 円。生成回数はログインユーザー単位で月初にリセットされる。ゲスト利用は IP ハッシュ単位の累計。
 
 ## 技術スタック
 
 | 役割 | 採用 |
-|------|------|
-| フレームワーク | Next.js 16.2.4（App Router） |
-| ランタイム | React 19.2.4 |
-| 言語 | TypeScript 5 |
-| スタイリング | Tailwind CSS v4 |
-| AI | Gemini API（`gemini-2.5-flash` / `@google/genai`） |
-| 認証 | Supabase Auth + GitHub OAuth（`@supabase/ssr` + `@supabase/supabase-js`） |
+|---|---|
+| フレームワーク | Next.js 16 App Router |
+| UI | React 19 / TypeScript / Tailwind CSS v4 |
+| AI | Gemini API `gemini-2.5-flash` / `@google/genai` |
+| 認証 | Supabase Auth + GitHub OAuth |
+| DB | Supabase |
 | 決済 | Stripe Checkout / Webhook / Customer Portal |
-| 文字数計算 | `twitter-text`（weighted length） |
+| 文字数計算 | `twitter-text` |
 | ホスティング | Vercel |
-
----
 
 ## セットアップ
 
-### 1. 依存パッケージのインストール
-
 ```bash
 npm install
+npm run dev
 ```
 
-### 2. 環境変数の設定
+ローカル起動後、http://localhost:3000 を開く。
 
-プロジェクトルートに `.env.local` を作成：
+## 環境変数
 
-```
+`.env.local` を作成する。
+
+```env
 GEMINI_API_KEY=your_gemini_api_key
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
@@ -70,224 +69,109 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_PRICE_ID=price_...
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ADMIN_EMAILS=you@example.com
+ADMIN_BASIC_USER=admin
+ADMIN_BASIC_PASSWORD=strong_password
+ADMIN_TOTP_SECRET=base32_totp_secret
+ADMIN_SESSION_SECRET=random_session_secret
+ADMIN_MAX_FAILED_ATTEMPTS=10
+ADMIN_LOCKOUT_MINUTES=30
 ```
 
-`GITHUB_PAT_ENCRYPTION_KEY` は以下のコマンドで生成：
+`GITHUB_PAT_ENCRYPTION_KEY` は 32 バイトの hex 文字列。
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
 | 変数名 | 用途 | 必須 |
-|--------|------|------|
-| `GEMINI_API_KEY` | Gemini API キー（[Google AI Studio](https://aistudio.google.com) で取得） | 必須 |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase プロジェクトの URL（Project Settings → API） | 必須 |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase の anon public key（同上） | 必須 |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase の service role key。利用ログ書き込みに使用 | 必須 |
-| `GITHUB_PAT_ENCRYPTION_KEY` | ユーザーの GitHub PAT を暗号化するサーバー秘密鍵（V3） | 必須 |
-| `STRIPE_SECRET_KEY` | Stripe の secret key。Checkout / Portal / Webhook 処理に使用 | 必須 |
-| `STRIPE_WEBHOOK_SECRET` | Stripe Webhook の署名検証 secret | 必須 |
-| `STRIPE_PRICE_ID` | Pro プラン（月額 ¥980）の Stripe Price ID | 必須 |
-| `NEXT_PUBLIC_APP_URL` | Checkout / Portal の戻り先 URL。未設定時はリクエスト origin を使用 | 任意 |
-| `ADMIN_EMAILS` | `/admin` に入れる管理者メールアドレス。複数の場合はカンマ区切り | 任意 |
+|---|---|---|
+| `GEMINI_API_KEY` | Gemini API キー | 必須 |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase Project URL | 必須 |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon public key | 必須 |
+| `SUPABASE_SERVICE_ROLE_KEY` | サーバー側 DB 操作、利用ログ、管理処理 | 必須 |
+| `GITHUB_PAT_ENCRYPTION_KEY` | GitHub OAuth token / PAT の暗号化 | 必須 |
+| `STRIPE_SECRET_KEY` | Stripe API | 必須 |
+| `STRIPE_WEBHOOK_SECRET` | Stripe Webhook 署名検証 | 必須 |
+| `STRIPE_PRICE_ID` | Pro プランの Price ID | 必須 |
+| `NEXT_PUBLIC_APP_URL` | Stripe の戻り先 URL。未設定時はリクエスト origin を使用 | 任意 |
+| `ADMIN_EMAILS` | `/admin` に入れる管理者メール。カンマ区切り可 | 任意 |
+| `ADMIN_BASIC_USER` | 管理画面 Basic 認証ユーザー | 管理画面を使う場合必須 |
+| `ADMIN_BASIC_PASSWORD` | 管理画面 Basic 認証パスワード | 管理画面を使う場合必須 |
+| `ADMIN_TOTP_SECRET` | 管理画面 TOTP 検証用 secret | 管理画面を使う場合必須 |
+| `ADMIN_SESSION_SECRET` | 管理画面セッション署名 secret | 管理画面を使う場合必須 |
+| `ADMIN_MAX_FAILED_ATTEMPTS` | 管理画面ログイン失敗上限。未設定時 10 | 任意 |
+| `ADMIN_LOCKOUT_MINUTES` | 管理画面ロック時間。未設定時 30 | 任意 |
 
-> サーバー専用キー（`GEMINI_API_KEY` / `SUPABASE_SERVICE_ROLE_KEY` / `GITHUB_PAT_ENCRYPTION_KEY` / `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `ADMIN_EMAILS`）は `NEXT_PUBLIC_` を付けないこと。絶対にクライアントに渡さない。
+サーバー専用キーに `NEXT_PUBLIC_` を付けないこと。`NEXT_PUBLIC_` が付く値はブラウザに公開される。
 
-### 3. Supabase / GitHub OAuth の準備
+## 外部サービス設定
 
-1. [Supabase](https://supabase.com/) でプロジェクトを作成し、Project URL / anon public key を取得
-2. [GitHub の OAuth Apps](https://github.com/settings/developers) で新規 OAuth App を作成。Authorization callback URL に `https://<Project Ref>.supabase.co/auth/v1/callback` を設定
-3. Supabase ダッシュボード → Authentication → Providers → **GitHub** を有効化し、Client ID / Secret を貼り付け
-4. Authentication → URL Configuration の **Redirect URLs** に下記を追加：
-   - `http://localhost:3000/auth/callback`
-   - `https://code-tweet.vercel.app/auth/callback`
+1. Supabase プロジェクトを作成し、Project URL / anon key / service role key を取得する。
+2. Supabase Auth で GitHub Provider を有効化する。
+3. GitHub OAuth App の callback URL に `https://<Project Ref>.supabase.co/auth/v1/callback` を設定する。
+4. Supabase の Redirect URLs に `http://localhost:3000/auth/callback` と本番 URL の `/auth/callback` を追加する。
+5. Stripe で月額 980 円の Price を作成し、`STRIPE_PRICE_ID` に設定する。
+6. Stripe Webhook に `/api/stripe/webhook` を登録し、署名 secret を `STRIPE_WEBHOOK_SECRET` に設定する。
 
-詳しい手順は [`docs/history/v8-02-freemium-phase-a-5.md`](./docs/history/v8-02-freemium-phase-a-5.md) を参照。
-※ V2 当時は Google OAuth を採用していました（[`v2-03-google-auth.md`](./docs/history/v2-03-google-auth.md)）。V8 Phase A.5（2026-05-06）で GitHub OAuth に一本化されています。
+Supabase の SQL は履歴ドキュメントを参照。
 
-### 4. Supabase テーブルの作成
-
-**V2.1 利用制限用**（`usage_logs` / `ip_usage_logs`）：SQL は [`docs/history/v2-04-rate-limit.md`](./docs/history/v2-04-rate-limit.md) を参照。
-
-**V3 PAT 保存用**（`user_tokens`）：SQL は [`docs/history/v3-01-private-repo.md`](./docs/history/v3-01-private-repo.md) を参照。
-
-**V8 Phase A サブスクリプション用**（`subscriptions`）：SQL は [`docs/history/v8-01-freemium-phase-a.md`](./docs/history/v8-01-freemium-phase-a.md) を参照。
-
-**V8 Phase A.5 OAuth トークン識別用**（`user_tokens.source` カラム）：SQL は [`docs/history/v8-02-freemium-phase-a-5.md`](./docs/history/v8-02-freemium-phase-a-5.md) を参照。
-
-### 5. 起動
-
-```bash
-npm run dev
-```
-
-[http://localhost:3000](http://localhost:3000) を開く。
-
----
+- 利用制限: [`docs/history/v2-04-rate-limit.md`](./docs/history/v2-04-rate-limit.md)
+- PAT 保存: [`docs/history/v3-01-private-repo.md`](./docs/history/v3-01-private-repo.md)
+- サブスクリプション: [`docs/history/v8-01-freemium-phase-a.md`](./docs/history/v8-01-freemium-phase-a.md)
+- OAuth token 識別: [`docs/history/v8-02-freemium-phase-a-5.md`](./docs/history/v8-02-freemium-phase-a-5.md)
 
 ## 使い方
 
-1. GitHub リポジトリ URL を入力 → 「README を取得」（または直接プロジェクト説明を貼り付け）
-2. 口調メモ・URL・ハッシュタグを入力（すべて任意）
-3. 「ポストを生成する」を押す
-4. 生成された 5 件のポストを推奨日時に合わせて投稿
-5. 利用上限を増やしたい場合は GitHub でログイン（3 回まで → 月 3 回・「自分のリポジトリから選ぶ」機能も解放）。月 30 回・プライベートリポジトリ対応の Pro プラン（¥980 / 月）は `/pricing` から購入可能
+1. GitHub リポジトリ URL を入力して README を取得する、または説明文を直接貼り付ける。
+2. 必要に応じて口調メモ、URL、ハッシュタグを入力する。
+3. 「ポストを生成する」を押す。
+4. 生成された 5 件をコピーし、推奨日時を参考に投稿する。
+5. 上限を増やす場合は GitHub でログインし、必要に応じて Pro にアップグレードする。
 
----
+## 主要構成
 
-## アーキテクチャ
-
-### リクエストフロー
-
-```
-[ブラウザ]                     [Next.js / Vercel]                  [外部 API]
-    │                                  │                              │
-    │ ① / にアクセス                    │                              │
-    │─────────────────────>│ proxy.ts → updateSession()                │
-    │                                  │ Server Component が getUser()  │
-    │                                  │     ──────> Supabase Auth      │
-    │ ② 未ログイン: AuthOverlay (ソフト案内) │                          │
-    │ ③ GitHub ログイン (任意)           │ /auth/callback で session 確立 │
-    │ ④ GitHub URL → README 取得        │ POST /api/github              │
-    │                                  │     ──────> GitHub REST API   │
-    │ ⑤ ポスト生成                      │ POST /api/generate            │
-    │                                  │ 利用回数チェック (usage_logs / │
-    │                                  │   ip_usage_logs)              │
-    │                                  │     ──────> Gemini API        │
-    │                                  │ weighted length 検証・短縮    │
-    │ ⑥ 5 件のポストを表示              │                              │
-```
-
-### ディレクトリ構成
-
-```
+```text
 src/
-├── app/
-│   ├── api/
-│   │   ├── generate/route.ts   # Gemini でポスト生成（利用回数チェック付き）
-│   │   ├── github/route.ts     # GitHub README 取得（公開・プライベート対応）
-│   │   ├── repos/route.ts      # ログインユーザーのリポジトリ一覧（V8 Phase A.5）
-│   │   └── usage/route.ts      # 残り回数取得（V8 Phase A.5）
-│   ├── auth/
-│   │   ├── callback/route.ts   # GitHub OAuth コールバック（provider_token 暗号化保存）
-│   │   └── signout/route.ts    # ログアウト
-│   ├── about/
-│   │   └── page.tsx            # Code Tweet の説明ページ（V1 採用 / 縦1カラムの使い方ガイド + 利用枠要約）
-│   ├── pricing/
-│   │   └── page.tsx            # 料金プラン（D2 採用 / 無料と Pro の機能比較表 + Stripe Checkout）
-│   ├── settings/
-│   │   └── page.tsx            # 設定ページ（プラン表示・Pro向けPAT管理・アカウント削除）
-│   ├── admin/
-│   │   ├── page.tsx            # 管理ダッシュボード（利用状況・プラン変更）
-│   │   └── actions.ts          # 管理者向け Server Actions
-│   ├── terms/
-│   │   └── page.tsx            # 利用規約
-│   ├── privacy/
-│   │   └── page.tsx            # プライバシーポリシー
-│   ├── contact/
-│   │   └── page.tsx            # 問い合わせ導線
-│   ├── layout.tsx              # 全体レイアウト（Header 差し込み）
-│   └── page.tsx                # トップ（Server Component）
-├── components/
-│   ├── AuthOverlay.tsx         # 未ログイン時のソフト案内バナー
-│   ├── GenerateForm.tsx        # フォーム本体（Client Component）
-│   ├── Header.tsx              # ヘッダー（ログイン状態判定）
-│   ├── HeaderActions.tsx       # ハンバーガーメニュー（プランバッジ・GitHub ログイン）
-│   ├── RepoSelectorModal.tsx   # 自分のリポジトリ選択モーダル（V8 Phase A.5）
-│   ├── SettingsForm.tsx        # Pro向けPAT登録・削除、無料向けPro案内、アカウント削除
-│   └── TweetCard.tsx           # 生成ポストカード
-├── lib/
-│   ├── encryption.ts           # AES-256-GCM 暗号化/復号（V3）
-│   ├── gemini.ts               # プロンプト生成・パース・自動短縮
-│   ├── rateLimit.ts            # 月単位の利用回数制限（V8 Phase A 以降）
-│   ├── subscription.ts         # tier 取得ヘルパー（V8 Phase A）
-│   ├── usage.ts                # 残り回数取得ヘルパー（V8 Phase A.5）
-│   └── supabase/
-│       ├── admin.ts            # service role クライアント
-│       ├── client.ts           # ブラウザ用クライアント
-│       ├── server.ts           # サーバー用クライアント（cookies）
-│       └── middleware.ts       # cookie リフレッシュヘルパ
-├── proxy.ts                    # 全リクエストで Supabase セッション更新
-└── types/
-    └── tweet.ts                # 共通型定義
+  app/
+    api/generate/route.ts          # Gemini 生成、制限チェック
+    api/github/route.ts            # README 取得
+    api/repos/route.ts             # GitHub リポジトリ一覧
+    api/tokens/route.ts            # Pro 向け PAT 登録・削除
+    api/stripe/*                   # Checkout / Portal / Webhook
+    auth/callback/route.ts         # GitHub OAuth callback
+    admin/                         # 管理画面
+    pricing/page.tsx               # 料金表
+    settings/page.tsx              # プラン、PAT、アカウント削除
+  components/
+    GenerateForm.tsx               # 生成フォーム
+    RepoSelectorModal.tsx          # リポジトリ選択
+    Header.tsx / HeaderActions.tsx # ナビゲーション
+  lib/
+    gemini.ts                      # プロンプト、生成、短縮
+    rateLimit.ts                   # 利用制限
+    usage.ts                       # 残り回数
+    stripe.ts                      # Stripe helper
+    adminSecurity.ts               # 管理画面認証
+    supabase/                      # Supabase clients
+  proxy.ts                         # Supabase セッション更新
 ```
 
-> `src/proxy.ts` は Next.js 16 のミドルウェア（旧 `middleware.ts`）。すべての画面・API リクエストで Supabase の cookie をリフレッシュする。
-
----
-
-## 開発状況
-
-STEP 5（Vercel デプロイ）まで完了し、本番稼働中。
-
-V2 完了（2026-05-01〜02）：
-
-- ✅ Feature 1: サーバー管理 API キー
-- ✅ Feature 2: GitHub URL 連携（公開リポジトリのみ）
-- ✅ Feature 3: ユーザー認証（当時は Google ログイン / Supabase Auth・任意、現在は GitHub OAuth に移行済み）
-- ✅ V2.1: 利用回数制限（当時はゲスト 5 回 / ログイン 10 回 / 日、現在はゲスト 3 回まで / 無料 月3 / Pro 月30）・`GITHUB_TOKEN` 削除
-- 見送り Feature 4/5: ポスト保存・履歴・検索（X の予約投稿で代替可能なため）
-
-V3 完了（2026-05-04）：
-
-- ✅ GitHub プライベートリポジトリ対応（ユーザー PAT を AES-256-GCM 暗号化保存）
-- ✅ `/settings` ページ：PAT 登録・削除・取得ガイド
-- ✅ ハンバーガーメニュー
-
-詳細は [`docs/history/v3-01-private-repo.md`](./docs/history/v3-01-private-repo.md) を参照。
-
-V8 Phase A 完了（2026-05-04）：
-
-- ✅ 利用回数制限導入（ゲスト 3回まで / 無料 月3 / Pro 月30）
-- ✅ `subscriptions` テーブル + tier ベースの機能差別化
-- ✅ プライベートリポジトリを Pro 限定に巻き上げ
-
-詳細は [`docs/history/v8-01-freemium-phase-a.md`](./docs/history/v8-01-freemium-phase-a.md) を参照。
-
-V8 Phase A.5 完了（2026-05-06）：
-
-- ✅ 残り回数表示・プランバッジ
-- ✅ 上限到達エラーに GitHub ログイン / Pro プラン CTA
-- ✅ Google ログイン → **GitHub OAuth に一本化**
-- ✅ 自分のリポジトリから選ぶモーダル UI
-- ✅ 要件定義書・事業計画書を `docs/product/` に整備
-
-現行実装では、Pro ユーザー向けの手動 PAT 登録 UI は `/settings` に残している。GitHub OAuth の provider token が使えない・期限切れになる場合でも、fine-grained PAT を登録してプライベートリポジトリを取得できるようにするため。
-
-詳細は [`docs/history/v8-02-freemium-phase-a-5.md`](./docs/history/v8-02-freemium-phase-a-5.md) を参照。
-
-### ロードマップ
-
-| バージョン | 機能 | 状態 |
-|-----------|------|------|
-| V3 | GitHub プライベートリポジトリ対応 | ✅ 完了 |
-| V8 Phase A | 月単位制限・tier ベース機能差別化 | ✅ 完了 |
-| V8 Phase A.5 | UI 作り込み + GitHub OAuth 一本化 + リポジトリ選択 UI | ✅ 完了 |
-| V8 Phase B | Stripe 統合（Checkout・Webhook・Customer Portal） | ✅ 実装済み |
-| V5 | Claude API も選択可能に | 未着手 |
-| V9 | Instagram・Threads など他 SNS 対応 | 保留 |
-
-### 次にやること
-
-1. **Pro 向け運用確認**
-   Customer Portal、解約時の無料プラン戻し、GitHub private repo 取得の動作確認を行う。
-2. **需要確認後の拡張**
-   Claude API 選択や他 SNS 対応は、Pro 導入後の利用状況を見て判断する。
-
----
+`src/proxy.ts` は Next.js 16 の proxy。全画面・API リクエストで Supabase の cookie を更新する。
 
 ## スクリプト
 
 | コマンド | 用途 |
-|---------|------|
+|---|---|
 | `npm run dev` | 開発サーバー起動 |
 | `npm run build` | 本番ビルド |
 | `npm start` | 本番ビルドの起動 |
 | `npm run lint` | ESLint 実行 |
 
-公開前は [`docs/launch-checklist.md`](./docs/launch-checklist.md) に沿って、環境変数・外部サービス・主要画面を確認する。
+## 現在の状態
 
----
+本番稼働中。Vercel デプロイ、GitHub OAuth、利用制限、Pro プラン、Stripe 課金、管理画面まで実装済み。今後の拡張候補は Claude API 選択、他 SNS 対応、投稿履歴保存。
+
+詳細な変更履歴は [`docs/history/`](./docs/history/) を参照。
 
 ## 作者
 
