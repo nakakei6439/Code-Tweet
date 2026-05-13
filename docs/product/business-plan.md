@@ -74,7 +74,7 @@
 
 ## 5. 収益モデル（フリーミアム）
 
-### 5.1 プラン構造（V8 Phase B 以降アクティブ化）
+### 5.1 プラン構造
 
 | プラン | 月額 | 生成回数 | README 上限 | 主要機能 |
 |--------|------|---------|------------|---------|
@@ -152,7 +152,7 @@
 | V3 | プライベートリポジトリ対応（PAT 暗号化） | ✅ 完了 | 完了 |
 | **V8 Phase A** | 月単位制限・tier ベース機能差別化 | ✅ 完了 | 2026-05-04 |
 | **V8 Phase A.5** | UI 作り込み + GitHub OAuth + リポジトリ選択 UI + ドキュメント | ✅ 完了 | 2026-05-06 |
-| **V8 Phase B** | Stripe 統合（Checkout / Webhook / Customer Portal） | 未着手 | 2026-05 末予定 |
+| **V8 Phase B** | Stripe 統合（Checkout / Webhook / Customer Portal） | ✅ 実装済み | 2026-05 |
 | V5 | Claude API 選択（Pro 限定） | 未着手 | Phase B 後 |
 | V7 | Google AdSense（無料ユーザー向け広告） | 検討中 | V8 Phase B が安定後 |
 | V9 | Instagram / Threads 対応 | 保留 | 需要次第 |

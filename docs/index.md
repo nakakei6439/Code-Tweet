@@ -13,6 +13,7 @@ Code Tweet の現在仕様、事業計画、実装履歴をまとめたドキュ
 | [product/business-plan.md](./product/business-plan.md) | 事業計画。ターゲット、収益モデル、KPI、ロードマップ |
 | [launch-checklist.md](./launch-checklist.md) | 一般公開前の環境変数・外部サービス・手動確認チェックリスト |
 | [development-guide.md](./development-guide.md) | 開発フローの参照ガイド |
+| [admin-security.sql](./admin-security.sql) | 管理画面のBasic認証/TOTP失敗回数ロック用テーブル |
 
 ---
 
@@ -53,9 +54,8 @@ Code Tweet の現在仕様、事業計画、実装履歴をまとめたドキュ
 
 | 優先度 | 内容 |
 |---|---|
-| 1 | V8 Phase B: Stripe 統合（Checkout・Webhook・Customer Portal） |
-| 2 | Pro 向け運用確認（Customer Portal、解約時の無料プラン戻し、private repo 取得確認） |
-| 3 | 生成履歴保存、エラー監視、問い合わせフォームは利用状況を見て優先度判断 |
-| 4 | Claude API 選択や他 SNS 対応は、Pro 導入後の利用状況で判断 |
+| 1 | Pro 向け運用確認（Checkout、Webhook、Customer Portal、解約時の無料プラン戻し、private repo 取得確認） |
+| 2 | 生成履歴保存、エラー監視、問い合わせフォームは利用状況を見て優先度判断 |
+| 3 | Claude API 選択や他 SNS 対応は、Pro 導入後の利用状況で判断 |
 
 生成履歴保存は未実装。初期は見送りだったが、継続利用や再利用の価値があるため、Stripe 導入後または利用状況を見て再検討する。

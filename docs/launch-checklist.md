@@ -11,6 +11,10 @@
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase の anon public key が入っている |
 | `SUPABASE_SERVICE_ROLE_KEY` | サーバー側の利用回数記録に使える |
 | `GITHUB_PAT_ENCRYPTION_KEY` | 32バイトのhex文字列で、OAuthトークン暗号化に使える |
+| `STRIPE_SECRET_KEY` | Stripe Checkout / Portal / Webhook で使える |
+| `STRIPE_WEBHOOK_SECRET` | Webhook 署名検証に使える |
+| `STRIPE_PRICE_ID` | Pro プラン（月額 ¥980）の Price ID が入っている |
+| `NEXT_PUBLIC_APP_URL` | 本番 URL が入っている（未設定時はリクエスト origin を使う） |
 
 ## 外部サービス
 
@@ -21,6 +25,9 @@
 | Supabase Redirect URLs | `http://localhost:3000/auth/callback` と本番URLが設定済み |
 | Supabase Tables | `usage_logs`, `ip_usage_logs`, `subscriptions`, `user_tokens` が作成済み |
 | Vercel | 本番環境変数が `.env.local` と同等に設定済み |
+| Stripe Product / Price | Pro 月額 ¥980 の recurring Price が作成済み |
+| Stripe Webhook | `/api/stripe/webhook` に `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted` が送信される |
+| Stripe Customer Portal | Customer Portal が有効で、解約・カード変更ができる |
 | GitHub OAuth Scopes | `read:user user:email` でログインできる |
 | Pro PAT | Pro ユーザーで fine-grained PAT（Contents: Read-only）を保存・削除できる |
 
@@ -30,9 +37,10 @@
 |---|---|
 | `/` | 未ログインで3回までの案内、フォーム、GitHubログイン導線が見える |
 | `/about` | 初見でも何ができるか短時間で分かる |
-| `/pricing` | Proが準備中であり、決済できるように見えすぎない |
+| `/pricing` | ログイン済み無料ユーザーが Pro Checkout に進める |
 | `/settings` | 未ログイン時にログイン案内が出る |
 | `/settings` | 無料ユーザーは Pro 案内、Pro ユーザーは PAT 管理とアカウント削除が見える |
+| `/settings` | Pro ユーザーが Customer Portal に進める |
 | `/admin` | `ADMIN_EMAILS` の管理者だけ利用状況・プラン変更・ゲスト回数リセットが見える |
 | `/terms` | 利用規約が表示される |
 | `/privacy` | プライバシーポリシーが表示される |
@@ -41,6 +49,8 @@
 | GitHub連携 | 公開リポジトリURLからREADME取得できる |
 | GitHub連携 | README がプラン上限を超える場合、フォーム側で文字数エラーになる |
 | リポジトリ選択 | 無料ユーザーは公開リポジトリ一覧、Pro ユーザーは公開＋非公開リポジトリ一覧を選べる |
+| Stripe Webhook | Checkout 完了後に `subscriptions.tier='paid'` になる |
+| Stripe Webhook | 解約後に `subscriptions.tier='free'` に戻る |
 | レスポンシブ | スマホ幅でヘッダー、フォーム、生成カードが崩れない |
 
 ## リリース前コマンド

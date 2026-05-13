@@ -41,6 +41,7 @@ README やプロジェクト説明を AI が分析し、X（旧 Twitter）向け
 | スタイリング | Tailwind CSS v4 |
 | AI | Gemini API（`gemini-2.5-flash` / `@google/genai`） |
 | 認証 | Supabase Auth + GitHub OAuth（`@supabase/ssr` + `@supabase/supabase-js`） |
+| 決済 | Stripe Checkout / Webhook / Customer Portal |
 | 文字数計算 | `twitter-text`（weighted length） |
 | ホスティング | Vercel |
 
@@ -64,6 +65,10 @@ NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
 GITHUB_PAT_ENCRYPTION_KEY=your_32byte_hex_key
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRICE_ID=price_...
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ADMIN_EMAILS=you@example.com
 ```
 
@@ -80,9 +85,13 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase の anon public key（同上） | 必須 |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase の service role key。利用ログ書き込みに使用 | 必須 |
 | `GITHUB_PAT_ENCRYPTION_KEY` | ユーザーの GitHub PAT を暗号化するサーバー秘密鍵（V3） | 必須 |
+| `STRIPE_SECRET_KEY` | Stripe の secret key。Checkout / Portal / Webhook 処理に使用 | 必須 |
+| `STRIPE_WEBHOOK_SECRET` | Stripe Webhook の署名検証 secret | 必須 |
+| `STRIPE_PRICE_ID` | Pro プラン（月額 ¥980）の Stripe Price ID | 必須 |
+| `NEXT_PUBLIC_APP_URL` | Checkout / Portal の戻り先 URL。未設定時はリクエスト origin を使用 | 任意 |
 | `ADMIN_EMAILS` | `/admin` に入れる管理者メールアドレス。複数の場合はカンマ区切り | 任意 |
 
-> サーバー専用キー（`GEMINI_API_KEY` / `SUPABASE_SERVICE_ROLE_KEY` / `GITHUB_PAT_ENCRYPTION_KEY` / `ADMIN_EMAILS`）は `NEXT_PUBLIC_` を付けないこと。絶対にクライアントに渡さない。
+> サーバー専用キー（`GEMINI_API_KEY` / `SUPABASE_SERVICE_ROLE_KEY` / `GITHUB_PAT_ENCRYPTION_KEY` / `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `ADMIN_EMAILS`）は `NEXT_PUBLIC_` を付けないこと。絶対にクライアントに渡さない。
 
 ### 3. Supabase / GitHub OAuth の準備
 
@@ -122,7 +131,7 @@ npm run dev
 2. 口調メモ・URL・ハッシュタグを入力（すべて任意）
 3. 「ポストを生成する」を押す
 4. 生成された 5 件のポストを推奨日時に合わせて投稿
-5. 利用上限を増やしたい場合は GitHub でログイン（3 回まで → 月 3 回・「自分のリポジトリから選ぶ」機能も解放）。月 30 回・プライベートリポジトリ対応の Pro プラン（¥980 / 月）は V8 Phase B で導入予定
+5. 利用上限を増やしたい場合は GitHub でログイン（3 回まで → 月 3 回・「自分のリポジトリから選ぶ」機能も解放）。月 30 回・プライベートリポジトリ対応の Pro プラン（¥980 / 月）は `/pricing` から購入可能
 
 ---
 
@@ -165,7 +174,7 @@ src/
 │   ├── about/
 │   │   └── page.tsx            # Code Tweet の説明ページ（V1 採用 / 縦1カラムの使い方ガイド + 利用枠要約）
 │   ├── pricing/
-│   │   └── page.tsx            # 料金プラン（D2 採用 / 無料と Pro の機能比較表が主役、決済は準備中）
+│   │   └── page.tsx            # 料金プラン（D2 採用 / 無料と Pro の機能比較表 + Stripe Checkout）
 │   ├── settings/
 │   │   └── page.tsx            # 設定ページ（プラン表示・Pro向けPAT管理・アカウント削除）
 │   ├── admin/
@@ -238,7 +247,7 @@ V8 Phase A 完了（2026-05-04）：
 V8 Phase A.5 完了（2026-05-06）：
 
 - ✅ 残り回数表示・プランバッジ
-- ✅ 上限到達エラーに GitHub ログイン / Pro プラン CTA（準備中）
+- ✅ 上限到達エラーに GitHub ログイン / Pro プラン CTA
 - ✅ Google ログイン → **GitHub OAuth に一本化**
 - ✅ 自分のリポジトリから選ぶモーダル UI
 - ✅ 要件定義書・事業計画書を `docs/product/` に整備
@@ -254,17 +263,15 @@ V8 Phase A.5 完了（2026-05-06）：
 | V3 | GitHub プライベートリポジトリ対応 | ✅ 完了 |
 | V8 Phase A | 月単位制限・tier ベース機能差別化 | ✅ 完了 |
 | V8 Phase A.5 | UI 作り込み + GitHub OAuth 一本化 + リポジトリ選択 UI | ✅ 完了 |
-| V8 Phase B | Stripe 統合（Checkout・Webhook・Customer Portal） | 未着手 |
+| V8 Phase B | Stripe 統合（Checkout・Webhook・Customer Portal） | ✅ 実装済み |
 | V5 | Claude API も選択可能に | 未着手 |
 | V9 | Instagram・Threads など他 SNS 対応 | 保留 |
 
 ### 次にやること
 
-1. **V8 Phase B: Stripe 決済導入**
-   `/pricing` から Checkout へ進めるようにし、Webhook で `subscriptions.tier` を `paid` に更新する。
-2. **Pro 向け運用確認**
+1. **Pro 向け運用確認**
    Customer Portal、解約時の無料プラン戻し、GitHub private repo 取得の動作確認を行う。
-3. **需要確認後の拡張**
+2. **需要確認後の拡張**
    Claude API 選択や他 SNS 対応は、Pro 導入後の利用状況を見て判断する。
 
 ---

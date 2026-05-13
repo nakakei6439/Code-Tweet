@@ -184,12 +184,12 @@ export default function SettingsForm({ hasToken, isPaid }: Props) {
               </svg>
               <h2 className="text-white font-semibold text-base">プライベートリポジトリ対応</h2>
               <span className="text-xs font-medium text-fuchsia-400 bg-fuchsia-950/50 border border-fuchsia-800 px-2 py-0.5 rounded-full">
-                Pro（準備中）
+                Pro
               </span>
             </div>
             <p className="text-gray-400 text-sm">
-              Pro プラン（¥980 / 月）は準備中です。公開後は、GitHub 連携で取得した非公開リポジトリの README も
-              自動取得でき、リポジトリ一覧から選んで生成できる予定です。
+              Pro プラン（¥980 / 月）では、GitHub 連携で取得した非公開リポジトリの README も
+              自動取得でき、リポジトリ一覧から選んで生成できます。
             </p>
             <Link
               href="/pricing"
@@ -200,7 +200,7 @@ export default function SettingsForm({ hasToken, isPaid }: Props) {
               Pro プランを見る
             </Link>
             <p className="text-gray-400 text-xs">
-              ※ Pro プランの決済機能は近日公開予定です。
+              決済後はこの画面で支払い管理やプライベートリポジトリ連携を設定できます。
             </p>
           </div>
         </div>

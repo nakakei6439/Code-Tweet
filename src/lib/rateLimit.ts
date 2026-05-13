@@ -66,7 +66,7 @@ export async function checkUserLimit(
     return {
       ok: false,
       status: 429,
-      message: `今月の生成上限（${limit}回）に達しました。Pro プラン（¥980 / 月、準備中）では月 ${USER_PAID_MONTHLY_LIMIT} 回まで使えます。`,
+      message: `今月の生成上限（${limit}回）に達しました。Pro プラン（¥980 / 月）では月 ${USER_PAID_MONTHLY_LIMIT} 回まで使えます。`,
       code: "free_limit",
     };
   }

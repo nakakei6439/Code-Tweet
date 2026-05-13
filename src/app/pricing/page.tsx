@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PROJECT_TEXT_LIMITS } from "@/lib/generateLimits";
+import { createClient } from "@/lib/supabase/server";
+import { getSubscriptionTier } from "@/lib/subscription";
+import StripeActionButton from "@/components/StripeActionButton";
 
 export const metadata: Metadata = {
   title: "料金プラン",
-  description: "Code Tweetの無料プランとProプランの違いを機能比較表で確認できます。Proプランの決済機能は準備中です。",
+  description: "Code Tweetの無料プランとProプランの違いを機能比較表で確認できます。",
 };
 
 interface PlanFeature {
@@ -22,7 +25,7 @@ interface PlanTier {
   readmeLimitLabel: string;
   bestFor: string;
   features: PlanFeature[];
-  cta: { label: string; href: string };
+  cta: { label: string; href?: string };
   available: boolean;
   badge?: string;
 }
@@ -62,9 +65,8 @@ const PLAN_TIERS: PlanTier[] = [
       { label: "公開リポジトリ一覧から選択", included: true },
       { label: "プライベートリポジトリ対応", included: true },
     ],
-    cta: { label: "近日公開", href: "#" },
-    available: false,
-    badge: "準備中",
+    cta: { label: "Pro にアップグレード" },
+    available: true,
   },
 ];
 
@@ -77,7 +79,13 @@ function planHasFeature(planSlug: string, label: string): boolean {
   return plan?.features.find((f) => f.label === label)?.included ?? false;
 }
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const tier = user ? await getSubscriptionTier(user.id) : null;
+  const isPaid = tier === "paid";
+  const isAuthenticated = !!user;
+
   return (
     <main className="min-h-screen bg-gray-950 px-4 py-16 text-gray-200">
       <div className="mx-auto max-w-5xl">
@@ -189,7 +197,28 @@ export default function PricingPage() {
                 </th>
                 {PLAN_TIERS.map((plan) => (
                   <td key={plan.slug} className="px-5 py-5">
-                    {plan.available ? (
+                    {plan.slug === "pro" && isPaid ? (
+                      <Link
+                        href="/settings"
+                        className="inline-flex items-center justify-center rounded-lg border border-gray-700 px-4 py-2 text-xs font-semibold text-gray-100 transition-colors hover:border-gray-600 hover:bg-gray-800"
+                      >
+                        支払いを管理する
+                      </Link>
+                    ) : plan.slug === "pro" && isAuthenticated ? (
+                      <StripeActionButton
+                        action="checkout"
+                        className="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2 text-xs font-semibold text-gray-950 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
+                      >
+                        {plan.cta.label}
+                      </StripeActionButton>
+                    ) : plan.slug === "pro" ? (
+                      <Link
+                        href="/"
+                        className="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2 text-xs font-semibold text-gray-950 transition-colors hover:bg-gray-100"
+                      >
+                        GitHubでログインしてアップグレード
+                      </Link>
+                    ) : plan.available && plan.cta.href ? (
                       <Link
                         href={plan.cta.href}
                         className="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2 text-xs font-semibold text-gray-950 transition-colors hover:bg-gray-100"
