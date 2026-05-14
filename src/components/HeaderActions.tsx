@@ -15,6 +15,8 @@ type Props = {
 export default function HeaderActions({ isAuthenticated, email, tier, isAdmin }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
+  const [isPortalPending, setIsPortalPending] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,6 +40,25 @@ export default function HeaderActions({ isAuthenticated, email, tier, isAdmin }:
         scopes: "read:user user:email",
       },
     });
+  }
+
+  async function handleOpenPortal() {
+    if (isPortalPending) return;
+    setIsPortalPending(true);
+    setPortalError(null);
+    try {
+      const res = await fetch("/api/stripe/portal", { method: "POST" });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.url) {
+        setPortalError(data?.error ?? "解約ページの作成に失敗しました。");
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      setPortalError("通信に失敗しました。時間をおいて再度お試しください。");
+    } finally {
+      setIsPortalPending(false);
+    }
   }
 
   return (
@@ -134,6 +155,19 @@ export default function HeaderActions({ isAuthenticated, email, tier, isAdmin }:
               >
                 プラン
               </Link>
+            )}
+            {tier === "paid" && (
+              <button
+                type="button"
+                onClick={handleOpenPortal}
+                disabled={isPortalPending}
+                className="w-full text-left flex items-center px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isPortalPending ? "移動中..." : "支払い・解約管理"}
+              </button>
+            )}
+            {portalError && (
+              <p className="px-3 py-1 text-[11px] text-red-300">{portalError}</p>
             )}
             <form action="/auth/signout" method="post">
               <button

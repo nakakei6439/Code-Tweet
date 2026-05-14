@@ -9,12 +9,35 @@ type Props = {
   isPaid: boolean;
 };
 
-function AccountDeletionSection() {
+function AccountDeletionSection({ isPaid }: { isPaid: boolean }) {
   const [confirmation, setConfirmation] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const canDelete = confirmation === "DELETE" && !isDeleting;
+  const [needsCancel, setNeedsCancel] = useState(false);
+  const [isPortalPending, setIsPortalPending] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
+  const blockDelete = isPaid || needsCancel;
+  const canDelete = confirmation === "DELETE" && !isDeleting && !blockDelete;
+
+  async function handleOpenPortal() {
+    if (isPortalPending) return;
+    setIsPortalPending(true);
+    setPortalError(null);
+    try {
+      const res = await fetch("/api/stripe/portal", { method: "POST" });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.url) {
+        setPortalError(data?.error ?? "解約ページの作成に失敗しました。");
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      setPortalError("通信に失敗しました。時間をおいて再度お試しください。");
+    } finally {
+      setIsPortalPending(false);
+    }
+  }
 
   useEffect(() => {
     function handleEscape(e: KeyboardEvent) {
@@ -54,6 +77,7 @@ function AccountDeletionSection() {
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         setError(data?.error ?? "アカウントの削除に失敗しました。時間をおいて再度お試しください。");
+        if (data?.needsCancel) setNeedsCancel(true);
         setIsDeleting(false);
         setIsConfirmOpen(false);
         return;
@@ -84,6 +108,29 @@ function AccountDeletionSection() {
             </p>
           </div>
 
+          {blockDelete && (
+            <div className="rounded-lg border border-amber-800/70 bg-amber-950/30 px-4 py-4 space-y-3">
+              <p className="text-amber-200 text-xs font-semibold">
+                Pro プラン契約中はアカウントを削除できません
+              </p>
+              <p className="text-amber-100/80 text-xs leading-5">
+                先に Stripe カスタマーポータルからサブスクリプションを解約してください。Stripe 側で解約が完了すると、このページから削除できるようになります（反映に少し時間がかかる場合があります）。
+              </p>
+              <button
+                type="button"
+                onClick={handleOpenPortal}
+                disabled={isPortalPending}
+                className="inline-flex min-h-10 items-center justify-center rounded-lg border border-amber-700 bg-amber-900/30 px-4 text-xs font-semibold
+                  text-amber-100 transition-colors hover:bg-amber-900/50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isPortalPending ? "移動中..." : "Stripe カスタマーポータルを開く"}
+              </button>
+              {portalError && (
+                <p className="text-[11px] text-red-300">{portalError}</p>
+              )}
+            </div>
+          )}
+
           <label className="block">
             <span className="block text-sm font-medium text-gray-300 mb-2">
               削除するには DELETE と入力してください
@@ -92,7 +139,7 @@ function AccountDeletionSection() {
               type="text"
               value={confirmation}
               onChange={(e) => setConfirmation(e.target.value)}
-              disabled={isDeleting}
+              disabled={isDeleting || blockDelete}
               autoComplete="off"
               className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white
                 outline-none transition-colors placeholder:text-gray-600 focus:border-red-500 disabled:opacity-60"
@@ -204,7 +251,7 @@ export default function SettingsForm({ hasToken, isPaid }: Props) {
             </p>
           </div>
         </div>
-        <AccountDeletionSection />
+        <AccountDeletionSection isPaid={isPaid} />
       </div>
     );
   }
@@ -212,7 +259,7 @@ export default function SettingsForm({ hasToken, isPaid }: Props) {
   return (
     <div className="space-y-6">
       <PatSection initialHasToken={hasToken} />
-      <AccountDeletionSection />
+      <AccountDeletionSection isPaid={isPaid} />
     </div>
   );
 }

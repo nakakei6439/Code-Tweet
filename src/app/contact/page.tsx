@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import StripePortalCard from "@/components/StripePortalCard";
 
 export const metadata: Metadata = {
   title: "問い合わせ",
-  description: "Code Tweet への問い合わせ先を案内します。",
+  description: "Code Tweet への問い合わせ先と解約手続きを案内します。",
 };
 
 export default function ContactPage() {
@@ -22,6 +23,7 @@ export default function ContactPage() {
         <hr className="my-12 border-gray-800" />
 
         <div className="space-y-4">
+          <StripePortalCard />
           <a
             href="https://x.com/nakakei6439"
             target="_blank"
