@@ -17,6 +17,7 @@ README やプロジェクト説明を AI が分析し、X（旧 Twitter）向け
 - 各ポストの推奨投稿日時と理由を提案
 - `twitter-text` による X の 280 weighted length チェックと自動短縮
 - GitHub OAuth ログイン、リポジトリ一覧選択、残り回数表示
+- Pro ユーザー向けの生成履歴保存・削除（README本文は保存しない）
 - Pro プランでプライベートリポジトリ対応
 - Stripe Checkout / Webhook / Customer Portal による Pro 課金
 - 管理画面で利用状況、プラン変更、ゲスト利用回数リセットを操作
@@ -120,6 +121,7 @@ Supabase の SQL は履歴ドキュメントを参照。
 - サブスクリプション: [`docs/history/v8-01-freemium-phase-a.md`](./docs/history/v8-01-freemium-phase-a.md)
 - OAuth token 識別: [`docs/history/v8-02-freemium-phase-a-5.md`](./docs/history/v8-02-freemium-phase-a-5.md)
 - 管理画面ログインロック: [`docs/admin-security.sql`](./docs/admin-security.sql)（管理画面を使う場合に Supabase SQL Editor で適用）
+- 生成履歴: [`docs/tweet-generations.sql`](./docs/tweet-generations.sql)
 
 ## 使い方
 
@@ -170,7 +172,7 @@ src/
 
 ## 現在の状態
 
-本番稼働中。Vercel デプロイ、GitHub OAuth、利用制限、Pro プラン、Stripe 課金、管理画面まで実装済み。今後の拡張候補は Claude API 選択、他 SNS 対応、投稿履歴保存。
+本番稼働中。Vercel デプロイ、GitHub OAuth、利用制限、Pro プラン、Stripe 課金、管理画面、生成履歴まで実装済み。今後の拡張候補は Claude API 選択、他 SNS 対応、エラー監視。
 
 詳細な変更履歴は [`docs/history/`](./docs/history/) を参照。
 

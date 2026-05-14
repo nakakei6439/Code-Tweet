@@ -73,6 +73,7 @@ GitHub リポジトリの README やプロジェクト説明から、X（旧 Twi
 | F-016 | README / プロジェクト説明の文字数上限（ゲスト・無料 1,000 文字、Pro 10,000 文字） | 全ロール | V8 Phase A |
 | F-017 | 管理画面（ユーザー数、生成数、直近7日集計、Pro/連携数、ユーザー別プラン変更、ゲスト利用回数リセット） | 管理者 | 現在仕様 |
 | F-018 | 利用規約・プライバシーポリシー・問い合わせページ | 全ロール | 現在仕様 |
+| F-019 | 生成履歴保存（生成結果、推奨投稿日時、URL、ハッシュタグ、生成日時。README本文・追加プロンプト本文は保存しない） | Pro | 現在仕様 |
 
 ### 4.2 V8 Phase A.5 で追加（実装済み）
 
@@ -98,6 +99,7 @@ GitHub リポジトリの README やプロジェクト説明から、X（旧 Twi
 |----|------|---------|
 | F-203 | Claude API 選択（Pro 限定） | V5 |
 | F-204 | Instagram / Threads 対応 | V9（保留） |
+| F-205 | 履歴の検索・お気に入り・個別削除 | 保留 |
 
 ---
 
@@ -111,7 +113,7 @@ GitHub リポジトリの README やプロジェクト説明から、X（旧 Twi
 ### 5.2 セキュリティ
 - **API キーはサーバー専用**：`GEMINI_API_KEY` / `SUPABASE_SERVICE_ROLE_KEY` / `GITHUB_PAT_ENCRYPTION_KEY` は `NEXT_PUBLIC_` を付けず、クライアントに渡さない
 - **ユーザー PAT・OAuth トークンは AES-256-GCM 暗号化**：DB に平文で保存しない。Pro のプライベートリポジトリ対応では `/settings` から fine-grained PAT を登録できる
-- **RLS（Row Level Security）**：`subscriptions` / `usage_logs` / `user_tokens` は user_id ベースのポリシーで保護
+- **RLS（Row Level Security）**：`subscriptions` / `usage_logs` / `user_tokens` / `tweet_generations` は user_id ベースのポリシーで保護
 - **Service Role Key の使用は API ルート内のみ**：admin client はサーバー側のみで使用
 - **IP ハッシュ化**：ゲスト識別は SHA-256 でハッシュ化した IP を保存（生 IP は保存しない）
 
