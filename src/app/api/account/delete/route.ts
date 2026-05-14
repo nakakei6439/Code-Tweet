@@ -44,6 +44,14 @@ export async function POST(request: Request) {
     console.error("[account/delete] tweet_generations cleanup error:", historyDeleteError);
   }
 
+  const { error: tokenDeleteError } = await admin
+    .from("user_tokens")
+    .delete()
+    .eq("user_id", user.id);
+  if (tokenDeleteError) {
+    console.error("[account/delete] user_tokens cleanup error:", tokenDeleteError);
+  }
+
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) {
     console.error("[account/delete] failed to delete user:", error);
@@ -59,6 +67,14 @@ export async function POST(request: Request) {
     .eq("user_id", user.id);
   if (subDeleteError) {
     console.error("[account/delete] subscriptions cleanup error:", subDeleteError);
+  }
+
+  const { error: usageDeleteError } = await admin
+    .from("usage_logs")
+    .delete()
+    .eq("user_id", user.id);
+  if (usageDeleteError) {
+    console.error("[account/delete] usage_logs cleanup error:", usageDeleteError);
   }
 
   await supabase.auth.signOut();
