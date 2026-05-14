@@ -119,6 +119,7 @@ Supabase の SQL は履歴ドキュメントを参照。
 - PAT 保存: [`docs/history/v3-01-private-repo.md`](./docs/history/v3-01-private-repo.md)
 - サブスクリプション: [`docs/history/v8-01-freemium-phase-a.md`](./docs/history/v8-01-freemium-phase-a.md)
 - OAuth token 識別: [`docs/history/v8-02-freemium-phase-a-5.md`](./docs/history/v8-02-freemium-phase-a-5.md)
+- 管理画面ログインロック: [`docs/admin-security.sql`](./docs/admin-security.sql)（管理画面を使う場合に Supabase SQL Editor で適用）
 
 ## 使い方
 
