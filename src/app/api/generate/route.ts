@@ -1,4 +1,5 @@
 import { generateTweets } from "@/lib/gemini";
+import { isSameOriginRequest } from "@/lib/origin";
 import { createClient } from "@/lib/supabase/server";
 import {
   checkGuestLimit,
@@ -88,6 +89,13 @@ function mapGeminiError(err: unknown): { message: string; status: number } {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  if (!isSameOriginRequest(request)) {
+    return Response.json(
+      { error: "許可されていないリクエスト元です。" } satisfies GenerateErrorResponse,
+      { status: 403 },
+    );
+  }
+
   if (!process.env.GEMINI_API_KEY) {
     return Response.json({ error: "現在サービスが利用できません。しばらくお待ちください。" } satisfies GenerateErrorResponse, { status: 503 });
   }
