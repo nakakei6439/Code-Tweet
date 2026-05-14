@@ -104,7 +104,7 @@ function AccountDeletionSection({ isPaid }: { isPaid: boolean }) {
           <div>
             <h2 className="text-white font-semibold text-base mb-1">アカウントを削除</h2>
             <p className="text-gray-400 text-sm">
-              アカウント、GitHub 連携情報、利用履歴、プラン情報を削除します。この操作は取り消せません。
+              アカウント、GitHub 連携情報、利用履歴、生成履歴、プラン情報を削除します。この操作は取り消せません。
             </p>
           </div>
 
@@ -187,7 +187,7 @@ function AccountDeletionSection({ isPaid }: { isPaid: boolean }) {
             </div>
             <div className="px-6 py-5 space-y-4">
               <div className="rounded-lg border border-red-900/70 bg-red-950/30 px-4 py-3 text-xs text-red-200">
-                対象: アカウント、GitHub 連携情報、利用履歴、プラン情報
+                対象: アカウント、GitHub 連携情報、利用履歴、生成履歴、プラン情報
               </div>
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <button

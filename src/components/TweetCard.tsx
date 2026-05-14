@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import type { ReactNode } from "react";
 import type { Tweet } from "@/types/tweet";
 
 interface TweetCardProps {
   tweet: Tweet;
+  actionSlot?: ReactNode;
 }
 
-export default function TweetCard({ tweet }: TweetCardProps) {
+export default function TweetCard({ tweet, actionSlot }: TweetCardProps) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -45,7 +47,8 @@ export default function TweetCard({ tweet }: TweetCardProps) {
       </div>
       <p className="text-xs text-gray-400 mb-3">{tweet.recommendedTime.reason}</p>
       <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">{tweet.text}</p>
-      <div className="flex justify-end mt-4">
+      <div className="mt-4 flex items-center justify-end gap-2">
+        {actionSlot}
         <button
           onClick={handleCopy}
           aria-live="polite"

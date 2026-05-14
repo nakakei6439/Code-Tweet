@@ -36,6 +36,14 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
+  const { error: historyDeleteError } = await admin
+    .from("tweet_generations")
+    .delete()
+    .eq("user_id", user.id);
+  if (historyDeleteError) {
+    console.error("[account/delete] tweet_generations cleanup error:", historyDeleteError);
+  }
+
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) {
     console.error("[account/delete] failed to delete user:", error);

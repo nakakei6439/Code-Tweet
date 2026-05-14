@@ -23,7 +23,7 @@
 | Supabase Auth | GitHub Provider が有効 |
 | GitHub OAuth App | Supabase の callback URL が設定済み |
 | Supabase Redirect URLs | `http://localhost:3000/auth/callback` と本番URLが設定済み |
-| Supabase Tables | `usage_logs`, `ip_usage_logs`, `subscriptions`, `user_tokens` が作成済み |
+| Supabase Tables | `usage_logs`, `ip_usage_logs`, `subscriptions`, `user_tokens`, `tweet_generations` が作成済み |
 | Vercel | 本番環境変数が `.env.local` と同等に設定済み |
 | Stripe Product / Price | Pro 月額 ¥980 の recurring Price が作成済み |
 | Stripe Webhook | `/api/stripe/webhook` に `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted` が送信される |
@@ -41,6 +41,8 @@
 | `/settings` | 未ログイン時にログイン案内が出る |
 | `/settings` | 無料ユーザーは Pro 案内、Pro ユーザーは PAT 管理とアカウント削除が見える |
 | `/settings` | Pro ユーザーが Customer Portal に進める |
+| `/history` | Pro ユーザーの生成履歴が新しい順に表示される |
+| `/history` | ゲストまたは未ログイン時にログイン案内が出る |
 | `/admin` | `ADMIN_EMAILS` の管理者だけ利用状況・プラン変更・ゲスト回数リセットが見える |
 | `/terms` | 利用規約が表示される |
 | `/privacy` | プライバシーポリシーが表示される |
