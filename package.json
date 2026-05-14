@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "verify:logs": "node scripts/verify-json-logs.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.52.0",
