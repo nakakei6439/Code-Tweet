@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { encrypt } from "@/lib/encryption";
+import { logError } from "@/lib/logger";
 import { getSubscriptionTier } from "@/lib/subscription";
 
 export async function POST(request: Request): Promise<Response> {
@@ -84,7 +85,7 @@ export async function POST(request: Request): Promise<Response> {
     );
 
   if (error) {
-    console.error("[tokens] upsert error:", error);
+    logError("tokens", "upsert error", error);
     return Response.json({ error: "保存に失敗しました。" }, { status: 500 });
   }
 
@@ -105,7 +106,7 @@ export async function DELETE(): Promise<Response> {
     .eq("user_id", user.id);
 
   if (error) {
-    console.error("[tokens] delete error:", error);
+    logError("tokens", "delete error", error);
     return Response.json({ error: "削除に失敗しました。" }, { status: 500 });
   }
 

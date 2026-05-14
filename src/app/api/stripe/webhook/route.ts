@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { logError } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getMissingStripeWebhookEnv, getStripe } from "@/lib/stripe";
 
@@ -31,7 +32,10 @@ async function upsertSubscriptionFromStripe(subscription: Stripe.Subscription, f
       .maybeSingle();
 
     if (error) {
-      console.error("[stripe/webhook] subscription lookup error:", error);
+      logError("stripe/webhook", "subscription lookup error", error, {
+        subscriptionId: subscription.id,
+        customerId,
+      });
       throw error;
     }
 
@@ -39,7 +43,7 @@ async function upsertSubscriptionFromStripe(subscription: Stripe.Subscription, f
   }
 
   if (!userId || !customerId) {
-    console.error("[stripe/webhook] missing user or customer id", {
+    logError("stripe/webhook", "missing user or customer id", undefined, {
       subscriptionId: subscription.id,
       userId,
       customerId,
@@ -60,7 +64,10 @@ async function upsertSubscriptionFromStripe(subscription: Stripe.Subscription, f
   );
 
   if (error) {
-    console.error("[stripe/webhook] subscription upsert error:", error);
+    logError("stripe/webhook", "subscription upsert error", error, {
+      subscriptionId: subscription.id,
+      userId,
+    });
     throw error;
   }
 }
@@ -76,7 +83,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 export async function POST(request: Request) {
   const missingEnv = getMissingStripeWebhookEnv();
   if (missingEnv.length > 0) {
-    console.error("[stripe/webhook] missing env:", missingEnv.join(", "));
+    logError("stripe/webhook", "missing env", undefined, { missingEnv });
     return Response.json({ error: "Webhook configuration is missing." }, { status: 400 });
   }
 
@@ -93,7 +100,7 @@ export async function POST(request: Request) {
   try {
     event = getStripe().webhooks.constructEvent(payload, signature, webhookSecret);
   } catch (err) {
-    console.error("[stripe/webhook] signature verification failed:", err);
+    logError("stripe/webhook", "signature verification failed", err);
     return Response.json({ error: "Invalid signature." }, { status: 400 });
   }
 
@@ -111,7 +118,7 @@ export async function POST(request: Request) {
         break;
     }
   } catch (err) {
-    console.error("[stripe/webhook] handler error:", err);
+    logError("stripe/webhook", "handler error", err, { eventType: event.type, eventId: event.id });
     return Response.json({ error: "Webhook handler failed." }, { status: 500 });
   }
 

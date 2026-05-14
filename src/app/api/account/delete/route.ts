@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logError } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getSubscriptionTier } from "@/lib/subscription";
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
     .delete()
     .eq("user_id", user.id);
   if (historyDeleteError) {
-    console.error("[account/delete] tweet_generations cleanup error:", historyDeleteError);
+    logError("account/delete", "tweet_generations cleanup error", historyDeleteError, { userId: user.id });
   }
 
   const { error: tokenDeleteError } = await admin
@@ -49,12 +50,12 @@ export async function POST(request: Request) {
     .delete()
     .eq("user_id", user.id);
   if (tokenDeleteError) {
-    console.error("[account/delete] user_tokens cleanup error:", tokenDeleteError);
+    logError("account/delete", "user_tokens cleanup error", tokenDeleteError, { userId: user.id });
   }
 
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) {
-    console.error("[account/delete] failed to delete user:", error);
+    logError("account/delete", "failed to delete user", error, { userId: user.id });
     return Response.json(
       { error: "アカウントの削除に失敗しました。時間をおいて再度お試しください。" },
       { status: 500 },
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
     .delete()
     .eq("user_id", user.id);
   if (subDeleteError) {
-    console.error("[account/delete] subscriptions cleanup error:", subDeleteError);
+    logError("account/delete", "subscriptions cleanup error", subDeleteError, { userId: user.id });
   }
 
   const { error: usageDeleteError } = await admin
@@ -74,7 +75,7 @@ export async function POST(request: Request) {
     .delete()
     .eq("user_id", user.id);
   if (usageDeleteError) {
-    console.error("[account/delete] usage_logs cleanup error:", usageDeleteError);
+    logError("account/delete", "usage_logs cleanup error", usageDeleteError, { userId: user.id });
   }
 
   await supabase.auth.signOut();

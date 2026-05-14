@@ -1,5 +1,6 @@
 import { createHash } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { logError } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { SubscriptionTier } from "@/lib/subscription";
 
@@ -50,7 +51,7 @@ export async function checkUserLimit(
     .gte("generated_at", getMonthWindowStart());
 
   if (error) {
-    console.error("[rateLimit] usage_logs count error:", error);
+    logError("rateLimit", "usage_logs count error", error);
     return { ok: true };
   }
 
@@ -78,7 +79,7 @@ export async function recordUserUsage(
   userId: string,
 ): Promise<void> {
   const { error } = await supabase.from("usage_logs").insert({ user_id: userId });
-  if (error) console.error("[rateLimit] usage_logs insert error:", error);
+  if (error) logError("rateLimit", "usage_logs insert error", error);
 }
 
 export async function checkGuestLimit(ipHash: string): Promise<RateLimitResult> {
@@ -89,7 +90,7 @@ export async function checkGuestLimit(ipHash: string): Promise<RateLimitResult> 
     .eq("ip_hash", ipHash);
 
   if (error) {
-    console.error("[rateLimit] ip_usage_logs count error:", error);
+    logError("rateLimit", "ip_usage_logs count error", error);
     return { ok: true };
   }
 
@@ -107,5 +108,5 @@ export async function checkGuestLimit(ipHash: string): Promise<RateLimitResult> 
 export async function recordGuestUsage(ipHash: string): Promise<void> {
   const admin = createAdminClient();
   const { error } = await admin.from("ip_usage_logs").insert({ ip_hash: ipHash });
-  if (error) console.error("[rateLimit] ip_usage_logs insert error:", error);
+  if (error) logError("rateLimit", "ip_usage_logs insert error", error);
 }

@@ -1,3 +1,4 @@
+import { logWarn } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Tweet } from "@/types/tweet";
 
@@ -47,7 +48,7 @@ export async function recordTweetGeneration(
   const { error } = await admin.from("tweet_generations").insert(payload);
   if (error) {
     if (process.env.NODE_ENV === "production") {
-      console.warn("[generationHistory] tweet_generations insert failed");
+      logWarn("generationHistory", "tweet_generations insert failed", { userId });
     }
   }
 }

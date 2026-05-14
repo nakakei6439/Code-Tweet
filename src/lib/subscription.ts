@@ -1,3 +1,4 @@
+import { logError } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type SubscriptionTier = "free" | "paid";
@@ -11,7 +12,7 @@ export async function getSubscriptionTier(userId: string): Promise<SubscriptionT
     .maybeSingle();
 
   if (error) {
-    console.error("[subscription] tier fetch error:", error);
+    logError("subscription", "tier fetch error", error, { userId });
     return "free";
   }
 

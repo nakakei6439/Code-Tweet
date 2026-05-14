@@ -1,3 +1,4 @@
+import { logError } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSubscriptionTier } from "@/lib/subscription";
 import {
@@ -17,7 +18,7 @@ async function countUserUsage(userId: string): Promise<number> {
     .eq("user_id", userId)
     .gte("generated_at", getMonthWindowStart());
   if (error) {
-    console.error("[usage] usage_logs count error:", error);
+    logError("usage", "usage_logs count error", error);
     return 0;
   }
   return count ?? 0;
@@ -30,7 +31,7 @@ async function countGuestUsage(ipHash: string): Promise<number> {
     .select("id", { count: "exact", head: true })
     .eq("ip_hash", ipHash);
   if (error) {
-    console.error("[usage] ip_usage_logs count error:", error);
+    logError("usage", "ip_usage_logs count error", error);
     return 0;
   }
   return count ?? 0;

@@ -1,3 +1,4 @@
+import { logError } from "@/lib/logger";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAppUrl, getMissingStripeCheckoutEnv, getStripe, getStripePriceId } from "@/lib/stripe";
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
 
   const missingEnv = getMissingStripeCheckoutEnv();
   if (missingEnv.length > 0) {
-    console.error("[stripe/checkout] missing env:", missingEnv.join(", "));
+    logError("stripe/checkout", "missing env", undefined, { missingEnv });
     return Response.json(
       { error: "Stripe の環境変数が未設定です。STRIPE_SECRET_KEY と STRIPE_PRICE_ID を設定してください。" },
       { status: 503 },
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (error) {
-    console.error("[stripe/checkout] subscription fetch error:", error);
+    logError("stripe/checkout", "subscription fetch error", error, { userId: user.id });
     return Response.json({ error: "プラン情報の取得に失敗しました。" }, { status: 500 });
   }
 
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
 
     return Response.json({ url: session.url });
   } catch (err) {
-    console.error("[stripe/checkout] session create error:", err);
+    logError("stripe/checkout", "session create error", err, { userId: user.id });
     return Response.json({ error: "決済ページの作成に失敗しました。" }, { status: 500 });
   }
 }

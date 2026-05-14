@@ -1,4 +1,5 @@
 import { generateTweets } from "@/lib/gemini";
+import { logError } from "@/lib/logger";
 import { isSameOriginRequest } from "@/lib/origin";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -66,7 +67,7 @@ function validateGenerateRequest(body: GenerateRequest, tier: UsageTier): Respon
 
 function mapGeminiError(err: unknown): { message: string; status: number } {
   const raw = err instanceof Error ? err.message : "";
-  console.error("[generate] Gemini API error:", err);
+  logError("generate", "Gemini API error", err);
 
   if (/5件のポストを生成できませんでした/.test(raw)) {
     return { message: raw, status: 500 };
