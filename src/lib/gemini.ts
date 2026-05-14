@@ -15,7 +15,12 @@ const URL_LEAD_RE =
   /(App Storeで無料公開中|今すぐインストール|iPhoneで無料で使える|ダウンロードはこちら|詳しくはこちら|今すぐ試す|無料で使えます|コードを見る|OSSとして公開中|GitHubで公開中)/i;
 const POST_MARKER_RE = /(?:^|\n)\s*(?:\d+[.)．:：]|[（(]\d+[）)]|ポスト\s*\d+[:：]?)\s*/;
 
-function countWeighted(text: string): number {
+export type ParsedGeneratedTweets = {
+  drafts: string[];
+  schedules: { label: string; reason: string }[];
+};
+
+export function countWeighted(text: string): number {
   return twitterText.parseTweet(text).weightedLength;
 }
 
@@ -53,7 +58,7 @@ function getDefaultUrlLead(url: string): string {
   return "詳しくはこちら →";
 }
 
-function reformatTweet(text: string, requiredHashtags = "", requiredUrl = ""): string {
+export function reformatTweet(text: string, requiredHashtags = "", requiredUrl = ""): string {
   let rest = text.trim();
 
   const requiredTags = extractHashtags(requiredHashtags);
@@ -148,6 +153,40 @@ function stripNextPost(text: string): string {
   const marker = text.match(POST_MARKER_RE);
   if (!marker || marker.index === undefined) return text.trim();
   return text.slice(0, marker.index).trim();
+}
+
+export function parseGeneratedTweets(text: string): ParsedGeneratedTweets {
+  const SCHEDULE_RE = /SCHEDULE:\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})\s*\/\s*([^\n]+)/g;
+  const scheduleMatches = Array.from(text.matchAll(SCHEDULE_RE));
+  if (scheduleMatches.length < 5) {
+    throw new Error("5件のポストを生成できませんでした。もう一度お試しください。");
+  }
+
+  const drafts: string[] = [];
+  const schedules: { label: string; reason: string }[] = [];
+
+  for (let i = 0; i < 5; i++) {
+    const sched = scheduleMatches[i];
+    const schedStart = sched.index!;
+    const schedEnd = schedStart + sched[0].length;
+    const prevSchedEnd = i === 0 ? 0 : scheduleMatches[i - 1].index! + scheduleMatches[i - 1][0].length;
+    const nextSchedStart = i + 1 < scheduleMatches.length ? scheduleMatches[i + 1].index! : text.length;
+
+    const body = stripPostMarker(text.slice(prevSchedEnd, schedStart));
+    const tail = stripNextPost(text.slice(schedEnd, nextSchedStart));
+    const content = [body, tail].filter(Boolean).join("\n");
+    if (!content) {
+      throw new Error("5件のポストを生成できませんでした。もう一度お試しください。");
+    }
+
+    drafts.push(content);
+    schedules.push({
+      label: formatScheduleLabel(sched[1], sched[2]),
+      reason: sched[3].trim(),
+    });
+  }
+
+  return { drafts, schedules };
 }
 
 // 対応URL: App Store / Google Play / GitHub Pages / GitHub / その他Web
@@ -275,35 +314,7 @@ export async function generateTweets(
     throw new Error("Gemini API から本文が返りませんでした。もう一度お試しください。");
   }
 
-  const SCHEDULE_RE = /SCHEDULE:\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})\s*\/\s*([^\n]+)/g;
-  const scheduleMatches = Array.from(text.matchAll(SCHEDULE_RE));
-  if (scheduleMatches.length < 5) {
-    throw new Error("5件のポストを生成できませんでした。もう一度お試しください。");
-  }
-
-  const drafts: string[] = [];
-  const schedules: { label: string; reason: string }[] = [];
-
-  for (let i = 0; i < 5; i++) {
-    const sched = scheduleMatches[i];
-    const schedStart = sched.index!;
-    const schedEnd = schedStart + sched[0].length;
-    const prevSchedEnd = i === 0 ? 0 : scheduleMatches[i - 1].index! + scheduleMatches[i - 1][0].length;
-    const nextSchedStart = i + 1 < scheduleMatches.length ? scheduleMatches[i + 1].index! : text.length;
-
-    const body = stripPostMarker(text.slice(prevSchedEnd, schedStart));
-    const tail = stripNextPost(text.slice(schedEnd, nextSchedStart));
-    const content = [body, tail].filter(Boolean).join("\n");
-    if (!content) {
-      throw new Error("5件のポストを生成できませんでした。もう一度お試しください。");
-    }
-
-    drafts.push(content);
-    schedules.push({
-      label: formatScheduleLabel(sched[1], sched[2]),
-      reason: sched[3].trim(),
-    });
-  }
+  const { drafts, schedules } = parseGeneratedTweets(text);
 
   for (let i = 0; i < drafts.length; i++) {
     let current = reformatTweet(drafts[i], hashtags, url);
