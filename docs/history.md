@@ -1,0 +1,28 @@
+# Code Tweet 実装履歴
+
+古い詳細メモは削除し、現在の判断に必要な経緯だけを残します。最新仕様は [product.md](./product.md)、セットアップは [setup.md](./setup.md) を参照してください。
+
+## 時系列
+
+| 時期 | 内容 |
+|---|---|
+| V1 | Next.js 16 App Router、TypeScript、Tailwind CSS v4 で MVP を作成。Gemini API で X 投稿を5件生成する基本機能を実装 |
+| V1 改善 | 生成結果の UI、推奨投稿日時、URL/ハッシュタグの扱い、280 weighted length 対応を改善 |
+| V2 | GitHub URL から README を取得する機能を追加。サーバー側で API キーを扱う構成へ移行 |
+| V2.1 | Supabase に `usage_logs` と `ip_usage_logs` を追加し、ゲスト/ログインユーザーの利用制限を導入 |
+| V3 | GitHub token / PAT の暗号化保存と Pro 向けプライベートリポジトリ対応を追加 |
+| V8 Phase A | フリーミアム基盤を追加。無料/Pro の tier、月単位制限、Stripe 統合前の購読状態管理を整備 |
+| V8 Phase A.5 | GitHub OAuth 一本化、リポジトリ選択 UI、残り回数表示、設定ページ、料金導線を整備 |
+| V8 Phase B | Stripe Checkout / Webhook / Customer Portal を実装し、Pro 課金運用に対応 |
+| V9 | Pro ユーザー向け生成履歴を追加。README 本文や追加プロンプト本文は保存しない方針にした |
+| 現在 | 管理画面、規約、プライバシーポリシー、問い合わせ導線、ゲスト利用回数リセット、管理画面ログインロックまで実装済み |
+
+## 重要な設計判断
+
+- 認証は GitHub OAuth に一本化した
+- GitHub OAuth token はログイン callback で暗号化保存し、公開リポジトリ一覧の取得に使う
+- ゲスト利用は IP ハッシュ単位の累計、ログイン利用はユーザー単位の月次制限
+- README の通常の文字数超過はフォーム上のエラー表示に任せ、極端な payload だけ API 側で粗く止める
+- Pro でも月間生成回数を 30 回に抑え、AI コスト上振れを避ける
+- Pro の生成履歴には出力結果だけを保存し、入力本文は保存しない
+- 管理画面は管理者メール、Basic 認証、TOTP、失敗回数ロックを組み合わせる

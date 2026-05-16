@@ -4,7 +4,8 @@ README やプロジェクト説明を AI が分析し、X（旧 Twitter）向け
 
 - 本番 URL: https://code-tweet.vercel.app/
 - ドキュメント索引: [`docs/index.md`](./docs/index.md)
-- 公開前チェックリスト: [`docs/launch-checklist.md`](./docs/launch-checklist.md)
+- セットアップ: [`docs/setup.md`](./docs/setup.md)
+- 運用メモ: [`docs/operations.md`](./docs/operations.md)
 
 ## 主な機能
 
@@ -114,14 +115,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 5. Stripe で月額 980 円の Price を作成し、`STRIPE_PRICE_ID` に設定する。
 6. Stripe Webhook に `/api/stripe/webhook` を登録し、署名 secret を `STRIPE_WEBHOOK_SECRET` に設定する。
 
-Supabase の SQL は履歴ドキュメントを参照。
-
-- 利用制限: [`docs/history/v2-04-rate-limit.md`](./docs/history/v2-04-rate-limit.md)
-- PAT 保存: [`docs/history/v3-01-private-repo.md`](./docs/history/v3-01-private-repo.md)
-- サブスクリプション: [`docs/history/v8-01-freemium-phase-a.md`](./docs/history/v8-01-freemium-phase-a.md)
-- OAuth token 識別: [`docs/history/v8-02-freemium-phase-a-5.md`](./docs/history/v8-02-freemium-phase-a-5.md)
-- 管理画面ログインロック: [`docs/admin-security.sql`](./docs/admin-security.sql)（管理画面を使う場合に Supabase SQL Editor で適用）
-- 生成履歴: [`docs/tweet-generations.sql`](./docs/tweet-generations.sql)
+Supabase の SQL は [`docs/database.sql`](./docs/database.sql) に集約している。利用制限、購読状態、GitHub 連携、管理画面ログインロック、生成履歴を fresh project に適用できる。
 
 ## 使い方
 
@@ -174,7 +168,7 @@ src/
 
 本番稼働中。Vercel デプロイ、GitHub OAuth、利用制限、Pro プラン、Stripe 課金、管理画面、生成履歴まで実装済み。今後の拡張候補は Claude API 選択、他 SNS 対応、エラー監視。
 
-詳細な変更履歴は [`docs/history/`](./docs/history/) を参照。
+詳細な変更履歴は [`docs/history.md`](./docs/history.md) を参照。
 
 ## 作者
 
