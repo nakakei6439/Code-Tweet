@@ -90,36 +90,50 @@ export function reformatTweet(text: string, requiredHashtags = "", requiredUrl =
     hashtags = uniqTags(inlineTags);
   }
 
-  // リード文と URL を取り出し、AI が先頭や途中に置いた場合も末尾側へ正規化する
-  const urlLineMatch = rest.match(/https?:\/\/\S+/);
+  // リード文と URL を取り出し、AI が先頭や途中に置いた場合も末尾側へ正規化する。
+  // 2 つ目以降の URL（同一 URL の重複含む）は本文から完全に除去する。
+  const urlRe = /https?:\/\/\S+/;
+  const urlLineMatch = rest.match(urlRe);
   let urlBlock = "";
   if (urlLineMatch) {
     const urlStr = urlLineMatch[0].replace(/[。、！？.,!?]+$/, "");
     const lines = rest.split("\n");
     const nextLines: string[] = [];
-    let consumedUrl = false;
+    let leadCaptured = false;
     let lead = "";
 
     for (const line of lines) {
-      const match = line.match(/https?:\/\/\S+/);
-      if (!match || consumedUrl) {
+      const match = line.match(urlRe);
+      if (!match) {
         nextLines.push(line);
         continue;
       }
 
-      consumedUrl = true;
       const beforeUrl = line.slice(0, match.index).trim();
       const afterUrl = line.slice((match.index ?? 0) + match[0].length).trim();
 
-      if (beforeUrl) {
-        const split = splitUrlLead(beforeUrl);
-        lead = split.lead;
-        if (split.body) nextLines.push(split.body);
+      if (!leadCaptured) {
+        leadCaptured = true;
+        if (beforeUrl) {
+          const split = splitUrlLead(beforeUrl);
+          lead = split.lead;
+          if (split.body) nextLines.push(split.body);
+        } else {
+          const prevContentIndex = [...nextLines].map((item) => item.trim()).findLastIndex(Boolean);
+          if (prevContentIndex >= 0 && isUrlLeadLine(nextLines[prevContentIndex])) {
+            lead = nextLines[prevContentIndex].trim();
+            nextLines.splice(prevContentIndex, 1);
+          }
+        }
       } else {
+        // 2 つ目以降の URL は本文から削除。直前のリード文行や同行内のリード文部分も合わせて捨てる。
         const prevContentIndex = [...nextLines].map((item) => item.trim()).findLastIndex(Boolean);
         if (prevContentIndex >= 0 && isUrlLeadLine(nextLines[prevContentIndex])) {
-          lead = nextLines[prevContentIndex].trim();
           nextLines.splice(prevContentIndex, 1);
+        }
+        if (beforeUrl) {
+          const split = splitUrlLead(beforeUrl);
+          if (split.body) nextLines.push(split.body);
         }
       }
 
@@ -149,12 +163,6 @@ function stripPostMarker(text: string): string {
   return text.slice(marker.index + marker[0].length).trim();
 }
 
-function stripNextPost(text: string): string {
-  const marker = text.match(POST_MARKER_RE);
-  if (!marker || marker.index === undefined) return text.trim();
-  return text.slice(0, marker.index).trim();
-}
-
 export function parseGeneratedTweets(text: string): ParsedGeneratedTweets {
   const SCHEDULE_RE = /SCHEDULE:\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})\s*\/\s*([^\n]+)/g;
   const scheduleMatches = Array.from(text.matchAll(SCHEDULE_RE));
@@ -168,13 +176,11 @@ export function parseGeneratedTweets(text: string): ParsedGeneratedTweets {
   for (let i = 0; i < 5; i++) {
     const sched = scheduleMatches[i];
     const schedStart = sched.index!;
-    const schedEnd = schedStart + sched[0].length;
     const prevSchedEnd = i === 0 ? 0 : scheduleMatches[i - 1].index! + scheduleMatches[i - 1][0].length;
-    const nextSchedStart = i + 1 < scheduleMatches.length ? scheduleMatches[i + 1].index! : text.length;
 
-    const body = stripPostMarker(text.slice(prevSchedEnd, schedStart));
-    const tail = stripNextPost(text.slice(schedEnd, nextSchedStart));
-    const content = [body, tail].filter(Boolean).join("\n");
+    // SCHEDULE 行をポスト本文の終端として扱う。SCHEDULE 行以降は次ポストの番号マーカーまで捨てる
+    // ことで、Gemini が SCHEDULE 後に追加の本文・URL ブロックを書いてもポストに混入させない。
+    const content = stripPostMarker(text.slice(prevSchedEnd, schedStart));
     if (!content) {
       throw new Error("5件のポストを生成できませんでした。もう一度お試しください。");
     }
@@ -219,8 +225,12 @@ ${hashtags
 - 本文には読みやすさのために1〜2箇所の改行を入れる
 - ハッシュタグは本文・URLと改行して末尾に記載する（例：「本文\n#tag1 #tag2 #tag3」）
 - 本文中にハッシュタグを入れた場合でも、最後の行にハッシュタグ行を必ず作る
+- ハッシュタグ行は本文末尾に 1 行だけ。本文中・URL の前後に追加のハッシュタグ行を書かない
 - ハッシュタグはユーザー指定分を含め合計3〜5つにする（ハッシュタグ未指定の場合もプロダクトに関連するタグを3〜5つ生成する）
-${url ? "" : "- URLが指定されていないため、URL・アプリストアURL・App Store・Google Play などのリンクや参照テキストを一切含めない"}
+${url ? `- URL は 1 ポストにつき 1 回のみ出力する。同じ URL も別の URL も、本文中に 2 回以上書かない\n- URL の直前リード文（例：「無料でダウンロード →」）も 1 ポストに 1 回のみ` : "- URLが指定されていないため、URL・アプリストアURL・App Store・Google Play などのリンクや参照テキストを一切含めない"}
+- 1 ポストには本文を 1 つだけ書く。同一ポスト内に複数の本文パターン・複数の CTA・複数の段落構成を混在させない
+- ストーリーアークの各段階は 1 ポスト内で 1 つだけ扱う。例えば「ユーザーの声・共感」と「CTA・エンゲージメント」を 1 ポストに同居させない
+- SCHEDULE: 行はポスト本文の終端を示す。SCHEDULE: 行を出力したら、その後ろには何も書かず、次のポスト番号（例：2.）または出力終了まで空白以外の文字を入れない
 - 以下のストーリーアークに沿って順番に生成する：
   1. プロジェクト紹介（何ができるアプリかを端的に伝える）
   2. 使い方・始め方（すぐ使えることを強調）
