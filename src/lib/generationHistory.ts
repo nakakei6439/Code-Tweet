@@ -50,6 +50,36 @@ export async function recordTweetGeneration(
     if (process.env.NODE_ENV === "production") {
       logWarn("generationHistory", "tweet_generations insert failed", { userId });
     }
+    return;
+  }
+  await pruneOldTweetGenerations(userId);
+}
+
+async function pruneOldTweetGenerations(userId: string): Promise<void> {
+  const admin = createAdminClient();
+  const { data: cutoff, error: cutoffError } = await admin
+    .from("tweet_generations")
+    .select("created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .range(TWEET_GENERATION_HISTORY_LIMIT - 1, TWEET_GENERATION_HISTORY_LIMIT - 1)
+    .maybeSingle();
+
+  if (cutoffError || !cutoff?.created_at) {
+    if (cutoffError && process.env.NODE_ENV === "production") {
+      logWarn("generationHistory", "tweet_generations cleanup lookup failed", { userId });
+    }
+    return;
+  }
+
+  const { error: deleteError } = await admin
+    .from("tweet_generations")
+    .delete()
+    .eq("user_id", userId)
+    .lt("created_at", cutoff.created_at);
+
+  if (deleteError && process.env.NODE_ENV === "production") {
+    logWarn("generationHistory", "tweet_generations cleanup failed", { userId });
   }
 }
 

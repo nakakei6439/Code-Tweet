@@ -1,6 +1,6 @@
 # Code Tweet プロダクト概要
 
-最終更新: 2026-05-16
+最終更新: 2026-05-24
 
 ## 目的
 
@@ -19,7 +19,7 @@ Code Tweet は、README やプロジェクト説明から X 向けのマーケ�
 - `twitter-text` による X の 280 weighted length チェックと自動短縮
 - GitHub OAuth ログイン、公開リポジトリ一覧選択
 - Pro ユーザー向けのプライベートリポジトリ対応
-- Pro ユーザー向けの生成履歴保存と個別削除
+- Pro ユーザー向けの生成履歴保存（最新 50 件、上限超過分は自動削除）と個別削除
 - Stripe Checkout / Webhook / Customer Portal
 - 管理画面で利用状況、プラン変更、ゲスト利用回数リセットを操作
 - `/about`、`/pricing`、`/terms`、`/privacy`、`/contact` を提供
@@ -39,7 +39,7 @@ Pro は月額 980 円。ログインユーザーの生成回数は月初にリ�
 ## データと保存方針
 
 - README 本文と追加プロンプト本文は保存しない
-- Pro ユーザーの生成履歴には生成結果、source URL、ハッシュタグ、作成日時を保存する
+- Pro ユーザーの生成履歴には生成結果、source URL、ハッシュタグ、作成日時を保存する。保存上限は 1 ユーザーあたり最新 50 件で、新規追加時に超過分を同期的に削除する
 - GitHub OAuth token / PAT は `GITHUB_PAT_ENCRYPTION_KEY` で AES-256-GCM 暗号化して保存し、リポジトリ一覧取得や Pro の非公開 README 取得に使う
 - 利用回数は Supabase の `usage_logs` と `ip_usage_logs` で管理する
 - アカウント削除時は関連データも削除する
