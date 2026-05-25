@@ -9,12 +9,39 @@ import {
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function proxy(request: NextRequest) {
+  const oauthRescueResponse = rescueOAuthCodeOnHome(request);
+  if (oauthRescueResponse) return oauthRescueResponse;
+
   if (request.nextUrl.pathname.startsWith("/admin")) {
     const adminGateResponse = await enforceAdminGate(request);
     if (adminGateResponse) return adminGateResponse;
   }
 
   return await updateSession(request);
+}
+
+function rescueOAuthCodeOnHome(request: NextRequest): NextResponse | null {
+  const { nextUrl } = request;
+  const code = nextUrl.searchParams.get("code");
+
+  if (nextUrl.pathname !== "/" || !code || nextUrl.searchParams.has("error")) {
+    return null;
+  }
+
+  const url = nextUrl.clone();
+  url.pathname = "/auth/callback";
+  url.search = "";
+  url.searchParams.set("code", code);
+  url.searchParams.set("next", getSafeNextPath(nextUrl.searchParams.get("next"), "/pricing"));
+  return NextResponse.redirect(url);
+}
+
+function getSafeNextPath(value: string | null, fallback: string): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return fallback;
+  }
+
+  return value;
 }
 
 async function enforceAdminGate(request: NextRequest): Promise<NextResponse | null> {
