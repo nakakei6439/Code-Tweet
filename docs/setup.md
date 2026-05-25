@@ -68,7 +68,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 1. Supabase プロジェクトを作成し、Project URL、anon key、service role key を取得する。
 2. Supabase Auth で GitHub Provider を有効化する。
 3. GitHub OAuth App の callback URL に `https://<Project Ref>.supabase.co/auth/v1/callback` を設定する。
-4. Supabase Redirect URLs に `http://localhost:3000/auth/callback` と本番 URL の `/auth/callback` を追加する。
+4. Supabase の `Authentication > URL Configuration` で Redirect URLs に `http://localhost:3000/auth/callback` と `https://code-tweet.vercel.app/auth/callback` を追加する。`/auth/callback` まで含める必要があり、トップ URL だけではローカルログインが本番トップへ戻ることがある。
 5. Stripe で月額 980 円の Price を作成し、`STRIPE_PRICE_ID` に設定する。
 6. Stripe Webhook に `/api/stripe/webhook` を登録し、署名 secret を `STRIPE_WEBHOOK_SECRET` に設定する。
 7. Supabase SQL Editor で [database.sql](./database.sql) を適用する。利用制限、購読状態、GitHub 連携、管理画面ログインロック、生成履歴のテーブルと RLS を含む。
