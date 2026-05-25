@@ -6,7 +6,7 @@
 |---|---|
 | [product.md](./product.md) | 現在仕様、料金、制限、KPI、リスク |
 | [setup.md](./setup.md) | ローカル起動、環境変数、外部サービス、DB SQL 適用 |
-| [operations.md](./operations.md) | 公開前チェック、運用ロードマップ、定期確認 |
+| [operations.md](./operations.md) | 本番ヘルスチェック、優先タスク、運用ロードマップ、定期確認 |
 | [history.md](./history.md) | V1 から現行版までの短い実装履歴 |
 | [database.sql](./database.sql) | Supabase SQL。管理画面ロックと生成履歴テーブル |
 
