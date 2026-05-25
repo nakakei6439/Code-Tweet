@@ -45,14 +45,19 @@ export async function POST(request: Request) {
       ? { customer: subscriptionRow.stripe_customer_id }
       : { customer_email: user.email ?? undefined };
 
+    const eligibleForTrial = !subscriptionRow?.stripe_customer_id;
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       ...customer,
       client_reference_id: user.id,
       line_items: [{ price: getStripePriceId(), quantity: 1 }],
       metadata: { user_id: user.id },
-      subscription_data: { metadata: { user_id: user.id } },
-      success_url: `${appUrl}/settings?checkout=success`,
+      subscription_data: {
+        metadata: { user_id: user.id },
+        ...(eligibleForTrial ? { trial_period_days: 30 } : {}),
+      },
+      success_url: `${appUrl}/settings?checkout=success${eligibleForTrial ? "&trial=started" : ""}`,
       cancel_url: `${appUrl}/pricing?checkout=cancelled`,
       allow_promotion_codes: true,
     });
