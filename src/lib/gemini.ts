@@ -3,7 +3,7 @@ import twitterText from "twitter-text";
 import type { Tweet } from "@/types/tweet";
 
 const TWEET_LIMIT = 280;
-const GEMINI_MODEL = "gemini-2.5-flash";
+export const GEMINI_MODEL = "gemini-2.5-flash";
 
 function formatScheduleLabel(dateStr: string, timeStr: string): string {
   const [year, month, day] = dateStr.split("-").map(Number);
@@ -196,7 +196,7 @@ export function parseGeneratedTweets(text: string): ParsedGeneratedTweets {
 }
 
 // 対応URL: App Store / Google Play / GitHub Pages / GitHub / その他Web
-function detectUrlType(url: string): string {
+export function detectUrlType(url: string): string {
   if (/apps\.apple\.com/i.test(url))  return "App Store（iOS アプリのダウンロードページ）";
   if (/play\.google\.com/i.test(url)) return "Google Play（Android アプリのダウンロードページ）";
   if (/github\.io/i.test(url))        return "GitHub Pages（デモまたはドキュメントサイト）";
