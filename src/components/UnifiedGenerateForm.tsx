@@ -1,15 +1,22 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import GenerateInputs from "@/components/GenerateInputs";
+import GenerateTabs, { type GenerateTabKey } from "@/components/GenerateTabs";
 import TweetCard from "@/components/TweetCard";
+import NoteCard from "@/components/NoteCard";
 import RepoSelectorModal from "@/components/RepoSelectorModal";
 import {
   PROJECT_TEXT_LIMITS,
   getProjectTextLimit,
 } from "@/lib/generateLimits";
+import {
+  DEFAULT_NOTE_LENGTH_PRESET,
+  NOTE_LENGTH_PRESETS,
+} from "@/lib/noteLengthPresets";
 import type {
   Tweet,
   GenerateRequest,
@@ -18,10 +25,17 @@ import type {
   GenerateErrorCode,
   GenerateErrorField,
 } from "@/types/tweet";
+import type {
+  NoteDraft,
+  NoteLengthPreset,
+  GenerateNoteRequest,
+  GenerateNoteResponse,
+} from "@/types/note";
 import type { UsageInfo } from "@/types/usage";
 
 type Props = {
   initialUsage: UsageInfo | null;
+  initialTab: GenerateTabKey;
 };
 
 const FIELD_LABELS: Record<GenerateErrorField, string> = {
@@ -30,6 +44,14 @@ const FIELD_LABELS: Record<GenerateErrorField, string> = {
   url: "URL",
   hashtags: "ハッシュタグ",
 };
+
+type ErrorState = {
+  error: string | null;
+  errorCode: GenerateErrorCode | null;
+  errorField: GenerateErrorField | null;
+};
+
+const EMPTY_ERROR: ErrorState = { error: null, errorCode: null, errorField: null };
 
 function formatCount(value: number) {
   return value.toLocaleString("ja-JP");
@@ -107,33 +129,176 @@ function UsageBadge({ usage }: { usage: UsageInfo }) {
       </div>
       {usage.tier === "guest" && (
         <p className="mt-2 leading-5 text-gray-400 sm:whitespace-nowrap">
-          ログインなしは3回まで、GitHubログインなら月3回まで使えます。README上限はどちらも {PROJECT_TEXT_LIMITS.free.toLocaleString("ja-JP")} 文字です。
+          ログインなしは3回まで、GitHubログインなら月3回まで使えます。ポストとnote Draftで合算カウントされます。
+        </p>
+      )}
+      {usage.tier !== "guest" && (
+        <p className="mt-2 leading-5 text-gray-400">
+          月の生成回数はポストとnote Draftで合算カウントされます（README上限 {PROJECT_TEXT_LIMITS[usage.tier].toLocaleString("ja-JP")} 文字）。
         </p>
       )}
     </div>
   );
 }
 
-export default function GenerateForm({ initialUsage }: Props) {
+function LengthPresetSelector({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: NoteLengthPreset;
+  onChange: (next: NoteLengthPreset) => void;
+  disabled: boolean;
+}) {
+  const presetKeys = Object.keys(NOTE_LENGTH_PRESETS) as NoteLengthPreset[];
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-300 mb-3">
+        記事の長さ <span className="text-gray-500 font-normal">（任意）</span>
+      </label>
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        {presetKeys.map((key) => {
+          const preset = NOTE_LENGTH_PRESETS[key];
+          const isActive = value === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onChange(key)}
+              disabled={disabled}
+              aria-pressed={isActive}
+              className={`flex flex-col items-center justify-center gap-1 px-2 py-4 rounded-lg border transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+                isActive
+                  ? "border-cyan-500 bg-cyan-500/10 text-white"
+                  : "border-gray-700 bg-gray-800/40 text-gray-300 hover:border-gray-500 hover:bg-gray-800/60"
+              }`}
+            >
+              <span className="text-base font-semibold">{preset.label}</span>
+              <span className={`text-xs ${isActive ? "text-cyan-200" : "text-gray-400"}`}>
+                {preset.minutesLabel}
+              </span>
+              <span className={`text-xs tabular-nums whitespace-nowrap ${isActive ? "text-cyan-200" : "text-gray-400"}`}>
+                約 {preset.min.toLocaleString("ja-JP")}〜{preset.max.toLocaleString("ja-JP")}字
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Hero({ activeTab }: { activeTab: GenerateTabKey }) {
+  const title =
+    activeTab === "note" ? (
+      <>
+        note{" "}
+        <span className="bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-yellow-200 bg-clip-text text-transparent">
+          Draft
+        </span>
+      </>
+    ) : (
+      <>
+        Code{" "}
+        <span className="bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-yellow-200 bg-clip-text text-transparent">
+          Tweet
+        </span>
+      </>
+    );
+  const subtitle =
+    activeTab === "note" ? (
+      <>
+        <span className="block">GitHubリポジトリURLを貼るだけで、</span>
+        <span className="block">note.com に貼り付けられるMarkdown Draftを1本生成します。</span>
+      </>
+    ) : (
+      <>
+        <span className="block">GitHubリポジトリURLを貼るだけで、</span>
+        <span className="block">READMEから1週間分のポストを5件作成します。</span>
+      </>
+    );
+  return (
+    <>
+      <h1 className="text-center text-6xl font-medium tracking-tight text-white sm:text-8xl">
+        {title}
+      </h1>
+      <p className="mx-auto mt-5 mb-10 max-w-xl text-center text-sm leading-6 text-gray-300">
+        {subtitle}
+      </p>
+    </>
+  );
+}
+
+export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const tabParam = searchParams?.get("tab");
+  const activeTab: GenerateTabKey =
+    tabParam === "note" ? "note" : tabParam === "tweet" ? "tweet" : initialTab;
+
+  // 共通入力
   const [projectText, setProjectText] = useState("");
   const [toneMemo, setToneMemo] = useState("");
   const [url, setUrl] = useState("");
+  const [githubUrl, setGithubUrl] = useState("");
+
+  // タブ固有入力
   const [hashtags, setHashtags] = useState("");
+  const [lengthPreset, setLengthPreset] = useState<NoteLengthPreset>(DEFAULT_NOTE_LENGTH_PRESET);
+
+  // タブ固有結果
   const [tweets, setTweets] = useState<Tweet[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [note, setNote] = useState<NoteDraft | null>(null);
+
+  // タブ固有 ローディング/エラー
+  const [isTweetLoading, setIsTweetLoading] = useState(false);
+  const [isNoteLoading, setIsNoteLoading] = useState(false);
+  const [tweetErrorState, setTweetErrorState] = useState<ErrorState>(EMPTY_ERROR);
+  const [noteErrorState, setNoteErrorState] = useState<ErrorState>(EMPTY_ERROR);
+
+  // 共通ステータス
   const [isFetchingReadme, setIsFetchingReadme] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [errorCode, setErrorCode] = useState<GenerateErrorCode | null>(null);
-  const [errorField, setErrorField] = useState<GenerateErrorField | null>(null);
   const [usage, setUsage] = useState<UsageInfo | null>(initialUsage);
+
+  // Repo selector
   const [isRepoModalOpen, setIsRepoModalOpen] = useState(false);
   const [repos, setRepos] = useState<import("@/app/api/repos/route").RepoItem[] | null>(null);
   const [reposLoading, setReposLoading] = useState(false);
   const [reposError, setReposError] = useState<string | null>(null);
+
   const resultsRef = useRef<HTMLDivElement>(null);
-  const [githubUrl, setGithubUrl] = useState("");
+
   const isLoggedIn = usage?.tier === "free" || usage?.tier === "paid";
   const projectTextLimit = getProjectTextLimit(usage?.tier ?? "guest");
+
+  const isLoading = activeTab === "tweet" ? isTweetLoading : isNoteLoading;
+  const currentErrorState = activeTab === "tweet" ? tweetErrorState : noteErrorState;
+  const setCurrentErrorState =
+    activeTab === "tweet" ? setTweetErrorState : setNoteErrorState;
+  const formDisabled = isLoading || isFetchingReadme;
+  const isDisabled = formDisabled || projectText.trim() === "";
+
+  const syncTabToUrl = useCallback(
+    (next: GenerateTabKey) => {
+      const params = new URLSearchParams(searchParams?.toString() ?? "");
+      if (next === "note") {
+        params.set("tab", "note");
+      } else {
+        params.delete("tab");
+      }
+      const query = params.toString();
+      const target = query ? `${pathname}?${query}` : pathname;
+      router.replace(target, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
+  function handleTabChange(next: GenerateTabKey) {
+    if (next === activeTab) return;
+    syncTabToUrl(next);
+  }
 
   async function handleOpenRepoModal() {
     setIsRepoModalOpen(true);
@@ -168,26 +333,34 @@ export default function GenerateForm({ initialUsage }: Props) {
     }
   }
 
-  const formDisabled = isLoading || isFetchingReadme;
-  const isDisabled = formDisabled || projectText.trim() === "";
-
   function clearErrorState() {
-    setError(null);
-    setErrorCode(null);
-    setErrorField(null);
+    setCurrentErrorState(EMPTY_ERROR);
   }
 
   function clearFieldError(field: GenerateErrorField) {
-    if (errorField === field) {
-      setError(null);
-      setErrorField(null);
-    }
+    setCurrentErrorState((prev) =>
+      prev.errorField === field ? EMPTY_ERROR : prev,
+    );
   }
 
   function setValidationError(field: GenerateErrorField, message: string) {
-    setError(message);
-    setErrorCode(null);
-    setErrorField(field);
+    setCurrentErrorState({ error: message, errorCode: null, errorField: field });
+  }
+
+  function setApiError(err: GenerateErrorResponse) {
+    setCurrentErrorState({
+      error: err.error ?? "エラーが発生しました。",
+      errorCode: err.code ?? null,
+      errorField: err.field ?? null,
+    });
+  }
+
+  function setNetworkError() {
+    setCurrentErrorState({
+      error: "ネットワークエラーが発生しました。接続を確認してください。",
+      errorCode: null,
+      errorField: null,
+    });
   }
 
   async function fetchReadmeContent(targetUrl: string): Promise<string | null> {
@@ -200,16 +373,16 @@ export default function GenerateForm({ initialUsage }: Props) {
       const data = await res.json();
       if (!res.ok) {
         const err = data as GenerateErrorResponse;
-        setError(err.error ?? "README の取得に失敗しました。");
-        setErrorCode(null);
-        setErrorField(err.field ?? null);
+        setCurrentErrorState({
+          error: err.error ?? "README の取得に失敗しました。",
+          errorCode: null,
+          errorField: err.field ?? null,
+        });
         return null;
       }
       return data.content;
     } catch {
-      setError("ネットワークエラーが発生しました。接続を確認してください。");
-      setErrorCode(null);
-      setErrorField(null);
+      setNetworkError();
       return null;
     }
   }
@@ -222,7 +395,10 @@ export default function GenerateForm({ initialUsage }: Props) {
       if (!content) return;
       setProjectText(content);
       if (content.length > projectTextLimit) {
-        setValidationError("projectText", `READMEが長すぎます。現在のプランでは ${formatCount(projectTextLimit)} 文字以内にしてください。`);
+        setValidationError(
+          "projectText",
+          `READMEが長すぎます。現在のプランでは ${formatCount(projectTextLimit)} 文字以内にしてください。`,
+        );
       }
     } finally {
       setIsFetchingReadme(false);
@@ -240,16 +416,18 @@ export default function GenerateForm({ initialUsage }: Props) {
       await loadReadmeIntoProjectText(trimmedUrl);
       return;
     }
-    setError("GitHubリポジトリURLを入力してください。");
-    setErrorCode(null);
-    setErrorField(null);
+    setCurrentErrorState({
+      error: "GitHubリポジトリURLを入力してください。",
+      errorCode: null,
+      errorField: null,
+    });
   }
 
-  async function handleGenerate(projectTextOverride?: string, urlOverride?: string) {
+  async function generateTweets(projectTextOverride?: string, urlOverride?: string) {
     const textToGenerate = projectTextOverride ?? projectText;
     const urlToGenerate = urlOverride ?? url;
     clearErrorState();
-    setIsLoading(true);
+    setIsTweetLoading(true);
     setTweets([]);
     try {
       const res = await fetch("/api/generate", {
@@ -259,21 +437,51 @@ export default function GenerateForm({ initialUsage }: Props) {
       });
       const data = await res.json();
       if (!res.ok) {
-        const err = data as GenerateErrorResponse;
-        setError(err.error ?? "エラーが発生しました。");
-        setErrorCode(err.code ?? null);
-        setErrorField(err.field ?? null);
+        setApiError(data as GenerateErrorResponse);
         return;
       }
       setTweets((data as GenerateResponse).tweets);
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
       refreshUsage();
     } catch {
-      setError("ネットワークエラーが発生しました。接続を確認してください。");
-      setErrorCode(null);
-      setErrorField(null);
+      setNetworkError();
     } finally {
-      setIsLoading(false);
+      setIsTweetLoading(false);
+    }
+  }
+
+  async function generateNote(projectTextOverride?: string, urlOverride?: string) {
+    const textToGenerate = projectTextOverride ?? projectText;
+    const urlToGenerate = urlOverride ?? url;
+    clearErrorState();
+    setIsNoteLoading(true);
+    setNote(null);
+    try {
+      const res = await fetch("/api/generate-note", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectText: textToGenerate, toneMemo, url: urlToGenerate, hashtags, lengthPreset } satisfies GenerateNoteRequest),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setApiError(data as GenerateErrorResponse);
+        return;
+      }
+      setNote((data as GenerateNoteResponse).note);
+      setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+      refreshUsage();
+    } catch {
+      setNetworkError();
+    } finally {
+      setIsNoteLoading(false);
+    }
+  }
+
+  async function handleGenerate() {
+    if (activeTab === "tweet") {
+      await generateTweets();
+    } else {
+      await generateNote();
     }
   }
 
@@ -281,7 +489,11 @@ export default function GenerateForm({ initialUsage }: Props) {
     const trimmedUrl = githubUrl.trim();
     clearErrorState();
     if (!trimmedUrl) {
-      setError("GitHubリポジトリURLを入力してください。");
+      setCurrentErrorState({
+        error: "GitHubリポジトリURLを入力してください。",
+        errorCode: null,
+        errorField: null,
+      });
       return;
     }
 
@@ -292,14 +504,38 @@ export default function GenerateForm({ initialUsage }: Props) {
 
     setProjectText(content);
     if (content.length > projectTextLimit) {
-      setValidationError("projectText", `READMEが長すぎます。現在のプランでは ${formatCount(projectTextLimit)} 文字以内にしてください。`);
+      setValidationError(
+        "projectText",
+        `READMEが長すぎます。現在のプランでは ${formatCount(projectTextLimit)} 文字以内にしてください。`,
+      );
       return;
     }
     if (!url.trim()) {
       setUrl(trimmedUrl);
     }
-    await handleGenerate(content, url.trim() || trimmedUrl);
+    if (activeTab === "tweet") {
+      await generateTweets(content, url.trim() || trimmedUrl);
+    } else {
+      await generateNote(content, url.trim() || trimmedUrl);
+    }
   }
+
+  const labels =
+    activeTab === "tweet"
+      ? {
+          quickGenerateLabel: "READMEからポストを作る",
+          quickFetchingLabel: "READMEを読んでいます...",
+          generateLabel: "ポストを生成する",
+          loadingTitle: "AIがポストを作成しています",
+        }
+      : {
+          quickGenerateLabel: "READMEからnote Draftを作る",
+          quickFetchingLabel: "READMEを読んでいます...",
+          generateLabel: "note Draftを生成する",
+          loadingTitle: "AIがnote Draftを書いています",
+        };
+
+  const { error, errorCode, errorField } = currentErrorState;
 
   return (
     <>
@@ -313,12 +549,16 @@ export default function GenerateForm({ initialUsage }: Props) {
               </div>
               <div className="text-center">
                 <p className="text-white font-semibold text-base">生成中...</p>
-                <p className="text-gray-400 text-sm mt-1">AIがポストを作成しています</p>
+                <p className="text-gray-400 text-sm mt-1">{labels.loadingTitle}</p>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      <Hero activeTab={activeTab} />
+
+      <GenerateTabs activeTab={activeTab} onChange={handleTabChange} />
 
       <GenerateInputs
         projectText={projectText}
@@ -341,11 +581,21 @@ export default function GenerateForm({ initialUsage }: Props) {
         error={error}
         onReadmeImport={handleReadmeImport}
         onQuickGenerate={handleQuickGenerate}
-        onGenerate={() => handleGenerate()}
+        onGenerate={handleGenerate}
         onClearFieldError={clearFieldError}
-        quickGenerateLabel="READMEからポストを作る"
-        quickFetchingLabel="READMEを読んでいます..."
-        generateLabel="ポストを生成する"
+        quickGenerateLabel={labels.quickGenerateLabel}
+        quickFetchingLabel={labels.quickFetchingLabel}
+        generateLabel={labels.generateLabel}
+        showHashtags={activeTab === "tweet"}
+        extraFields={
+          activeTab === "note" ? (
+            <LengthPresetSelector
+              value={lengthPreset}
+              onChange={setLengthPreset}
+              disabled={formDisabled}
+            />
+          ) : undefined
+        }
       />
 
       {error && (
@@ -366,7 +616,7 @@ export default function GenerateForm({ initialUsage }: Props) {
 
       {usage && <div className="mt-6"><UsageBadge usage={usage} /></div>}
 
-      {tweets.length > 0 && (
+      {activeTab === "tweet" && tweets.length > 0 && (
         <div ref={resultsRef} className="mt-12">
           <p className="text-gray-400 text-sm mb-4">生成されたポスト（{tweets.length}件）</p>
           <div className="space-y-4">
@@ -374,6 +624,13 @@ export default function GenerateForm({ initialUsage }: Props) {
               <TweetCard key={tweet.id} tweet={tweet} />
             ))}
           </div>
+        </div>
+      )}
+
+      {activeTab === "note" && note && (
+        <div ref={resultsRef} className="mt-12">
+          <p className="text-gray-400 text-sm mb-4">生成されたnote Draft</p>
+          <NoteCard note={note} />
         </div>
       )}
 

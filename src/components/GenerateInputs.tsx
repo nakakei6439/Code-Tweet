@@ -57,6 +57,9 @@ type Props = {
   quickFetchingLabel: string;
   generateLabel: string;
 
+  // ハッシュタグ欄の表示制御（note タブでは非表示）
+  showHashtags?: boolean;
+
   // 画面固有の追加フィールド（例: note 画面の「記事の長さ」セレクタ）
   extraFields?: ReactNode;
 };
@@ -87,6 +90,7 @@ export default function GenerateInputs({
   quickGenerateLabel,
   quickFetchingLabel,
   generateLabel,
+  showHashtags = true,
   extraFields,
 }: Props) {
   function getFieldError(field: GenerateErrorField) {
@@ -286,23 +290,25 @@ export default function GenerateInputs({
               {fieldMeta("url", url.length, "App Store / Google Play / GitHub / Web に対応。種別に合ったリード文が自動で付きます。")}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                ハッシュタグ <span className="text-gray-500 font-normal">（任意）</span>
-              </label>
-              <input
-                type="text"
-                value={hashtags}
-                onChange={(e) => {
-                  onHashtagsChange(e.target.value);
-                  onClearFieldError("hashtags");
-                }}
-                placeholder="例：#個人開発 #Webアプリ #SaaS"
-                disabled={formDisabled}
-                className={inputClass("hashtags", "focus:ring-fuchsia-500")}
-              />
-              {fieldMeta("hashtags", hashtags.length, "入力したハッシュタグに加え、関連タグが最大5つ付きます。")}
-            </div>
+            {showHashtags && (
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  ハッシュタグ <span className="text-gray-500 font-normal">（任意）</span>
+                </label>
+                <input
+                  type="text"
+                  value={hashtags}
+                  onChange={(e) => {
+                    onHashtagsChange(e.target.value);
+                    onClearFieldError("hashtags");
+                  }}
+                  placeholder="例：#個人開発 #Webアプリ #SaaS"
+                  disabled={formDisabled}
+                  className={inputClass("hashtags", "focus:ring-fuchsia-500")}
+                />
+                {fieldMeta("hashtags", hashtags.length, "入力したハッシュタグに加え、関連タグが最大5つ付きます。")}
+              </div>
+            )}
 
             {extraFields}
 

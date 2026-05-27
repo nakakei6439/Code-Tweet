@@ -1,17 +1,25 @@
+import { Suspense } from "react";
 import { headers } from "next/headers";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import GenerateForm from "@/components/GenerateForm";
+import UnifiedGenerateForm from "@/components/UnifiedGenerateForm";
+import type { GenerateTabKey } from "@/components/GenerateTabs";
 import { hashIp } from "@/lib/rateLimit";
 import { getGuestUsage, getUserUsage } from "@/lib/usage";
 import type { UsageInfo } from "@/types/usage";
 
 export const metadata: Metadata = {
-  title: "READMEをX投稿に変換",
-  description: "GitHubリポジトリやプロジェクト説明から、X向けマーケティングポストを5件まとめて生成します。",
+  title: "READMEをポスト / note Draftに変換",
+  description: "GitHubリポジトリやプロジェクト説明から、Xのポストとnote.comの紹介記事Draftを1ページで生成できます。",
 };
 
-export default async function Home() {
+type SearchParams = Promise<{ tab?: string | string[] }>;
+
+export default async function Home({ searchParams }: { searchParams: SearchParams }) {
+  const params = await searchParams;
+  const tabParam = Array.isArray(params.tab) ? params.tab[0] : params.tab;
+  const initialTab: GenerateTabKey = tabParam === "note" ? "note" : "tweet";
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -35,17 +43,9 @@ export default async function Home() {
       </div>
 
       <div className="max-w-3xl mx-auto relative z-10">
-        <h1 className="text-center text-6xl font-medium tracking-tight text-white sm:text-8xl">
-          Code{" "}
-          <span className="bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-yellow-200 bg-clip-text text-transparent">
-            Tweet
-          </span>
-        </h1>
-        <p className="mx-auto mt-5 mb-10 max-w-xl text-center text-sm leading-6 text-gray-300">
-          <span className="block">GitHubリポジトリURLを貼るだけで、</span>
-          <span className="block">READMEから1週間分のX向けポストを5件作成します。</span>
-        </p>
-        <GenerateForm initialUsage={initialUsage} />
+        <Suspense fallback={null}>
+          <UnifiedGenerateForm initialUsage={initialUsage} initialTab={initialTab} />
+        </Suspense>
       </div>
     </main>
   );

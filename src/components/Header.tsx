@@ -17,8 +17,8 @@ export default async function Header() {
           <Link href="/about" className="transition-colors hover:text-white">
             Code Tweetとは
           </Link>
-          <Link href="/note" className="transition-colors hover:text-white">
-            note Draft
+          <Link href="/about/note" className="transition-colors hover:text-white">
+            note Draftとは
           </Link>
           <Link href="/pricing" className="transition-colors hover:text-white">
             プラン
