@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import UnifiedGenerateForm from "@/components/UnifiedGenerateForm";
 import type { GenerateTabKey } from "@/components/GenerateTabs";
+import OnboardingHost from "@/components/onboarding/OnboardingHost";
 import { hashIp } from "@/lib/rateLimit";
 import { getGuestUsage, getUserUsage } from "@/lib/usage";
 import type { UsageInfo } from "@/types/usage";
@@ -47,6 +48,8 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
           <UnifiedGenerateForm initialUsage={initialUsage} initialTab={initialTab} />
         </Suspense>
       </div>
+
+      <OnboardingHost />
     </main>
   );
 }
