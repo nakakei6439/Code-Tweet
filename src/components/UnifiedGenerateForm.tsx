@@ -586,7 +586,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         quickGenerateLabel={labels.quickGenerateLabel}
         quickFetchingLabel={labels.quickFetchingLabel}
         generateLabel={labels.generateLabel}
-        showHashtags={activeTab === "tweet"}
+        showHashtags
         extraFields={
           activeTab === "note" ? (
             <LengthPresetSelector

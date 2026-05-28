@@ -57,7 +57,7 @@ type Props = {
   quickFetchingLabel: string;
   generateLabel: string;
 
-  // ハッシュタグ欄の表示制御（note タブでは非表示）
+  // ハッシュタグ欄の表示制御
   showHashtags?: boolean;
 
   // 画面固有の追加フィールド（例: note 画面の「記事の長さ」セレクタ）

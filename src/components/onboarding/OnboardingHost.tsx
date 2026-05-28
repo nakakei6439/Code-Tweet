@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   markDismissed,
   resolveOnboarding,
@@ -8,13 +8,14 @@ import {
 } from "@/lib/onboarding";
 import OnboardingStep from "./OnboardingStep";
 
-export default function OnboardingHost() {
-  const [resolution, setResolution] = useState<OnboardingResolution>({ kind: "hidden" });
+type Props = {
+  initialOnboarding?: string;
+};
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setResolution(resolveOnboarding(params.get("onboarding")));
-  }, []);
+export default function OnboardingHost({ initialOnboarding }: Props) {
+  const [resolution, setResolution] = useState<OnboardingResolution>(() =>
+    resolveOnboarding(initialOnboarding ?? null),
+  );
 
   if (resolution.kind === "hidden") return null;
 

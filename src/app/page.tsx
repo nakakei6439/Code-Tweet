@@ -14,10 +14,11 @@ export const metadata: Metadata = {
   description: "GitHubリポジトリやプロジェクト説明から、Xのポストとnote.comの紹介記事Draftを1ページで生成できます。",
 };
 
-type SearchParams = Promise<{ tab?: string | string[] }>;
+type SearchParams = Promise<{ onboarding?: string | string[]; tab?: string | string[] }>;
 
 export default async function Home({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
+  const onboardingParam = Array.isArray(params.onboarding) ? params.onboarding[0] : params.onboarding;
   const tabParam = Array.isArray(params.tab) ? params.tab[0] : params.tab;
   const initialTab: GenerateTabKey = tabParam === "note" ? "note" : "tweet";
 
@@ -49,7 +50,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
         </Suspense>
       </div>
 
-      <OnboardingHost />
+      <OnboardingHost initialOnboarding={onboardingParam} />
     </main>
   );
 }
