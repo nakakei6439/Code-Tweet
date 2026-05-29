@@ -95,7 +95,7 @@ function FreeLimitCTA() {
         bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400
         text-white shadow-lg shadow-fuchsia-500/20 hover:opacity-90 transition-opacity"
     >
-      Pro プランを見る（¥980 / 月）
+      Pro プランを見る（¥500 / 月）
     </Link>
   );
 }

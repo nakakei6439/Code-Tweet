@@ -235,7 +235,7 @@ export default function SettingsForm({ hasToken, isPaid }: Props) {
               </span>
             </div>
             <p className="text-gray-400 text-sm">
-              Pro プラン（¥980 / 月）では、GitHub 連携で取得した非公開リポジトリの README も
+              Pro プラン（¥500 / 月）では、GitHub 連携で取得した非公開リポジトリの README も
               自動取得でき、リポジトリ一覧から選んで生成できます。
             </p>
             <Link
