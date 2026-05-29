@@ -58,7 +58,7 @@ const PLAN_TIERS: PlanTier[] = [
     slug: "pro",
     name: "Pro",
     tagline: "本格運用するならこれ",
-    price: "¥980",
+    price: "¥500",
     priceUnit: "/ 月",
     monthlyLabel: "月30回",
     readmeLimitLabel: `${PROJECT_TEXT_LIMITS.paid.toLocaleString("ja-JP")}文字`,
@@ -74,7 +74,7 @@ const PLAN_TIERS: PlanTier[] = [
     cta: { label: "Pro にアップグレード" },
     available: true,
     badge: "初月無料",
-    trialNote: "30日後から ¥980/月（いつでも解約可）",
+    trialNote: "30日後から ¥500/月（いつでも解約可）",
   },
 ];
 

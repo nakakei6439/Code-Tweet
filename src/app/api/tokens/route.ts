@@ -26,7 +26,7 @@ export async function POST(request: Request): Promise<Response> {
   const tier = await getSubscriptionTier(user.id);
   if (tier !== "paid") {
     return Response.json(
-      { error: "PAT の登録は Pro プラン（月 980 円）でご利用いただけます。" },
+      { error: "PAT の登録は Pro プラン（月 500 円）でご利用いただけます。" },
       { status: 403 },
     );
   }

@@ -62,7 +62,7 @@ export default async function SettingsPage() {
             <p className="text-white text-lg font-bold flex items-center gap-2">
               Pro
               <span className="text-xs font-medium text-fuchsia-400 bg-fuchsia-950/50 border border-fuchsia-800 px-2 py-0.5 rounded-full">
-                ¥980 / 月
+                ¥500 / 月
               </span>
             </p>
           ) : (
