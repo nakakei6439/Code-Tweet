@@ -4,7 +4,7 @@
 
 ## 目的
 
-Code Tweet は、README やプロジェクト説明から X 向けのマーケティングポストを 5 件生成する個人開発者向け Web アプリです。紹介、使い方、ユースケース、共感、CTA の流れで投稿案を作り、推奨投稿日時と理由も付けます。
+Code Tweet は、README やプロジェクト説明から X 向けのマーケティングポスト 5 件、または note.com 向け Markdown Draft 1 本を生成する個人開発者向け Web アプリです。投稿案には推奨投稿日時と理由を付け、note Draft は記事タイトルと本文を Markdown で出力します。
 
 ## 対象ユーザー
 
@@ -14,12 +14,13 @@ Code Tweet は、README やプロジェクト説明から X 向けのマーケ�
 
 - GitHub リポジトリ URL から README を取得
 - README や機能説明の直接入力
-- 口調メモ、投稿に載せる URL、ハッシュタグの任意指定
-- Gemini API `gemini-2.5-flash` による 5 件生成
+- 口調メモ、投稿や記事に載せる URL、ハッシュタグの任意指定
+- Gemini API `gemini-2.5-flash` による Code Tweet / note Draft 生成
+- note Draft の長さプリセット（短め、標準、長め）
 - `twitter-text` による X の 280 weighted length チェックと自動短縮
 - GitHub OAuth ログイン、公開リポジトリ一覧選択
 - Pro ユーザー向けのプライベートリポジトリ対応
-- Pro ユーザー向けの生成履歴保存（最新 50 件、上限超過分は自動削除）と個別削除
+- Pro ユーザー向けの Code Tweet / note Draft 生成履歴保存（最新 50 件、上限超過分は自動削除）と削除
 - Stripe Checkout / Webhook / Customer Portal
 - 管理画面で利用状況、プラン変更、ゲスト利用回数リセットを操作
 - `/about`、`/pricing`、`/terms`、`/privacy`、`/contact` を提供
@@ -39,7 +40,7 @@ Pro は月額 500 円。ログインユーザーの生成回数は月初にリ�
 ## データと保存方針
 
 - README 本文と追加プロンプト本文は保存しない
-- Pro ユーザーの生成履歴には生成結果、source URL、ハッシュタグ、作成日時を保存する。保存上限は 1 ユーザーあたり最新 50 件で、新規追加時に超過分を同期的に削除する
+- Pro ユーザーの生成履歴には Code Tweet / note Draft の生成結果、source URL、ハッシュタグ、作成日時を保存する。保存上限は 1 ユーザーあたり最新 50 件で、新規追加時に超過分を同期的に削除する
 - GitHub OAuth token / PAT は `GITHUB_PAT_ENCRYPTION_KEY` で AES-256-GCM 暗号化して保存し、リポジトリ一覧取得や Pro の非公開 README 取得に使う
 - 利用回数は Supabase の `usage_logs` と `ip_usage_logs` で管理する
 - アカウント削除時は関連データも削除する

@@ -100,16 +100,64 @@ create index if not exists admin_login_attempts_locked_until_idx
   on admin_login_attempts (locked_until);
 
 -- アプリ層の制約: 1 ユーザーあたり最新 50 件のみ保持。
--- src/lib/generationHistory.ts の recordTweetGeneration が INSERT 成功後に
+-- src/lib/generationHistory.ts の recordTweetGeneration / recordNoteGeneration が INSERT 成功後に
 -- 超過分を同期削除する。TWEET_GENERATION_HISTORY_LIMIT を参照。
 create table if not exists tweet_generations (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  tweets jsonb not null,
+  generation_type text not null default 'tweet',
+  tweets jsonb not null default '[]'::jsonb,
+  note jsonb,
   source_url text,
   hashtags text,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  constraint tweet_generations_type_check
+    check (generation_type in ('tweet', 'note')),
+  constraint tweet_generations_payload_check
+    check (
+      (generation_type = 'tweet' and jsonb_typeof(tweets) = 'array' and note is null)
+      or
+      (generation_type = 'note' and jsonb_typeof(tweets) = 'array' and note is not null)
+    )
 );
+
+alter table tweet_generations
+  add column if not exists generation_type text not null default 'tweet';
+
+alter table tweet_generations
+  add column if not exists note jsonb;
+
+alter table tweet_generations
+  alter column tweets set default '[]'::jsonb;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'tweet_generations_type_check'
+      and conrelid = 'tweet_generations'::regclass
+  ) then
+    alter table tweet_generations
+      add constraint tweet_generations_type_check
+      check (generation_type in ('tweet', 'note'));
+  end if;
+
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'tweet_generations_payload_check'
+      and conrelid = 'tweet_generations'::regclass
+  ) then
+    alter table tweet_generations
+      add constraint tweet_generations_payload_check
+      check (
+        (generation_type = 'tweet' and jsonb_typeof(tweets) = 'array' and note is null)
+        or
+        (generation_type = 'note' and jsonb_typeof(tweets) = 'array' and note is not null)
+      );
+  end if;
+end $$;
 
 alter table tweet_generations enable row level security;
 

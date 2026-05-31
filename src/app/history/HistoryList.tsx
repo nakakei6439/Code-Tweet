@@ -2,19 +2,35 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import TweetCard from "@/components/TweetCard";
-import type { TweetGenerationRecord } from "@/lib/generationHistory";
+import type { GenerationHistoryRecord } from "@/lib/generationHistory";
 import type { Tweet } from "@/types/tweet";
-import { deleteHistoryTweet } from "./actions";
+import { deleteHistoryNote, deleteHistoryTweet } from "./actions";
+
+const NoteCard = dynamic(() => import("@/components/NoteCard"), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded-xl border border-gray-800 bg-gray-900 p-5 text-sm text-gray-400">
+      note Draftを読み込んでいます...
+    </div>
+  ),
+});
 
 type Props = {
-  histories: TweetGenerationRecord[];
+  histories: GenerationHistoryRecord[];
 };
 
-type PendingDelete = {
+type PendingDelete = ({
+  type: "tweet";
   generationId: string;
   tweet: Tweet;
-} | null;
+} | {
+  type: "note";
+  generationId: string;
+  title: string;
+  markdown: string;
+}) | null;
 
 function formatCreatedAt(value: string) {
   const date = new Date(value);
@@ -30,12 +46,24 @@ function formatCreatedAt(value: string) {
 
 const PREVIEW_LENGTH = 60;
 
-function buildPreview(tweets: Tweet[]): string {
-  const first = tweets[0];
-  if (!first) return "（このセッションには表示できる投稿案がありません）";
-  const flattened = first.text.replace(/\s+/g, " ").trim();
+function truncatePreview(value: string): string {
+  const flattened = value.replace(/\s+/g, " ").trim();
+  if (!flattened) return "（この履歴には表示できる内容がありません）";
   if (flattened.length <= PREVIEW_LENGTH) return flattened;
   return `${flattened.slice(0, PREVIEW_LENGTH)}…`;
+}
+
+function buildPreview(history: GenerationHistoryRecord): string {
+  if (history.generationType === "note") {
+    return truncatePreview(`${history.note.title} ${history.note.markdown}`);
+  }
+  const first = history.tweets[0];
+  if (!first) return "（このセッションには表示できる投稿案がありません）";
+  return truncatePreview(first.text);
+}
+
+function buildCountLabel(history: GenerationHistoryRecord): string {
+  return history.generationType === "note" ? "note Draft" : `ポスト ${history.tweets.length}件`;
 }
 
 function extractGithubRepo(sourceUrl: string | null): string | null {
@@ -86,9 +114,9 @@ function classifyDate(value: string, now: Date): DateGroupKey {
   return "older";
 }
 
-function groupByDate(histories: TweetGenerationRecord[]) {
+function groupByDate(histories: GenerationHistoryRecord[]) {
   const now = new Date();
-  const buckets = new Map<DateGroupKey, TweetGenerationRecord[]>();
+  const buckets = new Map<DateGroupKey, GenerationHistoryRecord[]>();
   for (const history of histories) {
     const key = classifyDate(history.createdAt, now);
     const list = buckets.get(key) ?? [];
@@ -142,7 +170,9 @@ export default function HistoryList({ histories }: Props) {
     if (!pendingDelete) return;
     setError(null);
     startTransition(async () => {
-      const result = await deleteHistoryTweet(pendingDelete.generationId, pendingDelete.tweet.id);
+      const result = pendingDelete.type === "tweet"
+        ? await deleteHistoryTweet(pendingDelete.generationId, pendingDelete.tweet.id)
+        : await deleteHistoryNote(pendingDelete.generationId);
       if (!result.ok) {
         setError(result.error);
         return;
@@ -156,7 +186,7 @@ export default function HistoryList({ histories }: Props) {
       <section className="rounded-2xl border border-gray-800 bg-gray-900/80 p-8 text-center">
         <p className="text-base font-semibold text-white">まだ履歴はありません</p>
         <p className="mt-2 text-sm leading-6 text-gray-400">
-          ログインした状態でポストを生成すると、ここに生成結果が残ります。
+          Proプランでポストまたはnote Draftを生成すると、ここに生成結果が残ります。
         </p>
         <Link
           href="/"
@@ -218,12 +248,12 @@ export default function HistoryList({ histories }: Props) {
                         </div>
                         {!isOpen && (
                           <p className="mt-1 truncate text-xs text-gray-400">
-                            {buildPreview(history.tweets)}
+                            {buildPreview(history)}
                           </p>
                         )}
                       </div>
                       <span className="shrink-0 rounded-full border border-gray-700 px-2.5 py-1 text-xs text-gray-400">
-                        {history.tweets.length}件
+                        {buildCountLabel(history)}
                       </span>
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -258,24 +288,47 @@ export default function HistoryList({ histories }: Props) {
                           </div>
                         )}
                         <div className="space-y-4">
-                          {history.tweets.map((tweet) => (
-                            <TweetCard
-                              key={tweet.id}
-                              tweet={tweet}
-                              actionSlot={
+                          {history.generationType === "note" ? (
+                            <>
+                              <div className="flex justify-end">
                                 <button
                                   type="button"
                                   onClick={() => {
                                     setError(null);
-                                    setPendingDelete({ generationId: history.id, tweet });
+                                    setPendingDelete({
+                                      type: "note",
+                                      generationId: history.id,
+                                      title: history.note.title,
+                                      markdown: history.note.markdown,
+                                    });
                                   }}
                                   className="rounded-md border border-red-700/70 px-3 py-1 text-xs text-red-300 transition-colors hover:bg-red-950/40"
                                 >
                                   削除
                                 </button>
-                              }
-                            />
-                          ))}
+                              </div>
+                              <NoteCard note={history.note} />
+                            </>
+                          ) : (
+                            history.tweets.map((tweet) => (
+                              <TweetCard
+                                key={tweet.id}
+                                tweet={tweet}
+                                actionSlot={
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setError(null);
+                                      setPendingDelete({ type: "tweet", generationId: history.id, tweet });
+                                    }}
+                                    className="rounded-md border border-red-700/70 px-3 py-1 text-xs text-red-300 transition-colors hover:bg-red-950/40"
+                                  >
+                                    削除
+                                  </button>
+                                }
+                              />
+                            ))
+                          )}
                         </div>
                       </div>
                     )}
@@ -302,7 +355,7 @@ export default function HistoryList({ histories }: Props) {
             <div className="h-px bg-gradient-to-r from-transparent via-red-500 to-transparent" />
             <div className="border-b border-gray-800 px-6 py-5">
               <h3 id="history-delete-confirm-title" className="font-semibold text-white">
-                この投稿案を削除しますか？
+                {pendingDelete.type === "note" ? "このnote Draftを削除しますか？" : "この投稿案を削除しますか？"}
               </h3>
               <p className="mt-2 text-sm leading-6 text-gray-400">
                 削除すると元に戻せません。
@@ -311,7 +364,9 @@ export default function HistoryList({ histories }: Props) {
             <div className="space-y-4 px-6 py-5">
               <div className="max-h-40 overflow-y-auto rounded-lg border border-gray-800 bg-gray-950/60 px-4 py-3">
                 <p className="whitespace-pre-wrap text-xs leading-5 text-gray-300">
-                  {pendingDelete.tweet.text}
+                  {pendingDelete.type === "note"
+                    ? `# ${pendingDelete.title}\n\n${pendingDelete.markdown}`
+                    : pendingDelete.tweet.text}
                 </p>
               </div>
               {error && (

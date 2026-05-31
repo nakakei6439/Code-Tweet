@@ -9,7 +9,7 @@ import HistoryList from "./HistoryList";
 
 export const metadata: Metadata = {
   title: "生成履歴",
-  description: "Code Tweet で生成した過去のX投稿を確認できます。",
+  description: "Code Tweet で生成した過去のX投稿とnote Draftを確認できます。",
 };
 
 export default async function HistoryPage() {
@@ -44,7 +44,7 @@ export default async function HistoryPage() {
         <section className="rounded-2xl border border-gray-800 bg-gray-900/80 p-8 text-center">
           <p className="text-base font-semibold text-white">生成履歴は Pro プランの機能です</p>
           <p className="mt-2 text-sm leading-6 text-gray-400">
-            Pro では生成した投稿案を最新 {TWEET_GENERATION_HISTORY_LIMIT} 件まで保存し、あとから見返したり不要な投稿案を削除できます。
+            Pro では生成した投稿案とnote Draftを最新 {TWEET_GENERATION_HISTORY_LIMIT} 件まで保存し、あとから見返したり不要な履歴を削除できます。
           </p>
           <Link
             href="/pricing"

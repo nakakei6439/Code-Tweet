@@ -1,4 +1,5 @@
 import { generateNoteDraft } from "@/lib/geminiNote";
+import { recordNoteGeneration } from "@/lib/generationHistory";
 import { logError } from "@/lib/logger";
 import {
   DEFAULT_NOTE_LENGTH_PRESET,
@@ -169,6 +170,9 @@ export async function POST(request: Request): Promise<Response> {
     );
     if (user) {
       await recordUserUsage(supabase, user.id);
+      if (usageTier === "paid") {
+        await recordNoteGeneration(user.id, note, body.url ?? "", body.hashtags ?? "");
+      }
     } else if (ipHash) {
       await recordGuestUsage(ipHash);
     }

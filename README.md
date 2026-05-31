@@ -49,7 +49,7 @@ npm run dev
 
 Pro は月額 500 円。ログインユーザーの生成回数は月初にリセットされます。ゲスト利用は IP ハッシュ単位の累計です。
 
-Pro ユーザーの生成履歴は、Code Tweet の生成結果を最新 50 件まで保存します。
+Pro ユーザーの生成履歴は、Code Tweet と note Draft の生成結果を合算で最新 50 件まで保存します。
 
 機能、保存方針、KPI、リスクは [docs/product.md](./docs/product.md) に集約しています。
 
