@@ -150,6 +150,36 @@ export default function NoteCard({ note }: NoteCardProps) {
         </h2>
       </div>
 
+      {note.recommendedTimes.length > 0 && (
+        <div className="mb-4 rounded-lg border border-gray-700 bg-gray-950/60 px-4 py-3">
+          <div className="mb-2 flex items-center gap-1.5">
+            <svg className="w-4 h-4 shrink-0 text-cyan-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <path strokeLinecap="round" d="M12 6v6l4 2" />
+            </svg>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold">
+              おすすめ投稿時間
+            </span>
+          </div>
+          <ul className="space-y-2">
+            {note.recommendedTimes.map((time, i) => (
+              <li key={i} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="inline-flex shrink-0 rounded-md border border-cyan-800/60 bg-cyan-950/40 px-2 py-0.5 text-[10px] font-semibold text-cyan-300">
+                    {time.category}
+                  </span>
+                  <span className="text-sm font-medium text-gray-200 tabular-nums">{time.label}</span>
+                </div>
+                <span className="text-xs text-gray-400 leading-5">{time.reason}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2.5 text-[11px] text-gray-500 leading-4">
+            note の「予約投稿」で上の日時を指定すると、ねらった時間に自動公開できます。
+          </p>
+        </div>
+      )}
+
       <div className="mb-3 flex items-center justify-between border-b border-gray-800">
         <div className="flex items-center gap-1">
           <button
