@@ -163,6 +163,19 @@ function stripPostMarker(text: string): string {
   return text.slice(marker.index + marker[0].length).trim();
 }
 
+// SCHEDULE 行の後ろ（次ポストの番号マーカー手前まで）に Gemini が置いたハッシュタグ行だけを回収する。
+// 本文・URL 等の他テキストは拾わず捨てる。番号マーカー行が出たらそこで打ち切る。
+function extractTrailingHashtagLine(tail: string): string {
+  const lines: string[] = [];
+  for (const line of tail.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    if (POST_MARKER_RE.test(`\n${line}`)) break;
+    if (/^(?:#\S+\s*)+$/.test(trimmed)) lines.push(trimmed);
+  }
+  return lines.join("\n");
+}
+
 export function parseGeneratedTweets(text: string): ParsedGeneratedTweets {
   const SCHEDULE_RE = /SCHEDULE:\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})\s*\/\s*([^\n]+)/g;
   const scheduleMatches = Array.from(text.matchAll(SCHEDULE_RE));
@@ -176,13 +189,22 @@ export function parseGeneratedTweets(text: string): ParsedGeneratedTweets {
   for (let i = 0; i < 5; i++) {
     const sched = scheduleMatches[i];
     const schedStart = sched.index!;
+    const schedEnd = schedStart + sched[0].length;
     const prevSchedEnd = i === 0 ? 0 : scheduleMatches[i - 1].index! + scheduleMatches[i - 1][0].length;
+    const nextSchedStart = i + 1 < scheduleMatches.length ? scheduleMatches[i + 1].index! : text.length;
 
     // SCHEDULE 行をポスト本文の終端として扱う。SCHEDULE 行以降は次ポストの番号マーカーまで捨てる
     // ことで、Gemini が SCHEDULE 後に追加の本文・URL ブロックを書いてもポストに混入させない。
-    const content = stripPostMarker(text.slice(prevSchedEnd, schedStart));
+    let content = stripPostMarker(text.slice(prevSchedEnd, schedStart));
     if (!content) {
       throw new Error("5件のポストを生成できませんでした。もう一度お試しください。");
+    }
+
+    // ただしハッシュタグ行だけは SCHEDULE 行の後ろに置かれても回収し、本文末尾へ戻す
+    // （Gemini が非決定的にハッシュタグ行を SCHEDULE 後に出力してもポストから消えないようにする）。
+    const trailingTags = extractTrailingHashtagLine(text.slice(schedEnd, nextSchedStart));
+    if (trailingTags) {
+      content = `${content}\n${trailingTags}`;
     }
 
     drafts.push(content);
@@ -226,6 +248,7 @@ ${hashtags
 - ハッシュタグは本文・URLと改行して末尾に記載する（例：「本文\n#tag1 #tag2 #tag3」）
 - 本文中にハッシュタグを入れた場合でも、最後の行にハッシュタグ行を必ず作る
 - ハッシュタグ行は本文末尾に 1 行だけ。本文中・URL の前後に追加のハッシュタグ行を書かない
+- ハッシュタグ行はポスト本文の一部であり、必ず SCHEDULE: 行より前に置く。SCHEDULE: 行の後ろにハッシュタグを書かない
 - ハッシュタグはユーザー指定分を含め合計3〜5つにする（ハッシュタグ未指定の場合もプロダクトに関連するタグを3〜5つ生成する）
 ${url ? `- URL は 1 ポストにつき 1 回のみ出力する。同じ URL も別の URL も、本文中に 2 回以上書かない\n- URL の直前リード文（例：「無料でダウンロード →」）も 1 ポストに 1 回のみ` : "- URLが指定されていないため、URL・アプリストアURL・App Store・Google Play などのリンクや参照テキストを一切含めない"}
 - 1 ポストには本文を 1 つだけ書く。同一ポスト内に複数の本文パターン・複数の CTA・複数の段落構成を混在させない
@@ -247,16 +270,22 @@ SCHEDULE: YYYY-MM-DD HH:MM / 理由（15文字以内）
 
 【出力形式】
 必ず以下の形式で出力する。説明・見出し・空行は不要。
+各ポストはハッシュタグ行で終わり、その直後の行に SCHEDULE: を置く（ハッシュタグ行は必ず SCHEDULE: 行より前）。
 
 1. [ポスト本文]
+#tag1 #tag2 #tag3
 SCHEDULE: YYYY-MM-DD HH:MM / 理由
 2. [ポスト本文]
+#tag1 #tag2 #tag3
 SCHEDULE: YYYY-MM-DD HH:MM / 理由
 3. [ポスト本文]
+#tag1 #tag2 #tag3
 SCHEDULE: YYYY-MM-DD HH:MM / 理由
 4. [ポスト本文]
+#tag1 #tag2 #tag3
 SCHEDULE: YYYY-MM-DD HH:MM / 理由
 5. [ポスト本文]
+#tag1 #tag2 #tag3
 SCHEDULE: YYYY-MM-DD HH:MM / 理由`;
 }
 
