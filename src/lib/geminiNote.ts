@@ -1,14 +1,21 @@
 import { GoogleGenAI } from "@google/genai";
-import { GEMINI_MODEL, detectUrlType } from "@/lib/gemini";
+import { GEMINI_MODEL, detectUrlType, formatScheduleLabel } from "@/lib/gemini";
 import {
   DEFAULT_NOTE_LENGTH_PRESET,
   NOTE_LENGTH_PRESETS,
 } from "@/lib/noteLengthPresets";
-import type { NoteDraft, NoteLengthPreset } from "@/types/note";
+import type {
+  NoteDraft,
+  NoteLengthPreset,
+  NoteRecommendedTime,
+} from "@/types/note";
 
 const TITLE_RE = /^\s*TITLE:\s*(.+)\s*$/m;
 const TITLE_MAX_LENGTH = 32;
 const HASHTAG_LINE_RE = /^\s*#\S+(?:\s+#\S+)+\s*$/m;
+const SCHEDULE_RE =
+  /SCHEDULE:\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})\s*\/\s*([^/\n]+?)\s*\/\s*([^\n]+)/g;
+const SCHEDULE_LINE_RE = /^\s*SCHEDULE:.*$/gm;
 
 function stripMarkdown(markdown: string): string {
   return markdown
@@ -71,6 +78,14 @@ ${hashtags ? `\n【ハッシュタグ（必須）】\n以下のハッシュタ�
 - 句点で改行し、段落の間は空行を入れて読みやすくする
 - 「〇〇とは」の見出しでは必ずプロダクト名を入れる（プロジェクト説明から推測）
 
+【おすすめ投稿時間（記事末尾に必ず出力）】
+ハッシュタグ行の後に、この記事を note.com に公開するのに適した日時を3件、以下の形式で1行ずつ出力する：
+SCHEDULE: YYYY-MM-DD HH:MM / カテゴリ / 理由（20文字以内）
+- カテゴリは必ず「おすすめ」「プロモーション」「マーケティング」の3つをこの順番で1件ずつ使う。
+- 日付は今日（${todayStr}）の翌日から7日以内。3件すべて異なる日時にする。
+- note.com の読者行動に合わせて選ぶ（X とは異なる）。夜のゴールデンタイム 21〜23時、平日昼 12〜13時、土日の朝〜午前などが読まれやすい。記事のテーマ・ターゲット層に合わせて最適な日時と理由を選ぶ。
+- これは投稿タイミングのメタ情報であり、本文の文字数には含めない（本文の字数制限には影響しない）。
+
 【出力形式】
 必ず以下の形式で出力する。前置き・説明・コードフェンスでの全体ラップ・引用符は一切付けない。
 
@@ -80,7 +95,19 @@ TITLE: 記事タイトル（必ず${TITLE_MAX_LENGTH}字以内・記号や空白
 
 #tag1 #tag2 #tag3
 
-（今日の日付：${todayStr}。記事中に日付を入れる必要はない。）`;
+SCHEDULE: YYYY-MM-DD HH:MM / おすすめ / 理由
+SCHEDULE: YYYY-MM-DD HH:MM / プロモーション / 理由
+SCHEDULE: YYYY-MM-DD HH:MM / マーケティング / 理由
+
+（今日の日付：${todayStr}。記事本文中に日付を入れる必要はない。）`;
+}
+
+function parseRecommendedTimes(text: string): NoteRecommendedTime[] {
+  return Array.from(text.matchAll(SCHEDULE_RE)).map((match) => ({
+    label: formatScheduleLabel(match[1], match[2]),
+    category: match[3].trim(),
+    reason: match[4].trim(),
+  }));
 }
 
 function parseNoteOutput(text: string): NoteDraft {
@@ -90,8 +117,10 @@ function parseNoteOutput(text: string): NoteDraft {
     throw new Error("note Draftを生成できませんでした。もう一度お試しください。");
   }
   const title = titleMatch[1].trim().replace(/^["「『]|["」』]$/g, "");
+  const recommendedTimes = parseRecommendedTimes(trimmed);
   const markdown = trimmed
     .slice((titleMatch.index ?? 0) + titleMatch[0].length)
+    .replace(SCHEDULE_LINE_RE, "")
     .replace(/^\s*\n+/, "")
     .trim();
   if (!markdown) {
@@ -101,6 +130,7 @@ function parseNoteOutput(text: string): NoteDraft {
     title,
     markdown,
     charCount: countPlainText(markdown),
+    recommendedTimes,
   };
 }
 

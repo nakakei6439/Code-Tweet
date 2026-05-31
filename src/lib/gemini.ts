@@ -5,7 +5,7 @@ import type { Tweet } from "@/types/tweet";
 const TWEET_LIMIT = 280;
 export const GEMINI_MODEL = "gemini-2.5-flash";
 
-function formatScheduleLabel(dateStr: string, timeStr: string): string {
+export function formatScheduleLabel(dateStr: string, timeStr: string): string {
   const [year, month, day] = dateStr.split("-").map(Number);
   const dow = ["日", "月", "火", "水", "木", "金", "土"][new Date(year, month - 1, day).getDay()];
   return `${month}月${day}日（${dow}）${timeStr}`;
