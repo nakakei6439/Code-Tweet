@@ -1,30 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import {
-  markDismissed,
-  resolveOnboarding,
-  type OnboardingResolution,
-} from "@/lib/onboarding";
+import type { OnboardingResolution } from "@/lib/onboarding";
 import OnboardingStep from "./OnboardingStep";
 
 type Props = {
-  initialOnboarding?: string;
+  initialResolution: OnboardingResolution;
 };
 
-export default function OnboardingHost({ initialOnboarding }: Props) {
-  const [resolution, setResolution] = useState<OnboardingResolution>(() =>
-    resolveOnboarding(initialOnboarding ?? null),
-  );
+type ResolutionKey = "hidden" | "show" | "forced";
 
-  if (resolution.kind === "hidden") return null;
+function toResolutionKey(resolution: OnboardingResolution): ResolutionKey {
+  if (resolution.kind === "hidden") return "hidden";
+  return resolution.forced ? "forced" : "show";
+}
+
+export default function OnboardingHost({ initialResolution }: Props) {
+  const resolutionKey = toResolutionKey(initialResolution);
+  const [closed, setClosed] = useState(false);
+
+  if (closed || resolutionKey === "hidden") return null;
 
   const handleClose = (dontShowAgain: boolean) => {
-    if (dontShowAgain && !resolution.forced) {
-      markDismissed();
+    if (dontShowAgain && resolutionKey !== "forced") {
+      void fetch("/api/onboarding/dismiss", { method: "POST" });
     }
-    setResolution({ kind: "hidden" });
+    setClosed(true);
   };
 
-  return <OnboardingStep forced={resolution.forced} onClose={handleClose} />;
+  return <OnboardingStep forced={resolutionKey === "forced"} onClose={handleClose} />;
 }

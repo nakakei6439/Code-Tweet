@@ -1,10 +1,11 @@
 import { Suspense } from "react";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import UnifiedGenerateForm from "@/components/UnifiedGenerateForm";
 import type { GenerateTabKey } from "@/components/GenerateTabs";
 import OnboardingHost from "@/components/onboarding/OnboardingHost";
+import { ONBOARDING_COOKIE_NAME, resolveOnboarding } from "@/lib/onboarding";
 import { hashIp } from "@/lib/rateLimit";
 import { getGuestUsage, getUserUsage } from "@/lib/usage";
 import type { UsageInfo } from "@/types/usage";
@@ -21,6 +22,11 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   const onboardingParam = Array.isArray(params.onboarding) ? params.onboarding[0] : params.onboarding;
   const tabParam = Array.isArray(params.tab) ? params.tab[0] : params.tab;
   const initialTab: GenerateTabKey = tabParam === "note" ? "note" : "tweet";
+  const cookieStore = await cookies();
+  const onboardingResolution = resolveOnboarding(
+    onboardingParam ?? null,
+    cookieStore.get(ONBOARDING_COOKIE_NAME)?.value === "1",
+  );
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -50,7 +56,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
         </Suspense>
       </div>
 
-      <OnboardingHost initialOnboarding={onboardingParam} />
+      <OnboardingHost initialResolution={onboardingResolution} />
     </main>
   );
 }

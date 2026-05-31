@@ -1,30 +1,16 @@
-export const ONBOARDING_STORAGE_KEY = "code-tweet:onboarding-dismissed";
+export const ONBOARDING_COOKIE_NAME = "code_tweet_onboarding_dismissed";
+export const ONBOARDING_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 export type OnboardingResolution =
   | { kind: "hidden" }
   | { kind: "show"; forced: boolean };
 
-export function isDismissed(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.localStorage.getItem(ONBOARDING_STORAGE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-export function markDismissed() {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(ONBOARDING_STORAGE_KEY, "1");
-  } catch {
-    // ignore (private mode 等で書き込めない場合)
-  }
-}
-
-export function resolveOnboarding(queryValue: string | null): OnboardingResolution {
+export function resolveOnboarding(
+  queryValue: string | null,
+  dismissed: boolean,
+): OnboardingResolution {
   if (queryValue === "off") return { kind: "hidden" };
   if (queryValue === "show") return { kind: "show", forced: true };
-  if (isDismissed()) return { kind: "hidden" };
+  if (dismissed) return { kind: "hidden" };
   return { kind: "show", forced: false };
 }
