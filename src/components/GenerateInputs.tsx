@@ -1,12 +1,20 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import {
   MAX_HASHTAGS_LENGTH,
   MAX_TONE_MEMO_LENGTH,
   MAX_URL_LENGTH,
 } from "@/lib/generateLimits";
+import { detectReadmeUrls, type UrlCategory } from "@/lib/urlCategory";
 import type { GenerateErrorField } from "@/types/tweet";
+
+const URL_CATEGORY_BUTTONS: { cat: UrlCategory; label: string }[] = [
+  { cat: "appstore", label: "App Store" },
+  { cat: "googleplay", label: "Google Play" },
+  { cat: "github", label: "GitHub" },
+  { cat: "web", label: "Web" },
+];
 
 const STATIC_FIELD_LIMITS_BY_FIELD = {
   toneMemo: MAX_TONE_MEMO_LENGTH,
@@ -93,6 +101,8 @@ export default function GenerateInputs({
   showHashtags = true,
   extraFields,
 }: Props) {
+  const detectedUrls = useMemo(() => detectReadmeUrls(projectText), [projectText]);
+
   function getFieldError(field: GenerateErrorField) {
     return errorField === field ? error : null;
   }
@@ -287,7 +297,36 @@ export default function GenerateInputs({
                 disabled={formDisabled}
                 className={inputClass("url", "focus:ring-fuchsia-500")}
               />
-              {fieldMeta("url", url.length, "App Store / Google Play / GitHub / Web に対応。種別に合ったリード文が自動で付きます。")}
+              <div className="mt-2 flex flex-wrap gap-2">
+                {URL_CATEGORY_BUTTONS.map(({ cat, label }) => {
+                  const hit = detectedUrls[cat];
+                  const isActive = !!hit && !formDisabled;
+                  const isSelected = !!hit && url === hit;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      disabled={!isActive}
+                      onClick={() => {
+                        if (!hit) return;
+                        onUrlChange(hit);
+                        onClearFieldError("url");
+                      }}
+                      title={hit ?? "READMEに該当するURLが見つかりません"}
+                      className={
+                        isSelected
+                          ? "rounded-md border border-cyan-500 bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-300 cursor-pointer"
+                          : isActive
+                            ? "rounded-md border border-gray-700 px-3 py-1 text-xs text-gray-200 hover:border-cyan-500 hover:text-cyan-300 hover:bg-cyan-500/10 transition-colors cursor-pointer"
+                            : "rounded-md border border-gray-800 px-3 py-1 text-xs text-gray-600 cursor-not-allowed"
+                      }
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              {fieldMeta("url", url.length, "READMEから検出したURLをボタンで選べます。種別に合ったリード文が自動で付きます。")}
             </div>
 
             {showHashtags && (
