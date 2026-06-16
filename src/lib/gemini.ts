@@ -39,7 +39,7 @@ export function formatScheduleLabel(dateStr: string, timeStr: string): string {
   const dow = ["日", "月", "火", "水", "木", "金", "土"][new Date(year, month - 1, day).getDay()];
   return `${month}月${day}日（${dow}）${timeStr}`;
 }
-const MAX_REGENERATE_ATTEMPTS = 3;
+const MAX_REGENERATE_ATTEMPTS = 4;
 const URL_LEAD_RE =
   /(App Storeで無料公開中|今すぐインストール|iPhoneで無料で使える|ダウンロードはこちら|詳しくはこちら|今すぐ試す|無料で使えます|コードを見る|OSSとして公開中|GitHubで公開中)/i;
 const POST_MARKER_RE = /(?:^|\n)\s*(?:\d+[.)．:：]|[（(]\d+[）)]|ポスト\s*\d+[:：]?)\s*/;
