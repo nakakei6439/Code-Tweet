@@ -17,6 +17,7 @@ import {
   DEFAULT_NOTE_LENGTH_PRESET,
   NOTE_LENGTH_PRESETS,
 } from "@/lib/noteLengthPresets";
+import { postJson } from "@/lib/apiClient";
 import type {
   Tweet,
   GenerateRequest,
@@ -355,36 +356,17 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
     });
   }
 
-  function setNetworkError() {
-    setCurrentErrorState({
-      error: "ネットワークエラーが発生しました。接続を確認してください。",
-      errorCode: null,
-      errorField: null,
-    });
-  }
-
   async function fetchReadmeContent(targetUrl: string): Promise<string | null> {
-    try {
-      const res = await fetch("/api/github", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: targetUrl }),
+    const result = await postJson<{ content: string }>("/api/github", { url: targetUrl });
+    if (!result.ok) {
+      setCurrentErrorState({
+        error: result.error.error ?? "README の取得に失敗しました。",
+        errorCode: null,
+        errorField: result.error.field ?? null,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        const err = data as GenerateErrorResponse;
-        setCurrentErrorState({
-          error: err.error ?? "README の取得に失敗しました。",
-          errorCode: null,
-          errorField: err.field ?? null,
-        });
-        return null;
-      }
-      return data.content;
-    } catch {
-      setNetworkError();
       return null;
     }
+    return result.data.content;
   }
 
   async function loadReadmeIntoProjectText(targetUrl: string) {
@@ -430,21 +412,16 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
     setIsTweetLoading(true);
     setTweets([]);
     try {
-      const res = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectText: textToGenerate, toneMemo, url: urlToGenerate, hashtags } satisfies GenerateRequest),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setApiError(data as GenerateErrorResponse);
+      const result = await postJson<GenerateResponse>("/api/generate", {
+        projectText: textToGenerate, toneMemo, url: urlToGenerate, hashtags,
+      } satisfies GenerateRequest);
+      if (!result.ok) {
+        setApiError(result.error);
         return;
       }
-      setTweets((data as GenerateResponse).tweets);
+      setTweets(result.data.tweets);
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
       refreshUsage();
-    } catch {
-      setNetworkError();
     } finally {
       setIsTweetLoading(false);
     }
@@ -457,21 +434,16 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
     setIsNoteLoading(true);
     setNote(null);
     try {
-      const res = await fetch("/api/generate-note", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectText: textToGenerate, toneMemo, url: urlToGenerate, hashtags, lengthPreset } satisfies GenerateNoteRequest),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setApiError(data as GenerateErrorResponse);
+      const result = await postJson<GenerateNoteResponse>("/api/generate-note", {
+        projectText: textToGenerate, toneMemo, url: urlToGenerate, hashtags, lengthPreset,
+      } satisfies GenerateNoteRequest);
+      if (!result.ok) {
+        setApiError(result.error);
         return;
       }
-      setNote((data as GenerateNoteResponse).note);
+      setNote(result.data.note);
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
       refreshUsage();
-    } catch {
-      setNetworkError();
     } finally {
       setIsNoteLoading(false);
     }

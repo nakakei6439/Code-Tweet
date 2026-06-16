@@ -31,6 +31,9 @@ import type {
 } from "@/types/note";
 import type { UsageTier } from "@/types/usage";
 
+export const runtime = "nodejs";
+export const maxDuration = 60; // Hobby プランの関数実行上限（60 秒）をフルに使う
+
 const MAX_REQUEST_BYTES = 256 * 1024;
 
 function validateRequestSize(request: Request): Response | null {

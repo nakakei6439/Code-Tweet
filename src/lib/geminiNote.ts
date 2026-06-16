@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { GEMINI_MODEL, detectUrlType, formatScheduleLabel } from "@/lib/gemini";
+import { GEMINI_MODEL, GEMINI_THINKING_OFF, generateContentWithRetry, detectUrlType, formatScheduleLabel } from "@/lib/gemini";
 import {
   DEFAULT_NOTE_LENGTH_PRESET,
   NOTE_LENGTH_PRESETS,
@@ -151,10 +151,17 @@ export async function generateNoteDraft(
   const { min: bodyMin, max: bodyMax } = NOTE_LENGTH_PRESETS[lengthPreset];
 
   const basePrompt = buildNotePrompt(projectText, toneMemo, url, hashtags, todayStr, lengthPreset);
-  const first = await ai.models.generateContent({
+  // note は長文のため出力枠を大きめに確保しつつ、thinking は無効化してレイテンシを抑える。
+  const noteConfig = {
+    thinkingConfig: GEMINI_THINKING_OFF,
+    temperature: 0.8,
+    maxOutputTokens: 8192,
+  } as const;
+  const first = await generateContentWithRetry(ai, {
     model: GEMINI_MODEL,
     contents: basePrompt,
-  });
+    config: noteConfig,
+  }, 3);
   if (!first.text) {
     throw new Error("Gemini API から本文が返りませんでした。もう一度お試しください。");
   }
@@ -165,10 +172,11 @@ export async function generateNoteDraft(
   }
 
   const retryPrompt = `${basePrompt}\n\n【再生成指示】\n${firstViolations.join("\n")}\nタイトルは ${TITLE_MAX_LENGTH} 字以内、本文は ${bodyMin.toLocaleString("en-US")}〜${bodyMax.toLocaleString("en-US")} 字（プレーンテキスト換算）に必ず収めてください。`;
-  const retry = await ai.models.generateContent({
+  const retry = await generateContentWithRetry(ai, {
     model: GEMINI_MODEL,
     contents: retryPrompt,
-  });
+    config: noteConfig,
+  }, 1);
   if (!retry.text) {
     return firstNote;
   }
