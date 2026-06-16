@@ -1,16 +1,45 @@
 import { GoogleGenAI } from "@google/genai";
+import type { GenerateContentParameters, GenerateContentResponse } from "@google/genai";
 import twitterText from "twitter-text";
 import type { Tweet } from "@/types/tweet";
 
 const TWEET_LIMIT = 280;
 export const GEMINI_MODEL = "gemini-2.5-flash";
 
+// gemini-2.5-flash は thinking がデフォルト有効で 1 回の応答が遅く、Hobby プランの
+// 60 秒関数上限を超えて 504 になりやすい。thinkingBudget: 0 で無効化してレイテンシを抑える。
+export const GEMINI_THINKING_OFF = { thinkingBudget: 0 } as const;
+
+// gemini-2.5-flash は無料枠で 503(UNAVAILABLE「high demand」)や 429 を一時的に返すことが多い。
+// これらの一過性エラーは指数バックオフで自動リトライし、ユーザーに即エラーを返さない。
+const TRANSIENT_ERROR_RE =
+  /\b429\b|\b503\b|UNAVAILABLE|overloaded|high demand|RESOURCE_EXHAUSTED|Service Unavailable|fetch failed|ECONNRESET/i;
+
+export async function generateContentWithRetry(
+  ai: GoogleGenAI,
+  params: GenerateContentParameters,
+  maxRetries = 2,
+): Promise<GenerateContentResponse> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await ai.models.generateContent(params);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (attempt < maxRetries && TRANSIENT_ERROR_RE.test(message)) {
+        await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** attempt));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
 export function formatScheduleLabel(dateStr: string, timeStr: string): string {
   const [year, month, day] = dateStr.split("-").map(Number);
   const dow = ["日", "月", "火", "水", "木", "金", "土"][new Date(year, month - 1, day).getDay()];
   return `${month}月${day}日（${dow}）${timeStr}`;
 }
-const MAX_REGENERATE_ATTEMPTS = 4;
+const MAX_REGENERATE_ATTEMPTS = 3;
 const URL_LEAD_RE =
   /(App Storeで無料公開中|今すぐインストール|iPhoneで無料で使える|ダウンロードはこちら|詳しくはこちら|今すぐ試す|無料で使えます|コードを見る|OSSとして公開中|GitHubで公開中)/i;
 const POST_MARKER_RE = /(?:^|\n)\s*(?:\d+[.)．:：]|[（(]\d+[）)]|ポスト\s*\d+[:：]?)\s*/;
@@ -324,11 +353,52 @@ async function regenerateOne(
   hashtags: string,
   ai: GoogleGenAI
 ): Promise<string> {
-  const result = await ai.models.generateContent({
+  const result = await generateContentWithRetry(ai, {
     model: GEMINI_MODEL,
     contents: buildShortenPrompt(originalText, currentWeight, projectText, toneMemo, url, hashtags),
-  });
+    config: {
+      thinkingConfig: GEMINI_THINKING_OFF,
+      temperature: 0.7,
+      maxOutputTokens: 512,
+    },
+  }, 1);
   return (result.text ?? "").trim().replace(/^["「『]|["」』]$/g, "").trim();
+}
+
+// 1 ツイートを上限内に収まるまで最大 MAX_REGENERATE_ATTEMPTS 回まで逐次短縮する。
+// 試行は前回の短縮結果に依存するため逐次。失敗時はそこで打ち切り直近の結果を返す。
+async function shortenWithinLimit(
+  draft: string,
+  projectText: string,
+  toneMemo: string,
+  url: string,
+  hashtags: string,
+  ai: GoogleGenAI,
+): Promise<string> {
+  let current = reformatTweet(draft, hashtags, url);
+  let weight = countWeighted(current);
+  let attempts = 0;
+  while (weight > TWEET_LIMIT && attempts < MAX_REGENERATE_ATTEMPTS) {
+    attempts++;
+    try {
+      const shortened = reformatTweet(
+        await regenerateOne(current, weight, projectText, toneMemo, url, hashtags, ai),
+        hashtags,
+        url,
+      );
+      const shortenedWeight = countWeighted(shortened);
+      if (shortenedWeight <= TWEET_LIMIT && shortened.length > 0) {
+        return shortened;
+      }
+      if (shortened.length > 0 && shortenedWeight < weight) {
+        current = shortened;
+        weight = shortenedWeight;
+      }
+    } catch {
+      break;
+    }
+  }
+  return current;
 }
 
 export async function generateTweets(
@@ -344,10 +414,15 @@ export async function generateTweets(
   const today = new Date();
   const todayStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
 
-  const result = await ai.models.generateContent({
+  const result = await generateContentWithRetry(ai, {
     model: GEMINI_MODEL,
     contents: buildPrompt(projectText, toneMemo, url, hashtags, todayStr),
-  });
+    config: {
+      thinkingConfig: GEMINI_THINKING_OFF,
+      temperature: 0.9,
+      maxOutputTokens: 2048,
+    },
+  }, 3);
   const text = result.text;
   if (!text) {
     throw new Error("Gemini API から本文が返りませんでした。もう一度お試しください。");
@@ -355,36 +430,13 @@ export async function generateTweets(
 
   const { drafts, schedules } = parseGeneratedTweets(text);
 
-  for (let i = 0; i < drafts.length; i++) {
-    let current = reformatTweet(drafts[i], hashtags, url);
-    let weight = countWeighted(current);
-    let attempts = 0;
-    while (weight > TWEET_LIMIT && attempts < MAX_REGENERATE_ATTEMPTS) {
-      attempts++;
-      try {
-        const shortened = reformatTweet(
-          await regenerateOne(current, weight, projectText, toneMemo, url, hashtags, ai),
-          hashtags,
-          url
-        );
-        const shortenedWeight = countWeighted(shortened);
-        if (shortenedWeight <= TWEET_LIMIT && shortened.length > 0) {
-          current = shortened;
-          weight = shortenedWeight;
-          break;
-        }
-        if (shortened.length > 0 && shortenedWeight < weight) {
-          current = shortened;
-          weight = shortenedWeight;
-        }
-      } catch {
-        break;
-      }
-    }
-    drafts[i] = current;
-  }
+  // 5 件の短縮は相互に独立なので並列実行する（逐次だと Hobby の 60 秒上限を超えやすい）。
+  // 1 ツイート内の短縮試行は前の結果に依存するため逐次のまま。
+  const finalDrafts = await Promise.all(
+    drafts.map((draft) => shortenWithinLimit(draft, projectText, toneMemo, url, hashtags, ai)),
+  );
 
-  return drafts.map((text, i) => {
+  return finalDrafts.map((text, i) => {
     const weightedLength = countWeighted(text);
     return {
       id: i + 1,
