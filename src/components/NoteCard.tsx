@@ -216,46 +216,61 @@ export default function NoteCard({ note }: NoteCardProps) {
         </pre>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
-        <a
-          href="https://note.com/notes/new"
-          target="_blank"
-          rel="noreferrer"
-          className="border border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white text-xs px-3 py-1 rounded-md transition-colors"
-        >
-          noteエディタを開く
-        </a>
-        <button
-          onClick={handleDownload}
-          className="border border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
-        >
-          .md ダウンロード
-        </button>
-        <button
-          onClick={handleCopyFullMarkdown}
-          aria-live="polite"
-          className={
-            copiedFull
-              ? "border border-green-500 text-green-400 text-xs px-3 py-1 rounded-md"
-              : "border border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
-          }
-        >
-          {copiedFull ? "コピーしました ✓" : "Markdownコピー"}
-        </button>
-        <button
-          onClick={handleCopyBody}
-          aria-live="polite"
-          className={
-            copiedBody
-              ? "border border-green-500 text-green-400 text-xs px-3 py-1 rounded-md"
-              : "border border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
-          }
-        >
-          {copiedBody ? "コピーしました ✓" : "本文をコピー"}
-        </button>
+      <div className="mt-4 rounded-lg border border-gray-800 bg-gray-950/40 p-4">
+        <div className="mb-3 flex items-center gap-2 text-[11px] text-gray-400">
+          <span className="font-semibold text-gray-300">投稿の手順</span>
+          <span className="text-gray-600">①コピー → ②noteエディタを開く → ③貼り付け</span>
+        </div>
+
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-semibold text-cyan-400">①</span>
+          <button
+            onClick={handleCopyBody}
+            aria-live="polite"
+            className={
+              copiedBody
+                ? "border border-green-500 text-green-400 text-xs px-3 py-1 rounded-md"
+                : "border border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
+            }
+          >
+            {copiedBody ? "コピーしました ✓" : "本文をコピー"}
+          </button>
+          <button
+            onClick={handleCopyFullMarkdown}
+            aria-live="polite"
+            className={
+              copiedFull
+                ? "border border-green-500 text-green-400 text-xs px-3 py-1 rounded-md"
+                : "border border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
+            }
+          >
+            {copiedFull ? "コピーしました ✓" : "Markdownコピー"}
+          </button>
+          <button
+            onClick={handleDownload}
+            className="border border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
+          >
+            .md ダウンロード
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-semibold text-cyan-400">②</span>
+          <a
+            href="https://note.com/notes/new"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 bg-cyan-500 hover:bg-cyan-400 text-gray-950 font-semibold text-sm px-4 py-2 rounded-md transition-colors"
+          >
+            noteエディタを開く
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14 5h5v5M19 5l-9 9M19 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" />
+            </svg>
+          </a>
+        </div>
       </div>
       <p className="mt-3 text-xs text-gray-500 leading-5">
-        noteエディタに貼り付けると、見出し・リスト・引用などのMarkdown記法は自動でリッチテキストに変換されます。タイトル欄には上の見出しを別途コピーしてください。
+        ③ noteエディタに貼り付けると、見出し・リスト・引用などのMarkdown記法は自動でリッチテキストに変換されます。タイトル欄には、上の「TITLE」からコピーした見出しを別途貼り付けてください。
       </p>
     </div>
   );
