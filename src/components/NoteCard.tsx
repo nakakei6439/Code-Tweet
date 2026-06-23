@@ -77,7 +77,6 @@ const markdownComponents: Components = {
 export default function NoteCard({ note }: NoteCardProps) {
   const [copiedTitle, setCopiedTitle] = useState(false);
   const [copiedBody, setCopiedBody] = useState(false);
-  const [copiedFull, setCopiedFull] = useState(false);
   const [mode, setMode] = useState<ViewMode>("preview");
 
   const fullMarkdown = `# ${note.title}\n\n${note.markdown}\n`;
@@ -92,12 +91,6 @@ export default function NoteCard({ note }: NoteCardProps) {
     await navigator.clipboard.writeText(note.markdown);
     setCopiedBody(true);
     setTimeout(() => setCopiedBody(false), 2000);
-  }
-
-  async function handleCopyFullMarkdown() {
-    await navigator.clipboard.writeText(fullMarkdown);
-    setCopiedFull(true);
-    setTimeout(() => setCopiedFull(false), 2000);
   }
 
   function handleDownload() {
@@ -234,17 +227,6 @@ export default function NoteCard({ note }: NoteCardProps) {
             }
           >
             {copiedBody ? "コピーしました ✓" : "本文をコピー"}
-          </button>
-          <button
-            onClick={handleCopyFullMarkdown}
-            aria-live="polite"
-            className={
-              copiedFull
-                ? "border border-green-500 text-green-400 text-xs px-3 py-1 rounded-md"
-                : "border border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
-            }
-          >
-            {copiedFull ? "コピーしました ✓" : "Markdownコピー"}
           </button>
           <button
             onClick={handleDownload}
