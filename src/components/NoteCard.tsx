@@ -116,27 +116,10 @@ export default function NoteCard({ note }: NoteCardProps) {
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
       <div className="mb-4 rounded-lg border border-gray-700 bg-gray-950/60 px-4 py-3">
-        <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="mb-2 flex items-center gap-2">
           <span className="text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold">
             TITLE
           </span>
-          <button
-            type="button"
-            onClick={handleCopyTitle}
-            aria-label="タイトルをコピー"
-            aria-live="polite"
-            className={
-              copiedTitle
-                ? "shrink-0 inline-flex items-center gap-1 border border-green-500 text-green-400 text-[10px] px-2 py-0.5 rounded-md"
-                : "shrink-0 inline-flex items-center gap-1 border border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white text-[10px] px-2 py-0.5 rounded-md transition-colors cursor-pointer"
-            }
-          >
-            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-              <rect x="9" y="9" width="11" height="11" rx="2" />
-              <path d="M5 15V5a2 2 0 0 1 2-2h10" />
-            </svg>
-            {copiedTitle ? "✓" : "コピー"}
-          </button>
         </div>
         <h2 className="text-white text-lg sm:text-xl font-semibold leading-snug break-words">
           {note.title}
@@ -227,6 +210,17 @@ export default function NoteCard({ note }: NoteCardProps) {
             }
           >
             {copiedBody ? "コピーしました ✓" : "本文をコピー"}
+          </button>
+          <button
+            onClick={handleCopyTitle}
+            aria-live="polite"
+            className={
+              copiedTitle
+                ? "border border-green-500 text-green-400 text-xs px-3 py-1 rounded-md"
+                : "border border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
+            }
+          >
+            {copiedTitle ? "コピーしました ✓" : "タイトルをコピー"}
           </button>
           <button
             onClick={handleDownload}
