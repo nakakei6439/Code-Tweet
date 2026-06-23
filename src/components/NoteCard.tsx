@@ -195,43 +195,11 @@ export default function NoteCard({ note }: NoteCardProps) {
       <div className="mt-4 rounded-lg border border-gray-800 bg-gray-950/40 p-4">
         <div className="mb-3 flex items-center gap-2 text-[11px] text-gray-400">
           <span className="font-semibold text-gray-300">投稿の手順</span>
-          <span className="text-gray-600">①コピー → ②noteエディタを開く → ③貼り付け</span>
+          <span className="text-gray-600">①noteエディタを開く → ②コピー → ③貼り付け</span>
         </div>
 
-        <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className="mb-3 flex items-center gap-2">
           <span className="text-[11px] font-semibold text-cyan-400">①</span>
-          <button
-            onClick={handleCopyBody}
-            aria-live="polite"
-            className={
-              copiedBody
-                ? "border border-green-500 text-green-400 text-xs px-3 py-1 rounded-md"
-                : "border border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
-            }
-          >
-            {copiedBody ? "コピーしました ✓" : "本文をコピー"}
-          </button>
-          <button
-            onClick={handleCopyTitle}
-            aria-live="polite"
-            className={
-              copiedTitle
-                ? "border border-green-500 text-green-400 text-xs px-3 py-1 rounded-md"
-                : "border border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
-            }
-          >
-            {copiedTitle ? "コピーしました ✓" : "タイトルをコピー"}
-          </button>
-          <button
-            onClick={handleDownload}
-            className="border border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
-          >
-            .md ダウンロード
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold text-cyan-400">②</span>
           <a
             href="https://note.com/notes/new"
             target="_blank"
@@ -244,9 +212,41 @@ export default function NoteCard({ note }: NoteCardProps) {
             </svg>
           </a>
         </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-semibold text-cyan-400">②</span>
+          <button
+            onClick={handleCopyTitle}
+            aria-live="polite"
+            className={
+              copiedTitle
+                ? "border border-green-500 text-green-400 text-xs px-3 py-1 rounded-md"
+                : "border border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
+            }
+          >
+            {copiedTitle ? "コピーしました ✓" : "タイトルをコピー"}
+          </button>
+          <button
+            onClick={handleCopyBody}
+            aria-live="polite"
+            className={
+              copiedBody
+                ? "border border-green-500 text-green-400 text-xs px-3 py-1 rounded-md"
+                : "border border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
+            }
+          >
+            {copiedBody ? "コピーしました ✓" : "本文をコピー"}
+          </button>
+          <button
+            onClick={handleDownload}
+            className="border border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
+          >
+            .md ダウンロード
+          </button>
+        </div>
       </div>
       <p className="mt-3 text-xs text-gray-500 leading-5">
-        ③ noteエディタに貼り付けると、見出し・リスト・引用などのMarkdown記法は自動でリッチテキストに変換されます。タイトル欄には、上の「TITLE」からコピーした見出しを別途貼り付けてください。
+        ③ noteエディタに貼り付けると、見出し・リスト・引用などのMarkdown記法は自動でリッチテキストに変換されます。タイトル欄には、②の「タイトルをコピー」からコピーした見出しを別途貼り付けてください。
       </p>
     </div>
   );
