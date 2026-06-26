@@ -9,6 +9,7 @@ import HomeLinkButton from "@/components/HomeLinkButton";
 import SettingsForm from "@/components/SettingsForm";
 import StripeActionButton from "@/components/StripeActionButton";
 import { getMissingStripeCheckoutEnv } from "@/lib/stripe";
+import { isGithubAppConfigured } from "@/lib/githubApp";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -42,10 +43,11 @@ export default async function SettingsPage() {
 
   const admin = createAdminClient();
   const { data } = await admin
-    .from("user_tokens")
-    .select("id")
+    .from("github_app_installations")
+    .select("user_id")
     .eq("user_id", user.id)
     .maybeSingle();
+  const appConfigured = isGithubAppConfigured();
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-12">
@@ -101,7 +103,7 @@ export default async function SettingsPage() {
         )}
       </div>
 
-      <SettingsForm hasToken={!!data} isPaid={isPaid} />
+      <SettingsForm isConnected={!!data} isPaid={isPaid} appConfigured={appConfigured} />
     </main>
   );
 }

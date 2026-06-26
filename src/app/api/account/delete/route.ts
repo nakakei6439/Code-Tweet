@@ -53,6 +53,14 @@ export async function POST(request: Request) {
     logError("account/delete", "user_tokens cleanup error", tokenDeleteError, { userId: user.id });
   }
 
+  const { error: installDeleteError } = await admin
+    .from("github_app_installations")
+    .delete()
+    .eq("user_id", user.id);
+  if (installDeleteError) {
+    logError("account/delete", "github_app_installations cleanup error", installDeleteError, { userId: user.id });
+  }
+
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) {
     logError("account/delete", "failed to delete user", error, { userId: user.id });
