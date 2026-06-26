@@ -27,6 +27,25 @@ export type ReadmePayload =
       };
     };
 
+export type PatKind = "classic" | "fine-grained";
+
+/**
+ * PAT が classic か fine-grained かを判定する。
+ *
+ * 権威的シグナルは GitHub が返す `X-OAuth-Scopes` ヘッダの「有無」:
+ *   - fine-grained PAT … ヘッダ自体が存在しない（null）
+ *   - classic PAT     … ヘッダが存在する（値が空でも）
+ *
+ * 万一ヘッダが取得できない環境のため、トークン接頭辞でも補強する
+ * （`github_pat_` = fine-grained, `ghp_`/`ghs_`/`gho_` = classic 系）。
+ */
+export function detectPatKind(oauthScopesHeader: string | null, token: string): PatKind {
+  if (oauthScopesHeader !== null) return "classic";
+  if (token.startsWith("github_pat_")) return "fine-grained";
+  if (/^gh[posu]_/.test(token)) return "classic";
+  return "fine-grained";
+}
+
 export function parseGitHubRepoUrl(input: string): GitHubRepo | null {
   let url: URL;
   try {
