@@ -419,7 +419,7 @@ function PatSection({ initialHasToken }: { initialHasToken: boolean }) {
                 type="password"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                placeholder="github_pat_... または ghp_..."
+                placeholder="github_pat_..."
                 disabled={isPending}
                 autoComplete="off"
                 className={inputBase}
