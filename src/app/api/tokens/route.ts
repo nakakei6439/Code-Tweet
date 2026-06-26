@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { encrypt } from "@/lib/encryption";
 import { logError } from "@/lib/logger";
 import { getSubscriptionTier } from "@/lib/subscription";
+import { detectPatKind } from "@/lib/githubReadme";
 
 export async function POST(request: Request): Promise<Response> {
   let body: { token?: string };
@@ -50,21 +51,17 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "PAT の検証に失敗しました。" }, { status: 400 });
   }
 
-  // classic PAT は X-OAuth-Scopes を返す。fine-grained PAT はヘッダーが空なので検証スキップ
-  const scopes = ghRes.headers.get("x-oauth-scopes") ?? "";
-  if (scopes) {
-    const hasRepoScope = scopes
-      .split(",")
-      .map((s) => s.trim())
-      .some((s) => s === "repo" || s === "public_repo");
-    if (!hasRepoScope) {
-      return Response.json(
-        {
-          error: `PAT に repo スコープがありません（現在のスコープ: ${scopes || "なし"}）。GitHub でトークンを再作成してください。`,
-        },
-        { status: 400 },
-      );
-    }
+  // classic PAT（広い repo 権限）は受け付けない。Contents: Read-only に絞れる
+  // fine-grained PAT のみ許可することで、アプリに渡る権限を最小化する。
+  const oauthScopesHeader = ghRes.headers.get("x-oauth-scopes"); // fine-grained は null
+  if (detectPatKind(oauthScopesHeader, token) === "classic") {
+    return Response.json(
+      {
+        error:
+          "classic PAT は利用できません。fine-grained personal access token（Repository permissions → Contents: Read-only）を発行してください。",
+      },
+      { status: 400 },
+    );
   }
 
   const { encrypted, iv, tag } = encrypt(token);

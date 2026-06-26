@@ -379,7 +379,7 @@ function PatSection({ initialHasToken }: { initialHasToken: boolean }) {
             </li>
           </ol>
           <p className="text-gray-400 text-xs leading-5">
-            classic PAT も使えますが、その場合は <code className="text-cyan-400 bg-gray-800/80 px-1 py-0.5 rounded">repo</code> スコープが必要です（権限が広いため fine-grained を推奨）。
+            権限を最小限に絞るため、<code className="text-cyan-400 bg-gray-800/80 px-1 py-0.5 rounded">repo</code> スコープを持つ classic PAT は利用できません。上記の fine-grained personal access token（<code className="text-cyan-400 bg-gray-800/80 px-1 py-0.5 rounded">Contents: Read-only</code>）を発行してください。
           </p>
         </div>
 

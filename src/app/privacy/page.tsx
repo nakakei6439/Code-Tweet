@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 const sections = [
   {
     title: "1. 取得する情報",
-    body: "Code Tweet は、GitHub ログイン時のメールアドレス、GitHub アカウント識別情報、GitHub README やリポジトリ一覧の取得に必要な連携情報、生成回数、プラン判定、利用ログ、ゲスト利用時の IP アドレスをハッシュ化した情報を扱います。また、投稿生成時に入力されたプロジェクト説明、README、追加プロンプト、URL、ハッシュタグなどを扱います。Pro ユーザーの生成履歴として保存するのは生成された投稿、推奨投稿日時、URL、ハッシュタグ、生成日時で、README本文や追加プロンプト本文は保存しません。生成履歴は1ユーザーあたり最新50件までを保持し、新しい履歴が追加されるとそれを超える古い履歴は自動的に削除されます。",
+    body: "Code Tweet は、GitHub ログイン時のメールアドレス、GitHub アカウント識別情報、GitHub README やリポジトリ一覧の取得に必要な連携情報、生成回数、プラン判定、利用ログ、ゲスト利用時の IP アドレスをハッシュ化した情報を扱います。GitHub からは README ファイルとリポジトリの一覧情報（名前・説明・公開非公開・更新日時など）のみを取得し、ソースコードの取得・閲覧・保存は一切行いません。また、投稿生成時に入力されたプロジェクト説明、README、追加プロンプト、URL、ハッシュタグなどを扱います。Pro ユーザーの生成履歴として保存するのは生成された投稿、推奨投稿日時、URL、ハッシュタグ、生成日時で、README本文や追加プロンプト本文は保存しません。生成履歴は1ユーザーあたり最新50件までを保持し、新しい履歴が追加されるとそれを超える古い履歴は自動的に削除されます。",
   },
   {
     title: "2. 利用目的",
@@ -17,7 +17,7 @@ const sections = [
   },
   {
     title: "3. GitHub トークンの扱い",
-    body: "GitHub の Personal Access Token など、保存が必要なアクセストークン類はサーバー側でのみ扱い、データベースへ保存する場合は AES-256-GCM で暗号化します。保存済みトークンを画面に平文表示することはありません。必要がなくなった場合は、設定ページからトークン削除またはアカウント削除を行うことで関連情報を削除できます。",
+    body: "非公開リポジトリの README 取得に使用するアクセストークンは、Contents: Read-only に絞った fine-grained personal access token に限定し、広い権限を持つ classic PAT（repo スコープ）は受け付けません。トークンはサーバー側でのみ扱い、データベースへ保存する場合は AES-256-GCM で暗号化します。保存済みトークンを画面に平文表示することはありません。必要がなくなった場合は、設定ページからトークン削除またはアカウント削除を行うことで関連情報を削除できます。",
   },
   {
     title: "4. AI 生成に送信される情報",
@@ -61,7 +61,7 @@ export default function PrivacyPage() {
         </h1>
         <p className="mt-6 text-sm leading-7 text-gray-400">
           Code Tweet が扱う情報、その利用目的、外部サービスへの送信、削除方法について説明します。
-          最終更新日: 2026年5月24日
+          最終更新日: 2026年6月27日
         </p>
 
         <hr className="my-12 border-gray-800" />
@@ -73,6 +73,21 @@ export default function PrivacyPage() {
               <p className="mt-3 text-sm leading-7 text-gray-400">{section.body}</p>
             </section>
           ))}
+
+          <section>
+            <h2 className="text-lg font-semibold text-white">11. ソースコードの公開（検証用）</h2>
+            <p className="mt-3 text-sm leading-7 text-gray-400">
+              本サービスが GitHub と通信するコード（README とリポジトリ一覧の取得処理）は、第三者が確認できるよう公開しています。呼び出している GitHub API は README 取得とリポジトリ一覧取得のみで、ソースコードを取得する API は使用していません。
+            </p>
+            <a
+              href="https://github.com/nakakei6439/Code-Tweet-github-module"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-flex text-sm font-medium text-cyan-400 hover:underline"
+            >
+              GitHub 通信コードを確認する（GitHub）
+            </a>
+          </section>
         </div>
 
         <hr className="my-12 border-gray-800" />
