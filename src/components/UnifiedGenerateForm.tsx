@@ -1,14 +1,20 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import GenerateInputs from "@/components/GenerateInputs";
 import GenerateTabs, { type GenerateTabKey } from "@/components/GenerateTabs";
 import TweetCard from "@/components/TweetCard";
-import NoteCard from "@/components/NoteCard";
 import RepoSelectorModal from "@/components/RepoSelectorModal";
+
+// note Draft 生成時にだけ使う react-markdown 系の重い依存を初期バンドルから外し、
+// note タブで Draft を生成した瞬間に初めて読み込む。
+const NoteCard = dynamic(() => import("@/components/NoteCard"), {
+  loading: () => <div className="text-gray-400 text-sm">プレビューを準備中...</div>,
+});
 import {
   PROJECT_TEXT_LIMITS,
   getProjectTextLimit,
