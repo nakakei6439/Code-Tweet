@@ -9,7 +9,7 @@ import type { SubscriptionTier } from "@/lib/subscription";
 import AuthOverlay from "@/components/AuthOverlay";
 import HomeLinkButton from "@/components/HomeLinkButton";
 import AdminConfirmActionForm from "@/components/AdminConfirmActionForm";
-import { resetGuestUsage, setUserTier } from "./actions";
+import { resetGuestUsage, resetUserUsage, setUserTier } from "./actions";
 
 export const metadata: Metadata = {
   title: "管理",
@@ -55,15 +55,39 @@ function countRowsByDay(rows: { generated_at: string | null }[], dayKeys: string
 async function countAllRows(
   admin: ReturnType<typeof createAdminClient>,
   table: string,
+  idColumn: string = "id",
 ): Promise<number> {
   const { count, error } = await admin
     .from(table)
-    .select("id", { count: "exact", head: true });
+    .select(idColumn, { count: "exact", head: true });
   if (error) {
     console.error(`[admin] ${table} count error:`, error);
     return 0;
   }
   return count ?? 0;
+}
+
+async function getUserGenerationCounts(
+  admin: ReturnType<typeof createAdminClient>,
+  since: string,
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  const { data, error } = await admin
+    .from("usage_logs")
+    .select("user_id")
+    .gte("generated_at", since)
+    .range(0, 9999);
+
+  if (error) {
+    console.error("[admin] usage_logs per-user count error:", error);
+    return counts;
+  }
+
+  for (const row of (data ?? []) as { user_id: string | null }[]) {
+    if (!row.user_id) continue;
+    counts.set(row.user_id, (counts.get(row.user_id) ?? 0) + 1);
+  }
+  return counts;
 }
 
 async function countRowsSince(
@@ -185,15 +209,17 @@ export default async function AdminPage() {
     recentUserRows,
     recentGuestRows,
     tierMap,
+    userGenCounts,
   ] = await Promise.all([
     admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
     countRowsSince(admin, "usage_logs", monthStart),
     countRowsSince(admin, "ip_usage_logs", monthStart),
     countPaidUsers(admin),
-    countAllRows(admin, "user_tokens"),
+    countAllRows(admin, "github_app_installations", "user_id"),
     getGeneratedRowsSince(admin, "usage_logs", recentStart),
     getGeneratedRowsSince(admin, "ip_usage_logs", recentStart),
     fetchTierMap(admin),
+    getUserGenerationCounts(admin, monthStart),
   ]);
 
   if (usersResult.error) {
@@ -229,6 +255,7 @@ export default async function AdminPage() {
       email: u.email ?? "(no email)",
       createdAt: u.created_at ?? null,
       tier: tierMap.get(u.id) ?? "free",
+      genCount: userGenCounts.get(u.id) ?? 0,
     }));
 
   return (
@@ -311,6 +338,7 @@ export default async function AdminPage() {
                   <th className="px-5 py-3 font-medium">メール</th>
                   <th className="px-5 py-3 font-medium">登録日</th>
                   <th className="px-5 py-3 font-medium">現在のプラン</th>
+                  <th className="px-5 py-3 font-medium">今月の生成</th>
                   <th className="px-5 py-3 font-medium">操作</th>
                 </tr>
               </thead>
@@ -347,24 +375,36 @@ export default async function AdminPage() {
                           {isPaid ? "Pro" : "Free"}
                         </span>
                       </td>
+                      <td className="px-5 py-3 font-semibold text-white">
+                        {row.genCount.toLocaleString("ja-JP")}
+                      </td>
                       <td className="px-5 py-3">
-                        <form action={setUserTier}>
-                          <input type="hidden" name="userId" value={row.id} />
-                          <input type="hidden" name="tier" value={nextTier} />
-                          <button
-                            type="submit"
-                            className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${buttonClass}`}
-                          >
-                            {nextLabel}
-                          </button>
-                        </form>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <form action={setUserTier}>
+                            <input type="hidden" name="userId" value={row.id} />
+                            <input type="hidden" name="tier" value={nextTier} />
+                            <button
+                              type="submit"
+                              className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${buttonClass}`}
+                            >
+                              {nextLabel}
+                            </button>
+                          </form>
+                          <AdminConfirmActionForm
+                            action={resetUserUsage}
+                            buttonLabel="回数リセット"
+                            hiddenFields={{ userId: row.id }}
+                            buttonClassName="rounded-md border border-red-500/50 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-300 transition-colors hover:bg-red-500/20"
+                            confirmMessage="このユーザーの生成履歴を削除し、利用回数を0にします。実行しますか？"
+                          />
+                        </div>
                       </td>
                     </tr>
                   );
                 })}
                 {userRows.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-5 py-6 text-center text-xs text-gray-500">
+                    <td colSpan={5} className="px-5 py-6 text-center text-xs text-gray-500">
                       ユーザーがいません。
                     </td>
                   </tr>
