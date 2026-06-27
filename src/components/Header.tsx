@@ -12,25 +12,27 @@ export default async function Header() {
 
   return (
     <header className="w-full border-b border-gray-900 bg-gray-950/80 backdrop-blur-md sticky top-0 z-30">
-      <div className="px-4 py-3 relative flex items-center justify-center">
-        <nav className="absolute left-4 flex items-center gap-5 text-sm font-medium text-gray-300">
-          <Link href="/about" className="transition-colors hover:text-white">
-            Code Tweetとは
-          </Link>
-          <Link href="/about/note" className="transition-colors hover:text-white">
-            note Draftとは
-          </Link>
-          <Link href="/pricing" className="transition-colors hover:text-white">
-            プラン
-          </Link>
-        </nav>
-        <Link href="/" className="text-white font-semibold tracking-tight">
+      <div className="px-4 py-3 flex items-center gap-2">
+        <div className="flex-1 flex justify-start min-w-0">
+          <nav className="hidden md:flex items-center gap-5 text-sm font-medium text-gray-300">
+            <Link href="/about" className="transition-colors hover:text-white">
+              Code Tweetとは
+            </Link>
+            <Link href="/about/note" className="transition-colors hover:text-white">
+              note Draftとは
+            </Link>
+            <Link href="/pricing" className="transition-colors hover:text-white">
+              プラン
+            </Link>
+          </nav>
+        </div>
+        <Link href="/" className="shrink-0 text-white font-semibold tracking-tight">
           Code{" "}
           <span className="bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-yellow-200 bg-clip-text text-transparent">
             Tweet
           </span>
         </Link>
-        <div className="absolute right-4">
+        <div className="flex-1 flex justify-end min-w-0">
           <HeaderActions
             isAuthenticated={!!user}
             email={user?.email ?? null}
