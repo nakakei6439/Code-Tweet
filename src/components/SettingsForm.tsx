@@ -5,8 +5,9 @@ import Link from "next/link";
 import HomeLinkButton from "@/components/HomeLinkButton";
 
 type Props = {
-  hasToken: boolean;
+  isConnected: boolean;
   isPaid: boolean;
+  appConfigured: boolean;
 };
 
 function AccountDeletionSection({ isPaid }: { isPaid: boolean }) {
@@ -217,7 +218,7 @@ function AccountDeletionSection({ isPaid }: { isPaid: boolean }) {
   );
 }
 
-export default function SettingsForm({ hasToken, isPaid }: Props) {
+export default function SettingsForm({ isConnected, isPaid, appConfigured }: Props) {
   if (!isPaid) {
     return (
       <div className="space-y-6">
@@ -258,206 +259,66 @@ export default function SettingsForm({ hasToken, isPaid }: Props) {
 
   return (
     <div className="space-y-6">
-      <PatSection initialHasToken={hasToken} />
+      <GithubAppSection isConnected={isConnected} appConfigured={appConfigured} />
       <AccountDeletionSection isPaid={isPaid} />
     </div>
   );
 }
 
-function PatSection({ initialHasToken }: { initialHasToken: boolean }) {
-  const [hasToken, setHasToken] = useState(initialHasToken);
-  const [token, setToken] = useState("");
-  const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [justSaved, setJustSaved] = useState(false);
-
-  async function handleSave() {
-    if (!token.trim()) return;
-    setIsPending(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/tokens", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "保存に失敗しました。");
-        return;
-      }
-      setToken("");
-      setHasToken(true);
-      setJustSaved(true);
-    } catch {
-      setError("ネットワークエラーが発生しました。");
-    } finally {
-      setIsPending(false);
-    }
-  }
-
-  async function handleDelete() {
-    setIsPending(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/tokens", { method: "DELETE" });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "削除に失敗しました。");
-        return;
-      }
-      setHasToken(false);
-      setJustSaved(false);
-    } catch {
-      setError("ネットワークエラーが発生しました。");
-    } finally {
-      setIsPending(false);
-    }
-  }
-
-  const inputBase =
-    "w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
-
+function GithubAppSection({ isConnected, appConfigured }: { isConnected: boolean; appConfigured: boolean }) {
   return (
     <div className="bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden">
       <div className="h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
       <div className="p-8 space-y-6">
         <div>
-          <h2 className="text-white font-semibold text-base mb-1">GitHub Personal Access Token</h2>
+          <h2 className="text-white font-semibold text-base mb-1">GitHub App 連携</h2>
           <p className="text-gray-400 text-sm">
-            プライベートリポジトリの README を取得するために使用します。トークンはサーバーで AES-256-GCM 暗号化して保存されます。
+            プライベートリポジトリの README を取得するために使用します。アクセストークンは保存せず、
+            取得時に約1時間で失効する使い捨てトークンをサーバーで発行します。許可するのは
+            <code className="text-cyan-400 bg-gray-800/80 px-1 py-0.5 rounded mx-1">Contents: Read-only</code>
+            のみで、リポジトリの中身（ソースコード）の取得は行いません。
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <span className="text-sm text-gray-400">現在の状態：</span>
-          {hasToken ? (
+          {isConnected ? (
             <span className="text-xs font-medium text-emerald-400 bg-emerald-950/50 border border-emerald-800 px-2 py-0.5 rounded-full">
-              登録済み
+              接続済み
             </span>
           ) : (
             <span className="text-xs font-medium text-gray-400 bg-gray-800 border border-gray-700 px-2 py-0.5 rounded-full">
-              未登録
+              未接続
             </span>
           )}
         </div>
 
-        <div className="border border-cyan-900/50 bg-cyan-950/20 rounded-lg p-4 space-y-3">
-          <p className="text-cyan-200 text-xs font-semibold">推奨：fine-grained personal access token を発行してください</p>
+        <div className="border border-cyan-900/50 bg-cyan-950/20 rounded-lg p-4 space-y-2">
+          <p className="text-cyan-200 text-xs font-semibold leading-6">
+            「GitHub を接続」を押すと GitHub のインストール画面が開きます。
+          </p>
           <ol className="list-decimal list-inside text-xs text-gray-300 space-y-1 leading-6">
-            <li>
-              <a
-                href="https://github.com/settings/personal-access-tokens/new"
-                target="_blank"
-                rel="noreferrer"
-                className="text-cyan-400 hover:underline"
-              >
-                GitHub の Token 発行ページ
-              </a>
-              {" "}を開く
-            </li>
-            <li>
-              <span className="text-gray-200">Repository access</span> は{" "}
-              <code className="text-cyan-400 bg-gray-800/80 px-1 py-0.5 rounded">Only select repositories</code>{" "}
-              で必要なものだけ選ぶ（<code className="text-cyan-400 bg-gray-800/80 px-1 py-0.5 rounded">All repositories</code> でも可）
-            </li>
-            <li className="text-amber-200">
-              <span className="font-semibold">【必須】</span>
-              <span className="text-gray-200">Repository permissions</span> →{" "}
-              <code className="text-amber-300 bg-gray-800/80 px-1 py-0.5 rounded">Contents: Read-only</code>{" "}
-              を必ず付与する
-              <p className="ml-5 mt-1 text-[11px] text-amber-300/80 leading-5">
-                ※ これを付け忘れると、トークン自体は有効になりますが「自分のリポジトリから選ぶ」で
-                プライベートリポジトリが一覧に出ません。Metadata は Contents を選ぶと自動付与されます。
-              </p>
-            </li>
-            <li>
-              <span className="text-gray-200">Expiration</span> は 90 日など短めを推奨
-            </li>
-            <li>
-              生成された <code className="text-cyan-400 bg-gray-800/80 px-1 py-0.5 rounded">github_pat_...</code> を下の入力欄に貼り付けて保存
-            </li>
+            <li>許可するリポジトリを <span className="text-gray-200">Only select repositories</span> で選ぶ（<span className="text-gray-200">All repositories</span> でも可）</li>
+            <li>権限は <code className="text-cyan-400 bg-gray-800/80 px-1 py-0.5 rounded">Contents: Read-only</code> のみ（自動で設定済み・GitHub が強制します）</li>
+            <li>「Install」を押すとこの画面に戻り、接続済みになります</li>
           </ol>
           <p className="text-gray-400 text-xs leading-5">
-            権限を最小限に絞るため、<code className="text-cyan-400 bg-gray-800/80 px-1 py-0.5 rounded">repo</code> スコープを持つ classic PAT は利用できません。上記の fine-grained personal access token（<code className="text-cyan-400 bg-gray-800/80 px-1 py-0.5 rounded">Contents: Read-only</code>）を発行してください。
+            連携の解除はいつでも GitHub 側で行えます：GitHub の Settings → Applications → Installed GitHub Apps から Uninstall。
           </p>
         </div>
 
-        {justSaved ? (
-          <div className="space-y-4">
-            <div className="border border-emerald-800 bg-emerald-950/50 rounded-xl px-5 py-4 flex items-start gap-3">
-              <svg className="text-emerald-400 mt-0.5 shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-              <div>
-                <p className="text-emerald-400 text-sm font-medium">PAT を保存しました</p>
-                <p className="text-emerald-600 text-xs mt-0.5">プライベートリポジトリの README を取得できます</p>
-              </div>
-            </div>
-            <Link
-              href="/"
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-lg text-sm font-semibold
-                bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400
-                text-white shadow-lg shadow-cyan-500/20 hover:opacity-90 transition-opacity"
-            >
-              ホームへ戻る
-            </Link>
-            <button
-              onClick={() => setJustSaved(false)}
-              className="w-full py-2 text-xs text-gray-500 hover:text-gray-300 transition-colors cursor-pointer"
-            >
-              引き続き設定する
-            </button>
-          </div>
+        {appConfigured ? (
+          <a
+            href="/api/github-app/install"
+            className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-lg text-sm font-semibold
+              bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400
+              text-white shadow-lg shadow-cyan-500/20 hover:opacity-90 transition-opacity"
+          >
+            {isConnected ? "リポジトリを追加・再設定する" : "GitHub を接続する"}
+          </a>
         ) : (
-          <>
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">
-                {hasToken ? "新しいトークンで上書き" : "トークンを登録"}
-              </label>
-              <input
-                type="password"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                placeholder="github_pat_..."
-                disabled={isPending}
-                autoComplete="off"
-                className={inputBase}
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={handleSave}
-                disabled={isPending || token.trim() === ""}
-                className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer
-                  bg-gradient-to-r from-cyan-500 to-fuchsia-500
-                  text-white shadow-lg shadow-cyan-500/20
-                  hover:opacity-90
-                  disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-              >
-                {isPending ? "処理中..." : "保存"}
-              </button>
-
-              {hasToken && (
-                <button
-                  onClick={handleDelete}
-                  disabled={isPending}
-                  className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer
-                    border border-red-800 text-red-400
-                    hover:bg-red-950/50
-                    disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  削除
-                </button>
-              )}
-            </div>
-          </>
-        )}
-
-        {error && (
-          <div className="border border-red-800 bg-red-950/50 rounded-lg px-4 py-3 text-red-400 text-sm">
-            {error}
+          <div className="border border-amber-800/70 bg-amber-950/30 rounded-lg px-4 py-3 text-amber-200 text-xs leading-5">
+            GitHub App 連携は現在準備中です。設定が完了するまでお待ちください。
           </div>
         )}
 

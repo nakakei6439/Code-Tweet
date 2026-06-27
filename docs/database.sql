@@ -80,6 +80,25 @@ create policy "user_tokens_no_client_access"
   using (false)
   with check (false);
 
+-- GitHub App のインストール対応表。
+-- PAT を保存せず、利用者ごとに installation_id（番号）のみを保持する。
+-- README 取得時はサーバーがこの id から約1時間で失効する使い捨てトークンを発行する。
+create table if not exists github_app_installations (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  installation_id bigint not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table github_app_installations enable row level security;
+
+drop policy if exists "github_app_installations_no_client_access" on github_app_installations;
+create policy "github_app_installations_no_client_access"
+  on github_app_installations
+  for all
+  using (false)
+  with check (false);
+
 create table if not exists admin_login_attempts (
   identifier text primary key,
   failed_count integer not null default 0 check (failed_count >= 0),

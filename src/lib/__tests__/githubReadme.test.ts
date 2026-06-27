@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_README_BYTES, buildReadmePayload, detectPatKind, parseGitHubRepoUrl } from "@/lib/githubReadme";
+import { MAX_README_BYTES, buildReadmePayload, parseGitHubRepoUrl } from "@/lib/githubReadme";
 
 function base64(text: string): string {
   return Buffer.from(text, "utf-8").toString("base64");
@@ -17,23 +17,6 @@ describe("parseGitHubRepoUrl", () => {
     expect(parseGitHubRepoUrl("https://example.com/owner/repo")).toBeNull();
     expect(parseGitHubRepoUrl("https://github.com/owner")).toBeNull();
     expect(parseGitHubRepoUrl("ftp://github.com/owner/repo")).toBeNull();
-  });
-});
-
-describe("detectPatKind", () => {
-  it("treats a present X-OAuth-Scopes header as classic", () => {
-    expect(detectPatKind("repo, read:user", "github_pat_abc")).toBe("classic");
-    // 空文字でもヘッダが存在すれば classic（スコープ未選択の classic PAT）
-    expect(detectPatKind("", "ghp_abc")).toBe("classic");
-  });
-
-  it("treats an absent header as fine-grained, with prefix fallback", () => {
-    expect(detectPatKind(null, "github_pat_abc")).toBe("fine-grained");
-    // ヘッダが無くても classic 系接頭辞なら classic とみなす
-    expect(detectPatKind(null, "ghp_abc")).toBe("classic");
-    expect(detectPatKind(null, "gho_abc")).toBe("classic");
-    // 不明な形式は安全側（fine-grained 扱い）でヘッダ判定に委ねる
-    expect(detectPatKind(null, "unknown")).toBe("fine-grained");
   });
 });
 
