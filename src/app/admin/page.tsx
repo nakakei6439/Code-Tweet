@@ -9,7 +9,7 @@ import type { SubscriptionTier } from "@/lib/subscription";
 import AuthOverlay from "@/components/AuthOverlay";
 import HomeLinkButton from "@/components/HomeLinkButton";
 import AdminConfirmActionForm from "@/components/AdminConfirmActionForm";
-import { resetGuestUsage, resetUserUsage, setUserTier } from "./actions";
+import { resetUserUsage, setUserTier } from "./actions";
 
 export const metadata: Metadata = {
   title: "管理",
@@ -270,7 +270,7 @@ export default async function AdminPage() {
               管理ダッシュボード
             </h1>
             <p className="mt-3 text-sm leading-6 text-gray-400">
-              Code Tweet の利用状況確認、プラン変更、ゲストテスト回数のリセットを行う管理者向け画面です。
+              Code Tweet の利用状況確認、プラン変更、ユーザーごとの利用回数リセットを行う管理者向け画面です。
             </p>
           </div>
           <div className="rounded-lg border border-gray-800 bg-gray-900/70 px-4 py-3 text-xs text-gray-400">
@@ -318,18 +318,11 @@ export default async function AdminPage() {
         </section>
 
         <section className="mt-8 overflow-hidden rounded-xl border border-gray-800 bg-gray-900/60">
-          <div className="flex flex-col gap-4 border-b border-gray-800 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-sm font-semibold text-white">ユーザー一覧 / プラン変更</h2>
-              <p className="mt-1 text-xs text-gray-500">
-                新しい順に表示。ボタンを押すとそのユーザーのプランを切り替えます。
-              </p>
-            </div>
-            <AdminConfirmActionForm
-              action={resetGuestUsage}
-              buttonLabel="ゲストテスト回数を0にする"
-              confirmMessage="全ゲストの利用履歴を削除し、ゲストテスト回数を0にします。この操作は元に戻せません。実行しますか？"
-            />
+          <div className="border-b border-gray-800 px-5 py-4">
+            <h2 className="text-sm font-semibold text-white">ユーザー一覧 / プラン変更</h2>
+            <p className="mt-1 text-xs text-gray-500">
+              新しい順に表示。ボタンを押すとそのユーザーのプランを切り替えます。
+            </p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-left text-sm">
