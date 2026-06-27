@@ -31,7 +31,7 @@ export async function setUserTier(formData: FormData): Promise<void> {
   revalidatePath("/admin");
 }
 
-export async function resetGuestUsage(): Promise<void> {
+export async function resetGuestUsage(_formData?: FormData): Promise<void> {
   await requireAdmin();
 
   const admin = createAdminClient();
@@ -43,6 +43,29 @@ export async function resetGuestUsage(): Promise<void> {
   if (error) {
     console.error("[admin] resetGuestUsage error:", error);
     throw new Error("Failed to reset guest usage");
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/");
+}
+
+export async function resetUserUsage(formData: FormData): Promise<void> {
+  await requireAdmin();
+
+  const userId = String(formData.get("userId") ?? "");
+  if (!userId) {
+    throw new Error("Invalid input");
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("usage_logs")
+    .delete()
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("[admin] resetUserUsage error:", error);
+    throw new Error("Failed to reset user usage");
   }
 
   revalidatePath("/admin");
