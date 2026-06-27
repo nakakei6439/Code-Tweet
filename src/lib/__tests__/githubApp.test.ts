@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createVerify, generateKeyPairSync } from "node:crypto";
-import { buildAppJwt, decodeAppPrivateKey } from "@/lib/githubApp";
+import { createHmac, createVerify, generateKeyPairSync } from "node:crypto";
+import { buildAppJwt, decodeAppPrivateKey, verifyWebhookSignature } from "@/lib/githubApp";
 
 const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
 const pem = privateKey.export({ type: "pkcs1", format: "pem" }).toString();
@@ -22,6 +22,24 @@ describe("buildAppJwt", () => {
     const verifier = createVerify("RSA-SHA256").update(`${header}.${payload}`);
     const sigBuf = Buffer.from(signature.replace(/-/g, "+").replace(/_/g, "/"), "base64");
     expect(verifier.verify(publicKey, sigBuf)).toBe(true);
+  });
+});
+
+describe("verifyWebhookSignature", () => {
+  const secret = "test-webhook-secret";
+  const body = JSON.stringify({ action: "deleted", installation: { id: 123 } });
+  const validSig = "sha256=" + createHmac("sha256", secret).update(body).digest("hex");
+
+  it("accepts a correct signature", () => {
+    expect(verifyWebhookSignature(body, validSig, secret)).toBe(true);
+  });
+
+  it("rejects tampered body, wrong secret, and missing/invalid header", () => {
+    expect(verifyWebhookSignature(body + "x", validSig, secret)).toBe(false);
+    expect(verifyWebhookSignature(body, validSig, "wrong-secret")).toBe(false);
+    expect(verifyWebhookSignature(body, null, secret)).toBe(false);
+    expect(verifyWebhookSignature(body, "sha1=abc", secret)).toBe(false);
+    expect(verifyWebhookSignature(body, "sha256=deadbeef", secret)).toBe(false);
   });
 });
 

@@ -1,4 +1,4 @@
-import { createSign } from "node:crypto";
+import { createHmac, createSign, timingSafeEqual } from "node:crypto";
 
 /**
  * GitHub App 連携のサーバー専用ユーティリティ。
@@ -123,4 +123,31 @@ export async function getInstallationToken(installationId: number): Promise<stri
 export function buildInstallUrl(slug: string, state: string): string {
   const params = new URLSearchParams({ state });
   return `https://github.com/apps/${slug}/installations/new?${params.toString()}`;
+}
+
+/** アンインストール時などにキャッシュ済みトークンを破棄する。 */
+export function evictInstallationToken(installationId: number): void {
+  tokenCache.delete(installationId);
+}
+
+export function getWebhookSecret(): string | null {
+  const secret = process.env.GITHUB_APP_WEBHOOK_SECRET?.trim();
+  return secret ? secret : null;
+}
+
+/**
+ * GitHub webhook の署名（X-Hub-Signature-256: "sha256=..."）を HMAC-SHA256 で検証する。
+ * タイミング攻撃対策に timingSafeEqual を使い、長さ不一致や形式不正は false を返す。
+ */
+export function verifyWebhookSignature(
+  rawBody: string,
+  signatureHeader: string | null,
+  secret: string,
+): boolean {
+  if (!signatureHeader || !signatureHeader.startsWith("sha256=")) return false;
+  const expected = "sha256=" + createHmac("sha256", secret).update(rawBody).digest("hex");
+  const a = Buffer.from(signatureHeader);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
 }
