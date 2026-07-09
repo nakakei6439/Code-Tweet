@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MicrosoftClarity from "@/components/MicrosoftClarity";
+
+const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://code-tweet.vercel.app"),
@@ -42,6 +45,7 @@ export default function RootLayout({
         <Analytics />
         <SpeedInsights />
         <MicrosoftClarity />
+        {gaId && <GoogleAnalytics gaId={gaId} />}
       </body>
     </html>
   );
