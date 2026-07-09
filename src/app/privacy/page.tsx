@@ -25,11 +25,11 @@ const sections = [
   },
   {
     title: "5. 外部サービス",
-    body: "本サービスは、認証とデータベースに Supabase、ログインやリポジトリ情報取得に GitHub、投稿生成に Google Gemini API、ホスティングと実行基盤および利用状況分析に Vercel（Vercel Analytics / Vercel Speed Insights）、ヒートマップとセッション記録による UX 改善のために Microsoft Clarity を利用します。各外部サービスでの情報の扱いは、それぞれのプライバシーポリシーや利用規約に従います。",
+    body: "本サービスは、認証とデータベースに Supabase、ログインやリポジトリ情報取得に GitHub、投稿生成に Google Gemini API、ホスティングと実行基盤および利用状況分析に Vercel（Vercel Analytics / Vercel Speed Insights）、アクセス解析に Google LLC が提供する Google Analytics、ヒートマップとセッション記録による UX 改善のために Microsoft Clarity を利用します。各外部サービスでの情報の扱いは、それぞれのプライバシーポリシーや利用規約に従います。",
   },
   {
     title: "6. アクセス解析・セッション記録について",
-    body: "サービス改善および不具合検知のため、以下のアクセス解析ツールを利用します。Vercel Analytics は Cookie を使用せず、匿名のページビュー、参照元、地域、デバイス情報を収集します。Vercel Speed Insights は LCP・CLS・INP などのパフォーマンス指標を収集します。Microsoft Clarity はヒートマップとセッション記録のために Cookie を利用し、ページ上の操作（クリック、スクロール、マウス移動）を匿名化したうえで記録します。入力フォームのパスワード、クレジットカード情報、その他の機密性の高い入力欄は自動的にマスクされ、平文では記録されません。",
+    body: "サービス改善および不具合検知のため、以下のアクセス解析ツールを利用します。Vercel Analytics は Cookie を使用せず、匿名のページビュー、参照元、地域、デバイス情報を収集します。Vercel Speed Insights は LCP・CLS・INP などのパフォーマンス指標を収集します。Google Analytics は Cookie を利用して、ページビュー、参照元、地域、デバイス情報などのアクセス状況を測定します（IP アドレスは Google により匿名化されて扱われます）。Google Analytics による測定を無効化したい場合は、Google が提供する「Google アナリティクス オプトアウト アドオン」（https://tools.google.com/dlpage/gaoptout）を利用できます。Microsoft Clarity はヒートマップとセッション記録のために Cookie を利用し、ページ上の操作（クリック、スクロール、マウス移動）を匿名化したうえで記録します。入力フォームのパスワード、クレジットカード情報、その他の機密性の高い入力欄は自動的にマスクされ、平文では記録されません。",
   },
   {
     title: "7. 情報の削除",
