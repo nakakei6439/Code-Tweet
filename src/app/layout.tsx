@@ -6,6 +6,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MicrosoftClarity from "@/components/MicrosoftClarity";
+import FunnelAnalytics from "@/components/FunnelAnalytics";
 
 const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
@@ -46,6 +47,7 @@ export default function RootLayout({
         <SpeedInsights />
         <MicrosoftClarity />
         {gaId && <GoogleAnalytics gaId={gaId} />}
+        {gaId && <FunnelAnalytics />}
       </body>
     </html>
   );

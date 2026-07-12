@@ -24,6 +24,7 @@ import {
   NOTE_LENGTH_PRESETS,
 } from "@/lib/noteLengthPresets";
 import { postJson } from "@/lib/apiClient";
+import { trackCoreAction, trackActivationOnce } from "@/lib/analytics";
 import type {
   Tweet,
   GenerateRequest,
@@ -426,6 +427,9 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         return;
       }
       setTweets(result.data.tweets);
+      // ファネル: 生成成功のたびに core_action、初回のみ activation。
+      trackCoreAction("tweet", result.data.tweets.length);
+      trackActivationOnce();
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
       refreshUsage();
     } finally {
@@ -448,6 +452,9 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         return;
       }
       setNote(result.data.note);
+      // ファネル: 生成成功のたびに core_action、初回のみ activation。
+      trackCoreAction("note", 1);
+      trackActivationOnce();
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
       refreshUsage();
     } finally {
