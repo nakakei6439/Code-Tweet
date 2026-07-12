@@ -15,6 +15,7 @@ import {
   recordUserUsage,
 } from "@/lib/rateLimit";
 import { getSubscriptionTier } from "@/lib/subscription";
+import { normalizeUrl } from "@/lib/urlCategory";
 import {
   MAX_HASHTAGS_LENGTH,
   MAX_TONE_MEMO_LENGTH,
@@ -166,7 +167,7 @@ export async function POST(request: Request): Promise<Response> {
     const note = await generateNoteDraft(
       body.projectText,
       body.toneMemo ?? "",
-      body.url ?? "",
+      normalizeUrl(body.url ?? ""),
       body.hashtags ?? "",
       lengthPreset,
     );

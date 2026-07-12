@@ -286,16 +286,16 @@ export default function GenerateInputs({
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 URL <span className="text-gray-500 font-normal">（任意）</span>
               </label>
-              <input
-                type="url"
+              <textarea
                 value={url}
                 onChange={(e) => {
-                  onUrlChange(e.target.value);
+                  onUrlChange(e.target.value.replace(/\s+/g, ""));
                   onClearFieldError("url");
                 }}
+                rows={2}
                 placeholder="例：https://example.com または https://github.com/owner/repo"
                 disabled={formDisabled}
-                className={inputClass("url", "focus:ring-fuchsia-500")}
+                className={inputClass("url", "focus:ring-fuchsia-500", "resize-none [overflow-wrap:anywhere]")}
               />
               <div className="mt-2 flex flex-wrap gap-2">
                 {URL_CATEGORY_BUTTONS.map(({ cat, label }) => {
@@ -345,7 +345,7 @@ export default function GenerateInputs({
                   disabled={formDisabled}
                   className={inputClass("hashtags", "focus:ring-fuchsia-500")}
                 />
-                {fieldMeta("hashtags", hashtags.length, "入力したハッシュタグに加え、関連タグが最大5つ付きます。")}
+                {fieldMeta("hashtags", hashtags.length, "入力したハッシュタグに加え、関連タグが自動で付きます（Xポストは合計3つまで）。")}
               </div>
             )}
 

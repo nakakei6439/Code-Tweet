@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseGeneratedTweets, reformatTweet } from "@/lib/gemini";
+import { countWeighted, dropTagsToFit, parseGeneratedTweets, reformatTweet } from "@/lib/gemini";
 
 describe("reformatTweet", () => {
   it("moves an inline URL to a trailing URL block and keeps required hashtags", () => {
@@ -22,6 +22,44 @@ describe("reformatTweet", () => {
     const result = reformatTweet("ソースコードを公開しました。", "", "https://github.com/example/repo");
 
     expect(result).toBe("ソースコードを公開しました。\n\nGitHubで公開中 →\nhttps://github.com/example/repo");
+  });
+
+  it("caps hashtags at 3 while keeping user-specified tags", () => {
+    const result = reformatTweet(
+      "新機能をリリースしました。\n#AIツール #Web開発 #Next_js #個人開発あるある",
+      "#CodeTweet #個人開発",
+      "",
+    );
+
+    expect(result).toBe("新機能をリリースしました。\n\n#AIツール #CodeTweet #個人開発");
+  });
+});
+
+describe("dropTagsToFit", () => {
+  const body = "あ".repeat(132); // 264 ウェイト。タグを付けると 280 を超える
+
+  it("上限を超えたら関連タグを末尾から削って収める", () => {
+    const over = reformatTweet(`${body}\n#タグA #タグB #タグC`, "", "");
+    expect(countWeighted(over)).toBeGreaterThan(280);
+
+    const fitted = dropTagsToFit(over, "");
+    expect(countWeighted(fitted)).toBeLessThanOrEqual(280);
+    expect(fitted).toContain(body);
+    expect(fitted).toContain("#タグA");
+    expect(fitted).not.toContain("#タグC");
+  });
+
+  it("ユーザー指定タグは削らずに残す", () => {
+    const over = reformatTweet(`${body}\n#関連タグ #CodeTweet`, "#CodeTweet", "");
+    const fitted = dropTagsToFit(over, "#CodeTweet");
+
+    expect(fitted).toContain("#CodeTweet");
+    expect(fitted).not.toContain("#関連タグ");
+  });
+
+  it("上限内のポストはそのまま返す", () => {
+    const text = "短い本文です。\n\n#タグA #タグB";
+    expect(dropTagsToFit(text, "")).toBe(text);
   });
 });
 

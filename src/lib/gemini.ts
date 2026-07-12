@@ -40,6 +40,9 @@ export function formatScheduleLabel(dateStr: string, timeStr: string): string {
   return `${month}月${day}日（${dow}）${timeStr}`;
 }
 const MAX_REGENERATE_ATTEMPTS = 4;
+// 日本語タグは 1 文字 2 ウェイトあり、5 個並べると 280 の 3 割前後を食う。
+// 本文の余裕を確保するため合計 3 個までに絞る（ユーザー指定タグは個数超過でも残す）。
+const MAX_HASHTAGS = 3;
 const URL_LEAD_RE =
   /(App Storeで無料公開中|今すぐインストール|iPhoneで無料で使える|ダウンロードはこちら|詳しくはこちら|今すぐ試す|無料で使えます|コードを見る|OSSとして公開中|GitHubで公開中)/i;
 const POST_MARKER_RE = /(?:^|\n)\s*(?:\d+[.)．:：]|[（(]\d+[）)]|ポスト\s*\d+[:：]?)\s*/;
@@ -80,6 +83,48 @@ function extractHashtags(text: string): string[] {
   return text.match(/#[^\s#]+/g) ?? [];
 }
 
+// タグは合計 MAX_HASHTAGS 個までに絞る。ユーザー指定タグ（省略不可）は超過分でも必ず残し、
+// AI が足した関連タグを後ろから落とす。
+function capHashtags(hashtags: string, requiredTags: string[]): string {
+  let tags = hashtags.split(/\s+/).filter(Boolean);
+  while (tags.length > MAX_HASHTAGS) {
+    const dropIndex = tags.findLastIndex((tag) => !requiredTags.includes(tag));
+    if (dropIndex < 0) break; // 指定タグだけで上限を超えている場合はそのまま残す
+    tags = tags.filter((_, i) => i !== dropIndex);
+  }
+  return tags.join(" ");
+}
+
+// 上限超過時にハッシュタグを末尾から削って収める。本文を切り詰めるより自然に収まる。
+// ユーザー指定タグは最後まで残すため、それだけで超過する場合は削りきらずに返す。
+export function dropTagsToFit(text: string, requiredHashtags = ""): string {
+  if (countWeighted(text) <= TWEET_LIMIT) return text;
+
+  const lines = text.split("\n");
+  const tagLineIndex = lines.findLastIndex((line) => /^(?:#\S+\s*)+$/.test(line.trim()));
+  if (tagLineIndex < 0) return text;
+
+  const requiredTags = extractHashtags(requiredHashtags);
+  let kept = lines[tagLineIndex].trim().split(/\s+/);
+
+  const render = (tags: string[]) =>
+    lines
+      .map((line, i) => (i === tagLineIndex ? tags.join(" ") : line))
+      .filter((_, i) => !(i === tagLineIndex && tags.length === 0))
+      .join("\n")
+      .trim();
+
+  for (;;) {
+    const dropIndex = kept.findLastIndex((tag) => !requiredTags.includes(tag));
+    if (dropIndex < 0) break; // 指定タグしか残っていない
+    kept = kept.filter((_, i) => i !== dropIndex);
+    const candidate = render(kept);
+    if (countWeighted(candidate) <= TWEET_LIMIT) return candidate;
+  }
+
+  return render(kept);
+}
+
 function getDefaultUrlLead(url: string): string {
   if (/apps\.apple\.com/i.test(url)) return "App Storeで無料公開中 →";
   if (/play\.google\.com/i.test(url)) return "今すぐインストール →";
@@ -118,6 +163,7 @@ export function reformatTweet(text: string, requiredHashtags = "", requiredUrl =
   } else if (!hashtags && inlineTags.length > 0) {
     hashtags = uniqTags(inlineTags);
   }
+  hashtags = capHashtags(hashtags, requiredTags);
 
   // リード文と URL を取り出し、AI が先頭や途中に置いた場合も末尾側へ正規化する。
   // 2 つ目以降の URL（同一 URL の重複含む）は本文から完全に除去する。
@@ -264,8 +310,8 @@ ${projectText}
 ${toneMemo ? `\n【口調・トーン指示】\n${toneMemo}` : ""}
 ${url ? `\n【URL（必須）】\n全ポストに必ず以下のURLを含める。省略・変形は一切不可：${url}\nこのURLは「${detectUrlType(url)}」へのリンク。URLは単独行に置き、その直前の行にURLの種別に合ったリード文を記載する。\n- App Store/Google Play → 「App Storeで無料公開中 →」「今すぐインストール →」「iPhoneで無料で使える →」など\n- GitHub → 「コードを見る →」「OSSとして公開中 →」「GitHubで公開中 →」など\n- Webアプリ → 「詳しくはこちら →」「今すぐ試す →」「無料で使えます →」など\n5件それぞれ異なるリード文を使うこと。同じフレーズを繰り返さない。` : ""}
 ${hashtags
-  ? `\n【ハッシュタグ（必須）】\n以下のハッシュタグを必ず含め、さらにプロダクトに関連するハッシュタグを追加して合計3〜5つにする。指定タグの省略・変形は一切不可：${hashtags}`
-  : `\n【ハッシュタグ（必須）】\nプロダクトの内容・ターゲット層に合ったハッシュタグを3〜5つ生成して各ポストの末尾に付ける`}
+  ? `\n【ハッシュタグ（必須）】\n以下のハッシュタグを必ず含め、さらにプロダクトに関連するハッシュタグを追加して合計2〜3つにする。指定タグの省略・変形は一切不可：${hashtags}`
+  : `\n【ハッシュタグ（必須）】\nプロダクトの内容・ターゲット層に合ったハッシュタグを2〜3つ生成して各ポストの末尾に付ける`}
 
 【要件】
 - 必ず5件のポストを生成する
@@ -278,7 +324,8 @@ ${hashtags
 - 本文中にハッシュタグを入れた場合でも、最後の行にハッシュタグ行を必ず作る
 - ハッシュタグ行は本文末尾に 1 行だけ。本文中・URL の前後に追加のハッシュタグ行を書かない
 - ハッシュタグ行はポスト本文の一部であり、必ず SCHEDULE: 行より前に置く。SCHEDULE: 行の後ろにハッシュタグを書かない
-- ハッシュタグはユーザー指定分を含め合計3〜5つにする（ハッシュタグ未指定の場合もプロダクトに関連するタグを3〜5つ生成する）
+- ハッシュタグはユーザー指定分を含め合計2〜3つにする（ハッシュタグ未指定の場合もプロダクトに関連するタグを2〜3つ生成する）
+- タグを増やすより本文を充実させることを優先する。4つ以上のハッシュタグは付けない
 ${url ? `- URL は 1 ポストにつき 1 回のみ出力する。同じ URL も別の URL も、本文中に 2 回以上書かない\n- URL の直前リード文（例：「無料でダウンロード →」）も 1 ポストに 1 回のみ` : "- URLが指定されていないため、URL・アプリストアURL・App Store・Google Play などのリンクや参照テキストを一切含めない"}
 - 1 ポストには本文を 1 つだけ書く。同一ポスト内に複数の本文パターン・複数の CTA・複数の段落構成を混在させない
 - ストーリーアークの各段階は 1 ポスト内で 1 つだけ扱う。例えば「ユーザーの声・共感」と「CTA・エンゲージメント」を 1 ポストに同居させない
@@ -332,7 +379,9 @@ function buildShortenPrompt(
 ${projectText}
 ${toneMemo ? `\n【口調・トーン指示】\n${toneMemo}` : ""}
 ${url ? `\n【URL（省略・変形不可）】\n${url}\nURLは単独行に置き、直前の行のリード文も必ずそのまま保持する。` : ""}
-${hashtags ? `\n【ハッシュタグ（省略・変形不可）】\n指定タグを含む全ハッシュタグを保持する（合計3〜5つ）：${hashtags}` : ""}
+${hashtags
+  ? `\n【ハッシュタグ】\n指定タグ「${hashtags}」は省略・変形不可。それ以外の関連タグは削ってよい（合計2〜3つ）`
+  : "\n【ハッシュタグ】\n合計2〜3つに絞る。字数が厳しければ関連タグを削ってよい"}
 
 【元のポスト】
 ${originalText}
@@ -375,16 +424,20 @@ async function shortenWithinLimit(
   hashtags: string,
   ai: GoogleGenAI,
 ): Promise<string> {
-  let current = reformatTweet(draft, hashtags, url);
+  // まずハッシュタグを削って収まるか試し、それでも超過する場合だけ Gemini に短縮を頼む。
+  let current = dropTagsToFit(reformatTweet(draft, hashtags, url), hashtags);
   let weight = countWeighted(current);
   let attempts = 0;
   while (weight > TWEET_LIMIT && attempts < MAX_REGENERATE_ATTEMPTS) {
     attempts++;
     try {
-      const shortened = reformatTweet(
-        await regenerateOne(current, weight, projectText, toneMemo, url, hashtags, ai),
+      const shortened = dropTagsToFit(
+        reformatTweet(
+          await regenerateOne(current, weight, projectText, toneMemo, url, hashtags, ai),
+          hashtags,
+          url,
+        ),
         hashtags,
-        url,
       );
       const shortenedWeight = countWeighted(shortened);
       if (shortenedWeight <= TWEET_LIMIT && shortened.length > 0) {

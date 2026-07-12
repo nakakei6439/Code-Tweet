@@ -51,7 +51,7 @@ export default function TweetCard({ tweet, actionSlot }: TweetCardProps) {
         </span>
       </div>
       <p className="text-xs text-gray-400 mb-3">{tweet.recommendedTime.reason}</p>
-      <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">{tweet.text}</p>
+      <p className="text-white text-sm leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">{tweet.text}</p>
       <div className="mt-4 flex items-center justify-end gap-2">
         {actionSlot}
         <button
