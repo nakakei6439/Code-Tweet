@@ -57,7 +57,8 @@ export async function POST(request: Request) {
         metadata: { user_id: user.id },
         ...(eligibleForTrial ? { trial_period_days: 30 } : {}),
       },
-      success_url: `${appUrl}/settings?checkout=success${eligibleForTrial ? "&trial=started" : ""}`,
+      // session_id はファネル用 purchase イベントの二重送信ガードに使う（Stripe が実値に置換）。
+      success_url: `${appUrl}/settings?checkout=success${eligibleForTrial ? "&trial=started" : ""}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/pricing?checkout=cancelled`,
       allow_promotion_codes: true,
     });
