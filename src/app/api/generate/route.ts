@@ -11,6 +11,7 @@ import {
   recordUserUsage,
 } from "@/lib/rateLimit";
 import { getSubscriptionTier } from "@/lib/subscription";
+import { normalizeUrl } from "@/lib/urlCategory";
 import { recordTweetGeneration } from "@/lib/generationHistory";
 import {
   MAX_HASHTAGS_LENGTH,
@@ -148,12 +149,14 @@ export async function POST(request: Request): Promise<Response> {
   const validationError = validateGenerateRequest(body, usageTier);
   if (validationError) return validationError;
 
+  const url = normalizeUrl(body.url ?? "");
+
   try {
-    const tweets = await generateTweets(body.projectText, body.toneMemo ?? "", body.url ?? "", body.hashtags ?? "");
+    const tweets = await generateTweets(body.projectText, body.toneMemo ?? "", url, body.hashtags ?? "");
     if (user) {
       await recordUserUsage(supabase, user.id);
       if (usageTier === "paid") {
-        await recordTweetGeneration(user.id, tweets, body.url ?? "", body.hashtags ?? "");
+        await recordTweetGeneration(user.id, tweets, url, body.hashtags ?? "");
       }
     } else if (ipHash) {
       await recordGuestUsage(ipHash);
