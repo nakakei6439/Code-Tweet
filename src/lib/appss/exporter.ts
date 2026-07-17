@@ -5,6 +5,13 @@
 import { getFontEmbedCSS, toPng } from "html-to-image";
 import JSZip from "jszip";
 
+// Safari(WebKit) は SVG foreignObject への画像埋め込みで、初回描画時に
+// 内側の画像（特に大きな data:URL）を取りこぼす既知バグがある。該当ブラウザでは
+// スライドごとに捨てレンダリングして画像デコードを温めてから本番描画する。
+export const IS_SAFARI =
+  typeof navigator !== "undefined" &&
+  /^((?!chrome|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent);
+
 // React の render → ブラウザの layout/paint が落ち着くまで 2 フレーム待つ
 export const waitForPaint = () =>
   new Promise<void>((resolve) => {
@@ -39,6 +46,22 @@ export async function warmupCapture(el: HTMLElement, fontEmbedCSS?: string) {
   } catch {
     /* warmup 失敗は無視して本番キャプチャに進む */
   }
+}
+
+// オフスクリーン要素内の画像は Safari が遅延デコードするため、キャプチャ前に
+// 明示的にデコードしておく。これで html-to-image が生成する SVG 内の同一
+// data:URL がデコード済みキャッシュにヒットし、画像が黒く抜けるのを防ぐ。
+export async function decodeImages(el: HTMLElement): Promise<void> {
+  const imgs = Array.from(el.querySelectorAll("img"));
+  await Promise.all(
+    imgs.map(async (img) => {
+      try {
+        if (img.decode) await img.decode();
+      } catch {
+        /* デコード失敗は無視（描画側でフォールバック） */
+      }
+    }),
+  );
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -114,17 +137,27 @@ export async function captureSlide(
       backgroundColor: "#ffffff",
       fontEmbedCSS,
     };
-    // Safari は初回レンダリングが空／黒になることがあるため、真っ黒判定で最大3回まで再試行する。
-    let last = "";
-    for (let attempt = 0; attempt < 3; attempt++) {
+    const render = async (): Promise<string> => {
       try {
-        last = await toPng(el, options);
+        return await toPng(el, options);
       } catch {
         await waitForPaint();
-        continue;
+        return await toPng(el, options);
       }
-      if (!(await isMostlyBlank(last))) return last;
+    };
+    // 画像を先にデコードしてから描画する（Safari の遅延デコード対策）。
+    await decodeImages(el);
+    // Safari は同一 DOM の初回描画で画像を取りこぼす。捨てレンダリングで
+    // 画像デコードを温めてから本番描画する（2 回目以降はデコード済みで正しく出る）。
+    if (IS_SAFARI) {
+      await render();
       await waitForPaint();
+    }
+    // 全体が真っ黒／単色だった場合の保険として最大3回まで再試行する。
+    let last = await render();
+    for (let attempt = 0; attempt < 2 && (await isMostlyBlank(last)); attempt++) {
+      await waitForPaint();
+      last = await render();
     }
     return last;
   } finally {
