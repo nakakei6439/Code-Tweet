@@ -17,6 +17,8 @@ export interface AppSSCopySlideIdea {
 
 export interface AppSSCopyResponse {
   slides: AppSSCopySlideIdea[];
+  // AI が選んだ推奨テーマ（「AIにおまかせ」選択時に採用）
+  recommendedThemeId?: string;
 }
 
 export type AppSSCopyErrorField = "appName" | "appDescription" | "features" | "tone";

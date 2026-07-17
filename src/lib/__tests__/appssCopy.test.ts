@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildAppSSCopyPrompt, parseAppSSCopy } from "../geminiAppSS";
+import { buildAppSSCopyPrompt, parseAppSSCopy, parseRecommendedTheme } from "../geminiAppSS";
 
 const SAMPLE = `SLIDE: 1
 LAYOUT: hero
@@ -49,6 +49,19 @@ describe("parseAppSSCopy", () => {
   it("要求枚数より多い場合は切り詰める", () => {
     const slides = parseAppSSCopy(SAMPLE, 2);
     expect(slides).toHaveLength(2);
+  });
+});
+
+describe("parseRecommendedTheme", () => {
+  it("THEME 行から有効なテーマ id を取り出す", () => {
+    expect(parseRecommendedTheme("THEME: washi\n" + SAMPLE)).toBe("washi");
+    expect(parseRecommendedTheme("theme: dark-neon")).toBe("dark-neon");
+  });
+
+  it("不明なテーマ id / 未指定は undefined", () => {
+    expect(parseRecommendedTheme("THEME: unknown-theme")).toBeUndefined();
+    expect(parseRecommendedTheme(SAMPLE)).toBeUndefined();
+    expect(parseRecommendedTheme("")).toBeUndefined();
   });
 });
 

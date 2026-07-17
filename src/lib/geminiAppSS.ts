@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { GEMINI_MODEL, GEMINI_THINKING_OFF, generateContentWithRetry } from "./gemini";
+import { THEMES } from "./appss/constants";
 import type { AppSSCopySlideIdea } from "@/types/appss";
 import type { SlideLayout } from "./appss/types";
 
@@ -8,6 +9,15 @@ export const APPSS_MAX_SLIDES = 6;
 export const APPSS_DEFAULT_SLIDES = 5;
 
 const LAYOUT_HINTS: SlideLayout[] = ["hero", "device-bottom", "device-top", "two-devices", "no-device"];
+
+// AI がアプリの雰囲気からテーマを選ぶための説明。id は constants.ts の THEMES と一致。
+const THEME_GUIDE: { id: string; vibe: string }[] = [
+  { id: "simple-white", vibe: "清潔・信頼感。ユーティリティ/ビジネス/金融/生産性/ツール系" },
+  { id: "pastel", vibe: "やわらかく親しみやすい。家計簿/ヘルスケア/子供/女性向け/日記系" },
+  { id: "dark-neon", vibe: "先進的でクール。開発ツール/ガジェット/ゲーム/音楽/暗めのUI系" },
+  { id: "washi", vibe: "和風で上質・落ち着き。和風/伝統/文化/瞑想/写真/読書系" },
+  { id: "pop", vibe: "ポップで高彩度・元気。エンタメ/SNS/フード/若者向け系" },
+];
 
 export function buildAppSSCopyPrompt(
   appName: string,
@@ -41,9 +51,14 @@ ${tone ? `\n【トーン指示】\n${tone}` : ""}
 2〜${slideCount - 1}枚目: 主要機能・差別化ポイントを 1 スライド 1 つずつ（LAYOUT: device-bottom / device-top / two-devices を交互に使い、同じレイアウトを連続させない）
 ${slideCount}枚目: 締め — 信頼感や行動喚起（例：今すぐ無料ではじめよう）（LAYOUT: no-device）
 
-【出力形式】
-説明・前置き・空行は不要。必ず以下の形式で ${slideCount} ブロック出力する：
+【配色テーマの選択】
+このアプリの内容${tone ? "と上記トーン指示" : ""}に最も合う配色テーマを次から1つ選ぶ：
+${THEME_GUIDE.map((t) => `- ${t.id}: ${t.vibe}`).join("\n")}
 
+【出力形式】
+説明・前置き・空行は不要。まず1行目に選んだテーマを「THEME: <id>」形式で出力し、続けて ${slideCount} ブロック出力する：
+
+THEME: <上記から選んだ id>
 SLIDE: 1
 LAYOUT: hero
 LABEL: [ラベル]
@@ -55,6 +70,13 @@ LABEL: [ラベル]
 HEADLINE: [1行目]／[2行目]
 
 （以下同様に SLIDE: ${slideCount} まで）`;
+}
+
+// 出力から推奨テーマ id を取り出す。未検出/不正なら undefined。
+export function parseRecommendedTheme(text: string): string | undefined {
+  const m = text.match(/THEME:\s*([a-z-]+)/i);
+  const id = m?.[1]?.toLowerCase();
+  return id && THEMES[id] ? id : undefined;
 }
 
 export function parseAppSSCopy(text: string, slideCount: number): AppSSCopySlideIdea[] {
@@ -89,13 +111,18 @@ export function parseAppSSCopy(text: string, slideCount: number): AppSSCopySlide
   return slides.slice(0, slideCount);
 }
 
+export type AppSSCopyResult = {
+  slides: AppSSCopySlideIdea[];
+  recommendedThemeId?: string;
+};
+
 export async function generateAppSSCopy(
   appName: string,
   appDescription: string,
   features: string[],
   tone: string,
   slideCount: number,
-): Promise<AppSSCopySlideIdea[]> {
+): Promise<AppSSCopyResult> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY が設定されていません。");
   const ai = new GoogleGenAI({ apiKey });
@@ -118,5 +145,8 @@ export async function generateAppSSCopy(
   if (!text) {
     throw new Error("Gemini API から本文が返りませんでした。もう一度お試しください。");
   }
-  return parseAppSSCopy(text, slideCount);
+  return {
+    slides: parseAppSSCopy(text, slideCount),
+    recommendedThemeId: parseRecommendedTheme(text),
+  };
 }

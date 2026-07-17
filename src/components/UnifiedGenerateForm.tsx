@@ -66,6 +66,9 @@ type ErrorState = {
 
 const EMPTY_ERROR: ErrorState = { error: null, errorCode: null, errorField: null };
 
+// テーマ選択の「AIにおまかせ」を表すセンチネル値
+const APPSS_THEME_AUTO = "auto";
+
 function formatCount(value: number) {
   return value.toLocaleString("ja-JP");
 }
@@ -201,6 +204,7 @@ function AppssOptions({
           disabled={disabled}
           className="w-full rounded-lg border border-gray-700 bg-gray-800/50 px-3 py-2.5 text-sm text-white transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
+          <option value={APPSS_THEME_AUTO}>✨ AIにおまかせ</option>
           {Object.values(THEMES).map((theme) => (
             <option key={theme.id} value={theme.id}>
               {theme.name}
@@ -324,7 +328,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
   const [hashtags, setHashtags] = useState("");
   const [lengthPreset, setLengthPreset] = useState<NoteLengthPreset>(DEFAULT_NOTE_LENGTH_PRESET);
   const [appssTone, setAppssTone] = useState("");
-  const [appssThemeId, setAppssThemeId] = useState<string>(DEFAULT_THEME_ID);
+  const [appssThemeId, setAppssThemeId] = useState<string>(APPSS_THEME_AUTO);
 
   // タブ固有結果
   const [tweets, setTweets] = useState<Tweet[]>([]);
@@ -585,8 +589,13 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         return;
       }
 
-      // 選んだテーマ（配色・連動フォント）をエディタに引き継ぐ
-      writeHandoff(repo.repo, result.data.slides, appssThemeId);
+      // テーマをエディタに引き継ぐ。「AIにおまかせ」なら AI 推奨テーマ、
+      // 明示選択ならそれを使う（推奨が無ければ既定にフォールバック）。
+      const themeForHandoff =
+        appssThemeId === APPSS_THEME_AUTO
+          ? result.data.recommendedThemeId ?? DEFAULT_THEME_ID
+          : appssThemeId;
+      writeHandoff(repo.repo, result.data.slides, themeForHandoff);
       trackActivationOnce();
       refreshUsage();
       navigating = true;
