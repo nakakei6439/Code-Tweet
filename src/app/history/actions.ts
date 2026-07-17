@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { deleteTweetGenerationItem } from "@/lib/generationHistory";
-import { getSubscriptionTier } from "@/lib/subscription";
+import { hasProAccess } from "@/lib/entitlements";
 
 export type DeleteHistoryTweetResult =
   | { ok: true }
@@ -23,9 +23,8 @@ export async function deleteHistoryTweet(
   if (!user) {
     return { ok: false, error: "ログインが必要です。" };
   }
-  const tier = await getSubscriptionTier(user.id);
-  if (tier !== "paid") {
-    return { ok: false, error: "生成履歴の削除は Pro プランの機能です。" };
+  if (!(await hasProAccess(user.id, user.email))) {
+    return { ok: false, error: "生成履歴の削除はクレジット購入者向けの機能です。" };
   }
 
   const result = await deleteTweetGenerationItem(user.id, normalizedGenerationId, tweetId);

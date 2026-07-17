@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getSubscriptionTier } from "@/lib/subscription";
+import { getEntitlements } from "@/lib/entitlements";
 import { buildReadmePayload, parseGitHubRepoUrl } from "@/lib/githubReadme";
 import { getInstallationToken } from "@/lib/githubApp";
 import type { UsageTier } from "@/types/usage";
@@ -42,11 +42,12 @@ export async function POST(request: Request): Promise<Response> {
   let isPaid = false;
   let hasInstallation = false;
   if (user) {
-    const tier = await getSubscriptionTier(user.id);
-    usageTier = tier;
-    isPaid = tier === "paid";
+    // 文字数上限・プライベートリポ対応は perk 判定（サブスク / 管理者 / クレジット残高あり）。
+    const { perkTier } = await getEntitlements(user.id, user.email);
+    usageTier = perkTier;
+    isPaid = perkTier === "paid";
 
-    // Pro かつ GitHub App 接続済みなら、非公開リポジトリ用に installation トークンを付与する
+    // perk あり かつ GitHub App 接続済みなら、非公開リポジトリ用に installation トークンを付与する
     if (isPaid) {
       const admin = createAdminClient();
       const { data: installRow } = await admin

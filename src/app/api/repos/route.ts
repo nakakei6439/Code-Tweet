@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getSubscriptionTier } from "@/lib/subscription";
+import { hasProAccess } from "@/lib/entitlements";
 import { getInstallationToken } from "@/lib/githubApp";
 
 export interface RepoItem {
@@ -20,8 +20,8 @@ export async function GET(): Promise<Response> {
     return Response.json({ error: "ログインが必要です。" }, { status: 401 });
   }
 
-  const tier = await getSubscriptionTier(user.id);
-  const isPaid = tier === "paid";
+  // プライベートリポジトリの表示は perk 判定（サブスク / 管理者 / クレジット残高あり）。
+  const isPaid = await hasProAccess(user.id, user.email);
 
   const admin = createAdminClient();
   const { data: installRow } = await admin
@@ -86,5 +86,5 @@ export async function GET(): Promise<Response> {
     html_url: r.html_url,
   }));
 
-  return Response.json({ repos, tier });
+  return Response.json({ repos, tier: isPaid ? "paid" : "free" });
 }

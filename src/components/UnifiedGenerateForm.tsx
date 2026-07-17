@@ -15,6 +15,7 @@ import RepoSelectorModal from "@/components/RepoSelectorModal";
 const NoteCard = dynamic(() => import("@/components/NoteCard"), {
   loading: () => <div className="text-gray-400 text-sm">プレビューを準備中...</div>,
 });
+import { CREDIT_PACKS } from "@/lib/creditPacks";
 import {
   PROJECT_TEXT_LIMITS,
   getProjectTextLimit,
@@ -95,7 +96,8 @@ function GuestLimitCTA() {
   );
 }
 
-function FreeLimitCTA() {
+function CreditPackCTA() {
+  const smallest = CREDIT_PACKS[0];
   return (
     <Link
       href="/pricing"
@@ -103,14 +105,16 @@ function FreeLimitCTA() {
         bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400
         text-white shadow-lg shadow-fuchsia-500/20 hover:opacity-90 transition-opacity"
     >
-      Pro プランを見る（¥500 / 月）
+      クレジットパックを見る（{smallest.credits}回 ¥{smallest.amountJpy}〜）
     </Link>
   );
 }
 
 function UsageBadge({ usage }: { usage: UsageInfo }) {
-  const isLow = usage.remaining <= 2;
-  const isEmpty = usage.remaining === 0;
+  // 生成できる残数は「月次無料枠の残り + 購入クレジット」。
+  const totalRemaining = usage.remaining + usage.credits;
+  const isLow = totalRemaining <= 2;
+  const isEmpty = totalRemaining === 0;
   const tierLabel = usage.tier === "paid" ? "Pro" : usage.tier === "free" ? "無料" : "ゲスト";
   const tierClass =
     usage.tier === "paid"
@@ -133,6 +137,9 @@ function UsageBadge({ usage }: { usage: UsageInfo }) {
         <span className="whitespace-nowrap">
           {usage.tier === "guest" ? "あと" : "今月あと"} <span className={`font-bold text-sm ${remainClass}`}>{usage.remaining}</span>
           <span className="text-gray-400"> / {usage.limit} 回</span>
+          {usage.credits > 0 && (
+            <span className="text-gray-400"> + クレジット <span className="font-bold text-sm text-white">{usage.credits}</span> 回</span>
+          )}
         </span>
       </div>
       {usage.tier === "guest" && (
@@ -595,7 +602,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
             )}
           </div>
           {errorCode === "guest_limit" && <GuestLimitCTA />}
-          {errorCode === "free_limit" && <FreeLimitCTA />}
+          {(errorCode === "free_limit" || errorCode === "paid_limit") && <CreditPackCTA />}
         </div>
       )}
 

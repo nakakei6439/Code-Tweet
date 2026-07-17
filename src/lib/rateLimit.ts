@@ -1,8 +1,9 @@
 import { createHash } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { CREDIT_PACKS } from "@/lib/creditPacks";
+import type { Entitlements } from "@/lib/entitlements";
 import { logError } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { SubscriptionTier } from "@/lib/subscription";
 
 export const GUEST_TOTAL_LIMIT = 3;
 export const USER_FREE_MONTHLY_LIMIT = 3;
@@ -10,9 +11,13 @@ export const USER_PAID_MONTHLY_LIMIT = 30;
 
 import type { GenerateErrorCode } from "@/types/tweet";
 
+// useCredit: 月次無料枠を使い切っており、この生成は購入クレジットを消費すべきという印。
 export type RateLimitResult =
-  | { ok: true }
+  | { ok: true; useCredit: boolean }
   | { ok: false; status: 429; message: string; code: GenerateErrorCode };
+
+const SMALLEST_PACK = CREDIT_PACKS[0];
+const CREDIT_PACK_HINT = `クレジットパック（${SMALLEST_PACK.credits}回 ¥${SMALLEST_PACK.amountJpy}〜）を購入すると続けて生成できます。`;
 
 export function getMonthWindowStart(): string {
   const now = new Date();
@@ -40,9 +45,10 @@ export function hashIp(ip: string): string {
 export async function checkUserLimit(
   supabase: SupabaseClient,
   userId: string,
-  tier: SubscriptionTier,
+  entitlements: Pick<Entitlements, "quotaTier" | "creditBalance">,
 ): Promise<RateLimitResult> {
-  const limit = tier === "paid" ? USER_PAID_MONTHLY_LIMIT : USER_FREE_MONTHLY_LIMIT;
+  const limit =
+    entitlements.quotaTier === "paid" ? USER_PAID_MONTHLY_LIMIT : USER_FREE_MONTHLY_LIMIT;
 
   const { count, error } = await supabase
     .from("usage_logs")
@@ -52,26 +58,30 @@ export async function checkUserLimit(
 
   if (error) {
     logError("rateLimit", "usage_logs count error", error);
-    return { ok: true };
+    return { ok: true, useCredit: false };
   }
 
   if ((count ?? 0) >= limit) {
-    if (tier === "paid") {
+    // 月次無料枠を使い切っていても、購入クレジットが残っていれば生成できる。
+    if (entitlements.creditBalance > 0) {
+      return { ok: true, useCredit: true };
+    }
+    if (entitlements.quotaTier === "paid") {
       return {
         ok: false,
         status: 429,
-        message: `今月の生成上限（${limit}回）に達しました。来月 1 日にリセットされます。`,
+        message: `今月の生成上限（${limit}回）に達しました。${CREDIT_PACK_HINT}`,
         code: "paid_limit",
       };
     }
     return {
       ok: false,
       status: 429,
-      message: `今月の生成上限（${limit}回）に達しました。Pro プラン（¥500 / 月）では月 ${USER_PAID_MONTHLY_LIMIT} 回まで使えます。`,
+      message: `今月の無料枠（${limit}回）を使い切りました。${CREDIT_PACK_HINT}`,
       code: "free_limit",
     };
   }
-  return { ok: true };
+  return { ok: true, useCredit: false };
 }
 
 export async function recordUserUsage(
@@ -91,7 +101,7 @@ export async function checkGuestLimit(ipHash: string): Promise<RateLimitResult> 
 
   if (error) {
     logError("rateLimit", "ip_usage_logs count error", error);
-    return { ok: true };
+    return { ok: true, useCredit: false };
   }
 
   if ((count ?? 0) >= GUEST_TOTAL_LIMIT) {
@@ -102,7 +112,7 @@ export async function checkGuestLimit(ipHash: string): Promise<RateLimitResult> 
       code: "guest_limit",
     };
   }
-  return { ok: true };
+  return { ok: true, useCredit: false };
 }
 
 export async function recordGuestUsage(ipHash: string): Promise<void> {

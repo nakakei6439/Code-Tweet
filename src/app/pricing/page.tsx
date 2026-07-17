@@ -1,289 +1,184 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CREDIT_PACKS } from "@/lib/creditPacks";
 import { PROJECT_TEXT_LIMITS } from "@/lib/generateLimits";
 import { TWEET_GENERATION_HISTORY_LIMIT } from "@/lib/generationHistory";
+import { USER_FREE_MONTHLY_LIMIT } from "@/lib/rateLimit";
 import { createClient } from "@/lib/supabase/server";
-import { getSubscriptionTier, isEligibleForTrial } from "@/lib/subscription";
+import { getSubscriptionTier } from "@/lib/subscription";
 import GitHubLoginButton from "@/components/GitHubLoginButton";
 import StripeActionButton from "@/components/StripeActionButton";
-import { getMissingStripeCheckoutEnv } from "@/lib/stripe";
+import { getMissingStripeCreditsEnv } from "@/lib/stripe";
 
 export const metadata: Metadata = {
   title: "料金プラン",
-  description: "Code Tweetの無料プランとProプランの違いを機能比較表で確認できます。",
+  description:
+    "Code Tweetは毎月の無料枠に加えて、使う分だけクレジットを買い足せる単発課金制です。サブスク不要で、買ったクレジットは無期限で使えます。",
 };
 
-interface PlanFeature {
-  label: string;
-  included: boolean;
-}
-
-interface PlanTier {
-  slug: "free" | "pro";
-  name: string;
-  tagline: string;
-  price: string;
-  priceUnit?: string;
-  monthlyLabel: string;
-  readmeLimitLabel: string;
-  bestFor: string;
-  features: PlanFeature[];
-  cta: { label: string; href?: string };
-  available: boolean;
-  badge?: string;
-  trialNote?: string;
-}
-
-const PLAN_TIERS: PlanTier[] = [
-  {
-    slug: "free",
-    name: "無料",
-    tagline: "GitHubで連携してはじめる",
-    price: "¥0",
-    monthlyLabel: "月3回",
-    readmeLimitLabel: `${PROJECT_TEXT_LIMITS.free.toLocaleString("ja-JP")}文字`,
-    bestFor: "公開リポジトリで継続的にXに発信したい個人開発者",
-    features: [
-      { label: "READMEの自動取得 + 5件生成", included: true },
-      { label: "推奨投稿日時 + 理由", included: true },
-      { label: "280ウェイトの自動チェック", included: true },
-      { label: "ワンクリックでXに投稿（共有リンク）", included: true },
-      { label: "公開リポジトリ一覧から選択", included: true },
-      { label: `生成履歴の保存・削除（最新${TWEET_GENERATION_HISTORY_LIMIT}件）`, included: false },
-      { label: "プライベートリポジトリ対応", included: false },
-    ],
-    cta: { label: "GitHubでログインして使う", href: "/" },
-    available: true,
-  },
-  {
-    slug: "pro",
-    name: "Pro",
-    tagline: "本格運用するならこれ",
-    price: "¥500",
-    priceUnit: "/ 月",
-    monthlyLabel: "月30回",
-    readmeLimitLabel: `${PROJECT_TEXT_LIMITS.paid.toLocaleString("ja-JP")}文字`,
-    bestFor: "プライベート開発を公開前から育てたい / 毎日発信したい人",
-    features: [
-      { label: "READMEの自動取得 + 5件生成", included: true },
-      { label: "推奨投稿日時 + 理由", included: true },
-      { label: "280ウェイトの自動チェック", included: true },
-      { label: "ワンクリックでXに投稿（共有リンク）", included: true },
-      { label: "公開リポジトリ一覧から選択", included: true },
-      { label: `生成履歴の保存・削除（最新${TWEET_GENERATION_HISTORY_LIMIT}件）`, included: true },
-      { label: "プライベートリポジトリ対応", included: true },
-    ],
-    cta: { label: "Pro にアップグレード" },
-    available: true,
-    badge: "初月無料",
-    trialNote: "30日後から ¥500/月（いつでも解約可）",
-  },
+// クレジット購入で解放される機能（旧 Pro 特典）。
+const CREDIT_PERKS = [
+  `README文字数上限 ${PROJECT_TEXT_LIMITS.paid.toLocaleString("ja-JP")}文字（無料は${PROJECT_TEXT_LIMITS.free.toLocaleString("ja-JP")}文字）`,
+  `生成履歴の保存・削除（最新${TWEET_GENERATION_HISTORY_LIMIT}件）`,
+  "プライベートリポジトリ対応",
+  "クレジットは無期限（月をまたいでも消えない）",
 ];
 
-const ALL_FEATURES = Array.from(
-  new Set(PLAN_TIERS.flatMap((p) => p.features.map((f) => f.label))),
-);
-
-function planHasFeature(planSlug: string, label: string): boolean {
-  const plan = PLAN_TIERS.find((p) => p.slug === planSlug);
-  return plan?.features.find((f) => f.label === label)?.included ?? false;
-}
+const FREE_FEATURES = [
+  `毎月${USER_FREE_MONTHLY_LIMIT}回まで無料で生成`,
+  "READMEの自動取得 + 5件生成",
+  "推奨投稿日時 + 理由",
+  "280ウェイトの自動チェック",
+  "ワンクリックでXに投稿（共有リンク）",
+];
 
 export default async function PricingPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const tier = user ? await getSubscriptionTier(user.id) : null;
-  const isPaid = tier === "paid";
   const isAuthenticated = !!user;
-  const stripeReady = getMissingStripeCheckoutEnv().length === 0;
-  const eligibleForTrial = user && !isPaid ? await isEligibleForTrial(user.id) : !user;
+  const isSubscriber = user ? (await getSubscriptionTier(user.id)) === "paid" : false;
+  const stripeReady = getMissingStripeCreditsEnv().length === 0;
 
   return (
     <main className="min-h-screen bg-gray-950 px-4 py-16 text-gray-200">
       <div className="mx-auto max-w-5xl">
         <header>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
-            Pricing · Feature Comparison
+            Pricing · Pay as you go
           </p>
           <h1 className="mt-4 text-3xl font-bold text-white sm:text-5xl">
-            機能で比べる、
+            サブスク不要。
             <br className="sm:hidden" />
             <span className="bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-yellow-200 bg-clip-text text-transparent">
-              プランの違い。
+              使う分だけ買い足せる。
             </span>
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-gray-400">
-            無料と Pro の違いを機能単位で並べました。何ができて何ができないか、表で確認してから判断できます。
+            毎月{USER_FREE_MONTHLY_LIMIT}回まで無料。足りない月だけクレジットを買い足せます。
+            買ったクレジットに有効期限はありません。
           </p>
         </header>
 
-        <section className="mt-12 overflow-x-auto rounded-2xl border border-gray-800 bg-gray-900/60">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-gray-800 bg-gray-900/80">
-                <th className="px-5 py-5 align-bottom text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  比較項目
-                </th>
-                {PLAN_TIERS.map((plan) => (
-                  <th key={plan.slug} className="px-5 py-5 align-bottom">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base font-bold text-white">{plan.name}</span>
-                      {plan.badge && eligibleForTrial && (
-                        <span className="rounded-full border border-amber-700/60 bg-amber-950/40 px-2 py-0.5 text-[10px] font-semibold text-amber-200">
-                          {plan.badge}
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-1 flex items-baseline gap-1">
-                      <span className="text-2xl font-bold text-white">{plan.price}</span>
-                      {plan.priceUnit && (
-                        <span className="text-xs text-gray-400">{plan.priceUnit}</span>
-                      )}
-                    </div>
-                    {plan.slug === "pro" && plan.trialNote && eligibleForTrial && (
-                      <p className="mt-1 text-[11px] font-medium text-amber-200">
-                        初月無料・{plan.trialNote}
-                      </p>
-                    )}
-                    <p className="mt-1 text-xs font-normal text-emerald-300">{plan.monthlyLabel}</p>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800">
-              <tr>
-                <th
-                  scope="row"
-                  className="px-5 py-4 text-left text-xs font-medium text-gray-500"
-                >
-                  向いている人
-                </th>
-                {PLAN_TIERS.map((plan) => (
-                  <td key={plan.slug} className="px-5 py-4 text-xs leading-5 text-gray-300">
-                    {plan.bestFor}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <th
-                  scope="row"
-                  className="px-5 py-4 text-left text-sm font-normal text-gray-300"
-                >
-                  README文字数上限
-                </th>
-                {PLAN_TIERS.map((plan) => (
-                  <td key={plan.slug} className="px-5 py-4 text-sm font-medium text-gray-200">
-                    {plan.readmeLimitLabel}
-                  </td>
-                ))}
-              </tr>
-              {ALL_FEATURES.map((label) => (
-                <tr key={label}>
-                  <th
-                    scope="row"
-                    className="px-5 py-4 text-left text-sm font-normal text-gray-300"
-                  >
-                    {label}
-                  </th>
-                  {PLAN_TIERS.map((plan) => {
-                    const included = planHasFeature(plan.slug, label);
-                    return (
-                      <td key={plan.slug} className="px-5 py-4">
-                        {included ? (
-                          <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-300">
-                            <span aria-hidden>✓</span>
-                            <span className="text-xs text-gray-400">含まれます</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 text-sm text-gray-600">
-                            <span aria-hidden>—</span>
-                            <span className="text-xs">対象外</span>
-                          </span>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
+        <section className="mt-12 grid gap-6 md:grid-cols-3">
+          {/* 無料プラン */}
+          <div className="flex flex-col rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
+            <h2 className="text-base font-bold text-white">無料</h2>
+            <div className="mt-2 flex items-baseline gap-1">
+              <span className="text-3xl font-bold text-white">¥0</span>
+            </div>
+            <p className="mt-1 text-xs text-emerald-300">月{USER_FREE_MONTHLY_LIMIT}回まで生成</p>
+            <ul className="mt-5 flex-1 space-y-2 text-xs leading-5 text-gray-300">
+              {FREE_FEATURES.map((label) => (
+                <li key={label} className="flex items-start gap-2">
+                  <span aria-hidden className="mt-0.5 text-emerald-300">✓</span>
+                  {label}
+                </li>
               ))}
-              <tr className="bg-gray-900/40">
-                <th
-                  scope="row"
-                  className="px-5 py-5 text-left text-xs font-medium text-gray-500"
+            </ul>
+            <div className="mt-6">
+              {isAuthenticated ? (
+                <button
+                  disabled
+                  className="w-full cursor-default rounded-lg border border-emerald-800/70 bg-emerald-950/30 px-4 py-2 text-xs font-semibold text-emerald-200"
                 >
-                  はじめる
-                </th>
-                {PLAN_TIERS.map((plan) => (
-                  <td key={plan.slug} className="px-5 py-5">
-                    {plan.slug === "pro" && !stripeReady ? (
-                      <button
-                        disabled
-                        title="決済機能は近日公開予定です"
-                        className="cursor-not-allowed rounded-lg border border-gray-800 px-4 py-2 text-xs font-semibold text-gray-500"
-                      >
-                        準備中
-                      </button>
-                    ) : plan.slug === "pro" && isPaid ? (
-                      <Link
-                        href="/settings"
-                        className="inline-flex items-center justify-center rounded-lg border border-gray-700 px-4 py-2 text-xs font-semibold text-gray-100 transition-colors hover:border-gray-600 hover:bg-gray-800"
-                      >
-                        支払いを管理する
-                      </Link>
-                    ) : plan.slug === "pro" && isAuthenticated ? (
-                      <StripeActionButton
-                        action="checkout"
-                        className="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2 text-xs font-semibold text-gray-950 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
-                      >
-                        {eligibleForTrial ? "30日間無料でProを試す" : plan.cta.label}
-                      </StripeActionButton>
-                    ) : plan.slug === "pro" ? (
-                      <GitHubLoginButton
-                        next="/pricing"
-                        className="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2 text-xs font-semibold text-gray-950 transition-colors hover:bg-gray-100"
-                      >
-                        {eligibleForTrial ? "GitHubでログインしてProを試す" : "GitHubでログインしてアップグレード"}
-                      </GitHubLoginButton>
-                    ) : plan.available && plan.slug === "free" && isAuthenticated ? (
-                      <button
-                        disabled
-                        className="cursor-default rounded-lg border border-emerald-800/70 bg-emerald-950/30 px-4 py-2 text-xs font-semibold text-emerald-200"
-                      >
-                        {isPaid ? "Proプランを利用中" : "無料プランを利用中"}
-                      </button>
-                    ) : plan.available && plan.slug === "free" ? (
-                      <GitHubLoginButton
-                        next="/"
-                        className="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2 text-xs font-semibold text-gray-950 transition-colors hover:bg-gray-100"
-                      >
-                        {plan.cta.label}
-                      </GitHubLoginButton>
-                    ) : plan.available && plan.cta.href ? (
-                      <Link
-                        href={plan.cta.href}
-                        className="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2 text-xs font-semibold text-gray-950 transition-colors hover:bg-gray-100"
-                      >
-                        {plan.cta.label}
-                      </Link>
-                    ) : (
-                      <button
-                        disabled
-                        className="cursor-not-allowed rounded-lg border border-gray-800 px-4 py-2 text-xs font-semibold text-gray-500"
-                      >
-                        {plan.cta.label}
-                      </button>
-                    )}
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
+                  利用中
+                </button>
+              ) : (
+                <GitHubLoginButton
+                  next="/"
+                  className="inline-flex w-full items-center justify-center rounded-lg bg-white px-4 py-2 text-xs font-semibold text-gray-950 transition-colors hover:bg-gray-100"
+                >
+                  GitHubでログインして使う
+                </GitHubLoginButton>
+              )}
+            </div>
+          </div>
+
+          {/* クレジットパック */}
+          {CREDIT_PACKS.map((pack, index) => {
+            const perUse = Math.round((pack.amountJpy / pack.credits) * 10) / 10;
+            const isBestValue = index === CREDIT_PACKS.length - 1;
+            return (
+              <div
+                key={pack.id}
+                className={`flex flex-col rounded-2xl border p-6 ${
+                  isBestValue
+                    ? "border-fuchsia-700/60 bg-gray-900/80 shadow-lg shadow-fuchsia-500/10"
+                    : "border-gray-800 bg-gray-900/60"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-bold text-white">{pack.name}</h2>
+                  {isBestValue && (
+                    <span className="rounded-full border border-fuchsia-700/60 bg-fuchsia-950/40 px-2 py-0.5 text-[10px] font-semibold text-fuchsia-200">
+                      おトク
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2 flex items-baseline gap-1">
+                  <span className="text-3xl font-bold text-white">
+                    ¥{pack.amountJpy.toLocaleString("ja-JP")}
+                  </span>
+                  <span className="text-xs text-gray-400">/ 買い切り</span>
+                </div>
+                <p className="mt-1 text-xs text-emerald-300">
+                  生成{pack.credits}回分（1回あたり約¥{perUse}）
+                </p>
+                <ul className="mt-5 flex-1 space-y-2 text-xs leading-5 text-gray-300">
+                  {CREDIT_PERKS.map((label) => (
+                    <li key={label} className="flex items-start gap-2">
+                      <span aria-hidden className="mt-0.5 text-emerald-300">✓</span>
+                      {label}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-6">
+                  {!stripeReady ? (
+                    <button
+                      disabled
+                      title="決済機能は近日公開予定です"
+                      className="w-full cursor-not-allowed rounded-lg border border-gray-800 px-4 py-2 text-xs font-semibold text-gray-500"
+                    >
+                      準備中
+                    </button>
+                  ) : isAuthenticated ? (
+                    <StripeActionButton
+                      action="credits"
+                      packId={pack.id}
+                      className="inline-flex w-full items-center justify-center rounded-lg bg-white px-4 py-2 text-xs font-semibold text-gray-950 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
+                    >
+                      {`${pack.name}を購入`}
+                    </StripeActionButton>
+                  ) : (
+                    <GitHubLoginButton
+                      next="/pricing"
+                      className="inline-flex w-full items-center justify-center rounded-lg bg-white px-4 py-2 text-xs font-semibold text-gray-950 transition-colors hover:bg-gray-100"
+                    >
+                      GitHubでログインして購入
+                    </GitHubLoginButton>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </section>
 
         <p className="mt-8 text-center text-xs text-gray-500">
-          ログインなしでも、ホームから3回まで生成できます。ゲストのREADME文字数上限は {PROJECT_TEXT_LIMITS.guest.toLocaleString("ja-JP")}文字です。
+          ログインなしでも、ホームから3回まで生成できます。ゲストのREADME文字数上限は{" "}
+          {PROJECT_TEXT_LIMITS.guest.toLocaleString("ja-JP")}文字です。
         </p>
         <p className="mt-3 text-center text-[11px] text-gray-500">
-          ※ 初月無料トライアルは Pro を初めてご契約の方のみ対象です。カード登録が必要ですが、30日以内に解約すれば請求は発生しません。
+          ※ クレジットは生成成功時にのみ1回分を消費します。毎月の無料枠を使い切ったあとに消費されます。
+          {isSubscriber && (
+            <>
+              <br />
+              Pro プラン契約中の方は、これまで通り月30回まで利用できます。契約の管理は
+              <Link href="/settings" className="mx-1 underline hover:text-gray-300">
+                設定ページ
+              </Link>
+              から行えます。
+            </>
+          )}
         </p>
       </div>
     </main>
