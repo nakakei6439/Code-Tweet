@@ -1,7 +1,7 @@
 import { logError } from "@/lib/logger";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAppUrl, getMissingStripeCheckoutEnv, getStripe } from "@/lib/stripe";
+import { getAppUrl, getMissingStripePortalEnv, getStripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
@@ -13,11 +13,11 @@ export async function POST(request: Request) {
     return Response.json({ error: "ログインが必要です。" }, { status: 401 });
   }
 
-  const missingEnv = getMissingStripeCheckoutEnv();
+  const missingEnv = getMissingStripePortalEnv();
   if (missingEnv.length > 0) {
     logError("stripe/portal", "missing env", undefined, { missingEnv });
     return Response.json(
-      { error: "Stripe の環境変数が未設定です。STRIPE_SECRET_KEY と STRIPE_PRICE_ID を設定してください。" },
+      { error: "Stripe の環境変数が未設定です。STRIPE_SECRET_KEY を設定してください。" },
       { status: 503 },
     );
   }

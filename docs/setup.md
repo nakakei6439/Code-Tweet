@@ -53,7 +53,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 | `GITHUB_PAT_ENCRYPTION_KEY` | GitHub OAuth token / PAT の暗号化 | 必須 |
 | `STRIPE_SECRET_KEY` | Stripe API（クレジットパック販売・既存サブスク） | 必須 |
 | `STRIPE_WEBHOOK_SECRET` | Stripe Webhook 署名検証 | 必須 |
-| `STRIPE_PRICE_ID` | 旧 Pro プランの Price ID（既存契約者の維持用。新規販売は停止） | 必須 |
+| `STRIPE_PRICE_ID` | 旧 Pro サブスクの Price ID。checkout ルート削除により未使用（履歴として残置、削除可） | 任意 |
 | `NEXT_PUBLIC_APP_URL` | Stripe の戻り先 URL。未設定時は request origin を使用 | 任意 |
 | `ADMIN_EMAILS` | `/admin` に入れる管理者メール。カンマ区切り可 | 任意 |
 | `ADMIN_BASIC_USER` | 管理画面 Basic 認証ユーザー | 管理画面を使う場合必須 |
@@ -69,7 +69,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 2. Supabase Auth で GitHub Provider を有効化する。
 3. GitHub OAuth App の callback URL に `https://<Project Ref>.supabase.co/auth/v1/callback` を設定する。
 4. Supabase の `Authentication > URL Configuration` で Redirect URLs に `http://localhost:3000/auth/callback` と `https://code-tweet.vercel.app/auth/callback` を追加する。`/auth/callback` まで含める必要があり、トップ URL だけではローカルログインが本番トップへ戻ることがある。
-5. Stripe で月額 500 円の Price を作成し、`STRIPE_PRICE_ID` に設定する（旧 Pro プラン。既存契約者の維持用）。クレジットパックは `src/lib/creditPacks.ts` の定数から `price_data` をインライン指定するため、Stripe 側での商品作成は不要。
+5. クレジットパックは `src/lib/creditPacks.ts` の定数から `price_data` をインライン指定するため、Stripe 側での商品作成は不要。旧 Pro サブスクの新規販売用 checkout は削除済み（既存契約者向けの webhook・ポータルのみ稼働）。
 6. Stripe Webhook に `/api/stripe/webhook` を登録し、署名 secret を `STRIPE_WEBHOOK_SECRET` に設定する。購読イベントに `checkout.session.completed` と `customer.subscription.*` を含める（クレジット付与も同じ `checkout.session.completed` を使う）。
 7. Supabase SQL Editor で [database.sql](./database.sql) を適用する。利用制限、購読状態、クレジット残高（`user_credits` / `credit_grants` / RPC 関数）、GitHub 連携、管理画面ログインロック、生成履歴のテーブルと RLS を含む。
 

@@ -108,14 +108,15 @@ function AccountDeletionSection({ hasActiveSubscription }: { hasActiveSubscripti
           <div>
             <h2 className="text-white font-semibold text-base mb-1">アカウントを削除</h2>
             <p className="text-gray-400 text-sm">
-              アカウント、GitHub 連携情報、利用履歴、生成履歴、プラン情報を削除します。この操作は取り消せません。
+              アカウント、GitHub 連携情報、利用履歴、生成履歴、プラン情報を削除します。
+              購入した未使用のクレジット残数も削除され、復元や返金はできません。この操作は取り消せません。
             </p>
           </div>
 
           {blockDelete && (
             <div className="rounded-lg border border-amber-800/70 bg-amber-950/30 px-4 py-4 space-y-3">
               <p className="text-amber-200 text-xs font-semibold">
-                Pro プラン契約中はアカウントを削除できません
+                サブスクリプション契約中はアカウントを削除できません
               </p>
               <p className="text-amber-100/80 text-xs leading-5">
                 先に Stripe カスタマーポータルからサブスクリプションを解約してください。Stripe 側で解約が完了すると、このページから削除できるようになります（反映に少し時間がかかる場合があります）。
@@ -191,7 +192,7 @@ function AccountDeletionSection({ hasActiveSubscription }: { hasActiveSubscripti
             </div>
             <div className="px-6 py-5 space-y-4">
               <div className="rounded-lg border border-red-900/70 bg-red-950/30 px-4 py-3 text-xs text-red-200">
-                対象: アカウント、GitHub 連携情報、利用履歴、生成履歴、プラン情報
+                対象: アカウント、GitHub 連携情報、利用履歴、生成履歴、プラン情報、購入済みクレジット残数（返金不可）
               </div>
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <button

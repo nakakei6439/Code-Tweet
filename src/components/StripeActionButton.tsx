@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-type StripeAction = "checkout" | "portal" | "credits";
+type StripeAction = "portal" | "credits";
 
 type Props = {
   action: StripeAction;
@@ -14,7 +14,6 @@ type Props = {
 };
 
 const ENDPOINTS: Record<StripeAction, string> = {
-  checkout: "/api/stripe/checkout",
   portal: "/api/stripe/portal",
   credits: "/api/stripe/credits",
 };

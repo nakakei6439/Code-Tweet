@@ -9,12 +9,12 @@ import AuthOverlay from "@/components/AuthOverlay";
 import HomeLinkButton from "@/components/HomeLinkButton";
 import SettingsForm from "@/components/SettingsForm";
 import StripeActionButton from "@/components/StripeActionButton";
-import { getMissingStripeCheckoutEnv } from "@/lib/stripe";
+import { getMissingStripePortalEnv } from "@/lib/stripe";
 import { isGithubAppConfigured } from "@/lib/githubApp";
 
 export const metadata: Metadata = {
   title: "Settings",
-  description: "Code Tweet のプランとGitHub連携状態を確認できます。",
+  description: "Code Tweet のクレジット残数とGitHub連携状態を確認できます。",
 };
 
 export default async function SettingsPage() {
@@ -45,7 +45,7 @@ export default async function SettingsPage() {
   const hasProAccess = entitlements.perkTier === "paid";
   const monthlyLimit =
     entitlements.quotaTier === "paid" ? USER_PAID_MONTHLY_LIMIT : USER_FREE_MONTHLY_LIMIT;
-  const stripeReady = getMissingStripeCheckoutEnv().length === 0;
+  const stripeReady = getMissingStripePortalEnv().length === 0;
 
   const admin = createAdminClient();
   const { data } = await admin
@@ -77,8 +77,17 @@ export default async function SettingsPage() {
             <p className="text-white text-lg font-bold">無料プラン</p>
           )}
           <p className="text-gray-400 text-xs mt-1">
-            {`月 ${monthlyLimit} 回まで生成・README上限 ${PROJECT_TEXT_LIMITS[hasProAccess ? "paid" : "free"].toLocaleString("ja-JP")} 文字・${hasProAccess ? "プライベートリポジトリ対応" : "公開リポジトリのみ"}`}
+            {isSubscriber
+              ? `月 ${monthlyLimit} 回まで生成・README上限 ${PROJECT_TEXT_LIMITS.paid.toLocaleString("ja-JP")} 文字・プライベートリポジトリ対応`
+              : hasProAccess
+                ? `無料枠は月 ${monthlyLimit} 回まで生成`
+                : `無料枠は月 ${monthlyLimit} 回まで生成・README上限 ${PROJECT_TEXT_LIMITS.free.toLocaleString("ja-JP")} 文字・公開リポジトリのみ`}
           </p>
+          {hasProAccess && !isSubscriber && (
+            <p className="text-emerald-300/90 text-xs mt-1">
+              利用できる特典: README上限 {PROJECT_TEXT_LIMITS.paid.toLocaleString("ja-JP")} 文字・生成履歴・プライベートリポジトリ対応
+            </p>
+          )}
         </div>
         {isSubscriber && stripeReady ? (
           <StripeActionButton

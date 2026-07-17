@@ -240,7 +240,7 @@ export default function GenerateInputs({
                     />
                   </div>
                   <p className="text-xs text-gray-400">
-                    公開リポジトリはURLだけで取得できます。非公開リポジトリは Pro プランの機能です。
+                    公開リポジトリはURLだけで取得できます。非公開リポジトリはクレジット購入者向けの機能です。
                   </p>
                 </div>
               </div>

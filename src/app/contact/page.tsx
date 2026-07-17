@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
 import StripePortalCard from "@/components/StripePortalCard";
+import { createClient } from "@/lib/supabase/server";
+import { getSubscriptionTier } from "@/lib/subscription";
 
 export const metadata: Metadata = {
   title: "問い合わせ",
-  description: "Code Tweet への問い合わせ先と解約手続きを案内します。",
+  description: "Code Tweet への問い合わせ先を案内します。",
 };
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  // 解約カードはサブスクリプション契約者にのみ表示する（新規販売停止済みの旧 Pro 向け）。
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const isSubscriber = user ? (await getSubscriptionTier(user.id)) === "paid" : false;
+
   return (
     <main className="min-h-screen bg-gray-950 px-4 py-20 text-gray-200">
       <article className="mx-auto max-w-2xl">
@@ -23,7 +30,7 @@ export default function ContactPage() {
         <hr className="my-12 border-gray-800" />
 
         <div className="space-y-4">
-          <StripePortalCard />
+          {isSubscriber && <StripePortalCard />}
           <a
             href="https://x.com/nakakei6439"
             target="_blank"
