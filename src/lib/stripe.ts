@@ -23,6 +23,11 @@ export function getMissingStripeCheckoutEnv() {
   return ["STRIPE_SECRET_KEY", "STRIPE_PRICE_ID"].filter((key) => !process.env[key]);
 }
 
+// クレジットパックは price_data をインライン指定するため Price ID は不要。
+export function getMissingStripeCreditsEnv() {
+  return ["STRIPE_SECRET_KEY"].filter((key) => !process.env[key]);
+}
+
 export function getMissingStripeWebhookEnv() {
   return ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"].filter((key) => !process.env[key]);
 }

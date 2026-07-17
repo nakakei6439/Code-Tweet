@@ -6,11 +6,14 @@ import HomeLinkButton from "@/components/HomeLinkButton";
 
 type Props = {
   isConnected: boolean;
-  isPaid: boolean;
+  /** perk（旧 Pro 特典）の有無。GitHub App 連携 UI のゲートに使う。 */
+  hasProAccess: boolean;
+  /** Stripe サブスク契約中か。解約前のアカウント削除ブロックに使う。 */
+  hasActiveSubscription: boolean;
   appConfigured: boolean;
 };
 
-function AccountDeletionSection({ isPaid }: { isPaid: boolean }) {
+function AccountDeletionSection({ hasActiveSubscription }: { hasActiveSubscription: boolean }) {
   const [confirmation, setConfirmation] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -18,7 +21,7 @@ function AccountDeletionSection({ isPaid }: { isPaid: boolean }) {
   const [needsCancel, setNeedsCancel] = useState(false);
   const [isPortalPending, setIsPortalPending] = useState(false);
   const [portalError, setPortalError] = useState<string | null>(null);
-  const blockDelete = isPaid || needsCancel;
+  const blockDelete = hasActiveSubscription || needsCancel;
   const canDelete = confirmation === "DELETE" && !isDeleting && !blockDelete;
 
   async function handleOpenPortal() {
@@ -218,8 +221,8 @@ function AccountDeletionSection({ isPaid }: { isPaid: boolean }) {
   );
 }
 
-export default function SettingsForm({ isConnected, isPaid, appConfigured }: Props) {
-  if (!isPaid) {
+export default function SettingsForm({ isConnected, hasProAccess, hasActiveSubscription, appConfigured }: Props) {
+  if (!hasProAccess) {
     return (
       <div className="space-y-6">
         <div className="bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden">
@@ -232,11 +235,11 @@ export default function SettingsForm({ isConnected, isPaid, appConfigured }: Pro
               </svg>
               <h2 className="text-white font-semibold text-base">プライベートリポジトリ対応</h2>
               <span className="text-xs font-medium text-fuchsia-400 bg-fuchsia-950/50 border border-fuchsia-800 px-2 py-0.5 rounded-full">
-                Pro
+                クレジット購入者向け
               </span>
             </div>
             <p className="text-gray-400 text-sm">
-              Pro プラン（¥500 / 月）では、GitHub 連携で取得した非公開リポジトリの README も
+              クレジットを購入すると、GitHub 連携で取得した非公開リポジトリの README も
               自動取得でき、リポジトリ一覧から選んで生成できます。
             </p>
             <Link
@@ -245,14 +248,14 @@ export default function SettingsForm({ isConnected, isPaid, appConfigured }: Pro
                 bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400
                 text-white shadow-lg shadow-fuchsia-500/20 hover:opacity-90 transition-opacity"
             >
-              Pro プランを見る
+              クレジットパックを見る
             </Link>
             <p className="text-gray-400 text-xs">
-              決済後はこの画面で支払い管理やプライベートリポジトリ連携を設定できます。
+              購入後はこの画面でプライベートリポジトリ連携を設定できます。
             </p>
           </div>
         </div>
-        <AccountDeletionSection isPaid={isPaid} />
+        <AccountDeletionSection hasActiveSubscription={hasActiveSubscription} />
       </div>
     );
   }
@@ -260,7 +263,7 @@ export default function SettingsForm({ isConnected, isPaid, appConfigured }: Pro
   return (
     <div className="space-y-6">
       <GithubAppSection isConnected={isConnected} appConfigured={appConfigured} />
-      <AccountDeletionSection isPaid={isPaid} />
+      <AccountDeletionSection hasActiveSubscription={hasActiveSubscription} />
     </div>
   );
 }

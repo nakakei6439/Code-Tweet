@@ -1,6 +1,8 @@
 import Stripe from "stripe";
 import { logError } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getCreditPack } from "@/lib/creditPacks";
+import { grantCredits } from "@/lib/credits";
 import { getMissingStripeWebhookEnv, getStripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -72,7 +74,33 @@ async function upsertSubscriptionFromStripe(subscription: Stripe.Subscription, f
   }
 }
 
-async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+// クレジットパック購入（mode: 'payment'）の完了。パック定義から付与数を再解決し、
+// event.id 単位の冪等 RPC で残高に加算する（リトライ二重発火でも二重付与しない）。
+async function handleCreditPurchaseCompleted(eventId: string, session: Stripe.Checkout.Session) {
+  if (session.payment_status !== "paid") return;
+
+  const packId = session.metadata?.pack_id;
+  const pack = packId ? getCreditPack(packId) : null;
+  const userId = session.metadata?.user_id ?? session.client_reference_id;
+
+  if (!pack || !userId) {
+    logError("stripe/webhook", "credit purchase missing pack or user", undefined, {
+      sessionId: session.id,
+      packId,
+      userId,
+    });
+    return;
+  }
+
+  await grantCredits(eventId, userId, pack.credits, session.id);
+}
+
+async function handleCheckoutCompleted(eventId: string, session: Stripe.Checkout.Session) {
+  if (session.mode === "payment") {
+    await handleCreditPurchaseCompleted(eventId, session);
+    return;
+  }
+
   const subscriptionId = idOf(session.subscription);
   if (!subscriptionId) return;
 
@@ -107,7 +135,7 @@ export async function POST(request: Request) {
   try {
     switch (event.type) {
       case "checkout.session.completed":
-        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+        await handleCheckoutCompleted(event.id, event.data.object as Stripe.Checkout.Session);
         break;
       case "customer.subscription.created":
       case "customer.subscription.updated":

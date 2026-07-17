@@ -2,21 +2,24 @@
 
 import { useState } from "react";
 
-type StripeAction = "checkout" | "portal";
+type StripeAction = "checkout" | "portal" | "credits";
 
 type Props = {
   action: StripeAction;
   children: string;
   className: string;
   disabled?: boolean;
+  /** action="credits" のとき購入するパック id（creditPacks.ts の CreditPackId） */
+  packId?: string;
 };
 
 const ENDPOINTS: Record<StripeAction, string> = {
   checkout: "/api/stripe/checkout",
   portal: "/api/stripe/portal",
+  credits: "/api/stripe/credits",
 };
 
-export default function StripeActionButton({ action, children, className, disabled }: Props) {
+export default function StripeActionButton({ action, children, className, disabled, packId }: Props) {
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +30,15 @@ export default function StripeActionButton({ action, children, className, disabl
     setError(null);
 
     try {
-      const res = await fetch(ENDPOINTS[action], { method: "POST" });
+      const res = await fetch(ENDPOINTS[action], {
+        method: "POST",
+        ...(action === "credits"
+          ? {
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ packId }),
+            }
+          : {}),
+      });
       const data = await res.json().catch(() => null);
 
       if (!res.ok || !data?.url) {

@@ -2,8 +2,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getSubscriptionTier } from "@/lib/subscription";
+import { getEntitlements } from "@/lib/entitlements";
 import { PROJECT_TEXT_LIMITS } from "@/lib/generateLimits";
+import { USER_FREE_MONTHLY_LIMIT, USER_PAID_MONTHLY_LIMIT } from "@/lib/rateLimit";
 import AuthOverlay from "@/components/AuthOverlay";
 import HomeLinkButton from "@/components/HomeLinkButton";
 import SettingsForm from "@/components/SettingsForm";
@@ -37,8 +38,13 @@ export default async function SettingsPage() {
     );
   }
 
-  const tier = await getSubscriptionTier(user.id);
-  const isPaid = tier === "paid";
+  const entitlements = await getEntitlements(user.id, user.email);
+  // isSubscriber は Stripe サブスク契約の有無（解約導線・削除ブロック用）。
+  // hasProAccess は perk 判定（サブスク / 管理者 / クレジット残高あり）。
+  const isSubscriber = entitlements.subscriptionTier === "paid";
+  const hasProAccess = entitlements.perkTier === "paid";
+  const monthlyLimit =
+    entitlements.quotaTier === "paid" ? USER_PAID_MONTHLY_LIMIT : USER_FREE_MONTHLY_LIMIT;
   const stripeReady = getMissingStripeCheckoutEnv().length === 0;
 
   const admin = createAdminClient();
@@ -60,7 +66,7 @@ export default async function SettingsPage() {
       <div className="mb-6 bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl p-6 flex items-center justify-between gap-4">
         <div>
           <p className="text-gray-400 text-sm mb-1">現在のプラン</p>
-          {isPaid ? (
+          {isSubscriber ? (
             <p className="text-white text-lg font-bold flex items-center gap-2">
               Pro
               <span className="text-xs font-medium text-fuchsia-400 bg-fuchsia-950/50 border border-fuchsia-800 px-2 py-0.5 rounded-full">
@@ -71,19 +77,17 @@ export default async function SettingsPage() {
             <p className="text-white text-lg font-bold">無料プラン</p>
           )}
           <p className="text-gray-400 text-xs mt-1">
-            {isPaid
-              ? `月 30 回まで生成・README上限 ${PROJECT_TEXT_LIMITS.paid.toLocaleString("ja-JP")} 文字・プライベートリポジトリ対応`
-              : `月 3 回まで生成・README上限 ${PROJECT_TEXT_LIMITS.free.toLocaleString("ja-JP")} 文字・公開リポジトリのみ`}
+            {`月 ${monthlyLimit} 回まで生成・README上限 ${PROJECT_TEXT_LIMITS[hasProAccess ? "paid" : "free"].toLocaleString("ja-JP")} 文字・${hasProAccess ? "プライベートリポジトリ対応" : "公開リポジトリのみ"}`}
           </p>
         </div>
-        {isPaid && stripeReady ? (
+        {isSubscriber && stripeReady ? (
           <StripeActionButton
             action="portal"
             className="shrink-0 px-4 py-2 rounded-lg text-xs font-medium border border-gray-700 text-gray-100 transition-colors hover:border-gray-600 hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             解約・支払い管理
           </StripeActionButton>
-        ) : isPaid ? (
+        ) : isSubscriber ? (
           <button
             disabled
             title="決済機能は近日公開予定です"
@@ -91,19 +95,35 @@ export default async function SettingsPage() {
           >
             解約・支払い管理
           </button>
-        ) : (
-          <Link
-            href="/pricing"
-            className="shrink-0 px-4 py-2 rounded-lg text-xs font-semibold cursor-pointer
-              bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400
-              text-white shadow-lg shadow-fuchsia-500/20 hover:opacity-90 transition-opacity"
-          >
-            Pro プランを見る
-          </Link>
-        )}
+        ) : null}
       </div>
 
-      <SettingsForm isConnected={!!data} isPaid={isPaid} appConfigured={appConfigured} />
+      <div className="mb-6 bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl p-6 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-gray-400 text-sm mb-1">購入クレジット</p>
+          <p className="text-white text-lg font-bold">
+            残り {entitlements.creditBalance.toLocaleString("ja-JP")} 回
+          </p>
+          <p className="text-gray-400 text-xs mt-1">
+            毎月の無料枠を使い切ったあとに 1 回ずつ消費されます。有効期限はありません。
+          </p>
+        </div>
+        <Link
+          href="/pricing"
+          className="shrink-0 px-4 py-2 rounded-lg text-xs font-semibold cursor-pointer
+            bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400
+            text-white shadow-lg shadow-fuchsia-500/20 hover:opacity-90 transition-opacity"
+        >
+          クレジットを購入
+        </Link>
+      </div>
+
+      <SettingsForm
+        isConnected={!!data}
+        hasProAccess={hasProAccess}
+        hasActiveSubscription={isSubscriber}
+        appConfigured={appConfigured}
+      />
     </main>
   );
 }

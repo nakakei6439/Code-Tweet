@@ -1,6 +1,6 @@
+import { getEntitlements } from "@/lib/entitlements";
 import { logError } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getSubscriptionTier } from "@/lib/subscription";
 import {
   GUEST_TOTAL_LIMIT,
   USER_FREE_MONTHLY_LIMIT,
@@ -8,7 +8,7 @@ import {
   getMonthWindowStart,
   getNextMonthStart,
 } from "@/lib/rateLimit";
-import type { UsageInfo, UsageTier } from "@/types/usage";
+import type { UsageInfo } from "@/types/usage";
 
 async function countUserUsage(userId: string): Promise<number> {
   const admin = createAdminClient();
@@ -37,15 +37,18 @@ async function countGuestUsage(ipHash: string): Promise<number> {
   return count ?? 0;
 }
 
-export async function getUserUsage(userId: string): Promise<UsageInfo> {
-  const tier: UsageTier = (await getSubscriptionTier(userId)) === "paid" ? "paid" : "free";
-  const limit = tier === "paid" ? USER_PAID_MONTHLY_LIMIT : USER_FREE_MONTHLY_LIMIT;
+export async function getUserUsage(userId: string, email: string | null | undefined): Promise<UsageInfo> {
+  const entitlements = await getEntitlements(userId, email);
+  // 月次無料枠は quota 判定（サブスク / 管理者のみ 30 回）。表示 tier は perk 判定。
+  const limit =
+    entitlements.quotaTier === "paid" ? USER_PAID_MONTHLY_LIMIT : USER_FREE_MONTHLY_LIMIT;
   const used = await countUserUsage(userId);
   return {
-    tier,
+    tier: entitlements.perkTier,
     used,
     limit,
     remaining: Math.max(0, limit - used),
+    credits: entitlements.creditBalance,
     resetAt: getNextMonthStart(),
   };
 }
@@ -57,6 +60,7 @@ export async function getGuestUsage(ipHash: string): Promise<UsageInfo> {
     used,
     limit: GUEST_TOTAL_LIMIT,
     remaining: Math.max(0, GUEST_TOTAL_LIMIT - used),
+    credits: 0,
     resetAt: getNextMonthStart(),
   };
 }

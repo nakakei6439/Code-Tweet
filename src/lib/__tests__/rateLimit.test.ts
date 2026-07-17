@@ -87,34 +87,64 @@ describe("hashIp", () => {
 });
 
 describe("checkUserLimit", () => {
-  it("allows free users below the monthly limit", async () => {
+  it("allows free users below the monthly limit without consuming credits", async () => {
     const result = await checkUserLimit(
       supabaseCount({ count: USER_FREE_MONTHLY_LIMIT - 1, error: null }) as never,
       "user-1",
-      "free",
+      { quotaTier: "free", creditBalance: 0 },
     );
 
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, useCredit: false });
   });
 
-  it("returns the free limit error at the monthly limit", async () => {
+  it("returns the free limit error at the monthly limit with no credits", async () => {
     const result = await checkUserLimit(
       supabaseCount({ count: USER_FREE_MONTHLY_LIMIT, error: null }) as never,
       "user-1",
-      "free",
+      { quotaTier: "free", creditBalance: 0 },
     );
 
     expect(result).toMatchObject({ ok: false, status: 429, code: "free_limit" });
   });
 
-  it("returns the paid limit error at the monthly limit", async () => {
+  it("consumes a credit when the monthly limit is exhausted but credits remain", async () => {
+    const result = await checkUserLimit(
+      supabaseCount({ count: USER_FREE_MONTHLY_LIMIT, error: null }) as never,
+      "user-1",
+      { quotaTier: "free", creditBalance: 5 },
+    );
+
+    expect(result).toEqual({ ok: true, useCredit: true });
+  });
+
+  it("does not consume credits while the monthly quota remains even if credits exist", async () => {
+    const result = await checkUserLimit(
+      supabaseCount({ count: 0, error: null }) as never,
+      "user-1",
+      { quotaTier: "free", creditBalance: 5 },
+    );
+
+    expect(result).toEqual({ ok: true, useCredit: false });
+  });
+
+  it("returns the paid limit error at the monthly limit with no credits", async () => {
     const result = await checkUserLimit(
       supabaseCount({ count: USER_PAID_MONTHLY_LIMIT, error: null }) as never,
       "user-1",
-      "paid",
+      { quotaTier: "paid", creditBalance: 0 },
     );
 
     expect(result).toMatchObject({ ok: false, status: 429, code: "paid_limit" });
+  });
+
+  it("lets paid users continue with credits past the monthly limit", async () => {
+    const result = await checkUserLimit(
+      supabaseCount({ count: USER_PAID_MONTHLY_LIMIT, error: null }) as never,
+      "user-1",
+      { quotaTier: "paid", creditBalance: 1 },
+    );
+
+    expect(result).toEqual({ ok: true, useCredit: true });
   });
 });
 
@@ -122,7 +152,7 @@ describe("checkGuestLimit", () => {
   it("allows guests below the total limit", async () => {
     createAdminClientMock.mockReturnValue(adminCount({ count: GUEST_TOTAL_LIMIT - 1, error: null }));
 
-    await expect(checkGuestLimit("hash")).resolves.toEqual({ ok: true });
+    await expect(checkGuestLimit("hash")).resolves.toEqual({ ok: true, useCredit: false });
   });
 
   it("returns the guest limit error at the total limit", async () => {

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { listTweetGenerations, TWEET_GENERATION_HISTORY_LIMIT } from "@/lib/generationHistory";
-import { getSubscriptionTier } from "@/lib/subscription";
+import { hasProAccess } from "@/lib/entitlements";
 import AuthOverlay from "@/components/AuthOverlay";
 import HomeLinkButton from "@/components/HomeLinkButton";
 import HistoryList from "./HistoryList";
@@ -32,8 +32,8 @@ export default async function HistoryPage() {
     );
   }
 
-  const tier = await getSubscriptionTier(user.id);
-  if (tier !== "paid") {
+  const canUseHistory = await hasProAccess(user.id, user.email);
+  if (!canUseHistory) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-12">
         <div className="mb-8 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
@@ -42,15 +42,15 @@ export default async function HistoryPage() {
           <div aria-hidden="true" />
         </div>
         <section className="rounded-2xl border border-gray-800 bg-gray-900/80 p-8 text-center">
-          <p className="text-base font-semibold text-white">生成履歴は Pro プランの機能です</p>
+          <p className="text-base font-semibold text-white">生成履歴はクレジット購入者向けの機能です</p>
           <p className="mt-2 text-sm leading-6 text-gray-400">
-            Pro では生成した投稿案を最新 {TWEET_GENERATION_HISTORY_LIMIT} 件まで保存し、あとから見返したり不要な投稿案を削除できます。
+            クレジットを購入すると、生成した投稿案を最新 {TWEET_GENERATION_HISTORY_LIMIT} 件まで保存し、あとから見返したり不要な投稿案を削除できます。
           </p>
           <Link
             href="/pricing"
             className="mt-6 inline-flex rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-950 transition-colors hover:bg-gray-100"
           >
-            Pro プランを見る
+            クレジットパックを見る
           </Link>
         </section>
       </main>

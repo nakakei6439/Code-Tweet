@@ -27,7 +27,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
 
   let initialUsage: UsageInfo | null = null;
   if (user) {
-    initialUsage = await getUserUsage(user.id);
+    initialUsage = await getUserUsage(user.id, user.email);
   } else {
     const h = await headers();
     const forwarded = h.get("x-forwarded-for");

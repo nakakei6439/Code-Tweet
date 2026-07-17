@@ -10,7 +10,8 @@ import {
   recordGuestUsage,
   recordUserUsage,
 } from "@/lib/rateLimit";
-import { getSubscriptionTier } from "@/lib/subscription";
+import { consumeCredit } from "@/lib/credits";
+import { getEntitlements } from "@/lib/entitlements";
 import { normalizeUrl } from "@/lib/urlCategory";
 import { recordTweetGeneration } from "@/lib/generationHistory";
 import {
@@ -114,16 +115,19 @@ export async function POST(request: Request): Promise<Response> {
 
   let ipHash: string | null = null;
   let usageTier: UsageTier = "guest";
+  let useCredit = false;
   if (user) {
-    const tier = await getSubscriptionTier(user.id);
-    usageTier = tier;
-    const limit = await checkUserLimit(supabase, user.id, tier);
+    const entitlements = await getEntitlements(user.id, user.email);
+    // 文字数上限・履歴保存は perk 判定（サブスク / 管理者 / クレジット残高あり）に従う。
+    usageTier = entitlements.perkTier;
+    const limit = await checkUserLimit(supabase, user.id, entitlements);
     if (!limit.ok) {
       return Response.json(
         { error: limit.message, code: limit.code } satisfies GenerateErrorResponse,
         { status: limit.status },
       );
     }
+    useCredit = limit.useCredit;
   } else {
     const ip = getClientIp(request);
     if (!ip) {
@@ -155,6 +159,11 @@ export async function POST(request: Request): Promise<Response> {
     const tweets = await generateTweets(body.projectText, body.toneMemo ?? "", url, body.hashtags ?? "");
     if (user) {
       await recordUserUsage(supabase, user.id);
+      // 無料枠超過分のみ購入クレジットを消費（生成成功時のみ）。
+      // 失敗しても生成結果は返す（既存の fail-open 方針に合わせる）。
+      if (useCredit) {
+        await consumeCredit(user.id);
+      }
       if (usageTier === "paid") {
         await recordTweetGeneration(user.id, tweets, url, body.hashtags ?? "");
       }

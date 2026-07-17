@@ -1,13 +1,18 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getSubscriptionTier } from "@/lib/subscription";
+import { getEntitlements } from "@/lib/entitlements";
 import { isAdminEmail } from "@/lib/admin";
 import HeaderActions from "@/components/HeaderActions";
 
 export default async function Header() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const tier = user ? await getSubscriptionTier(user.id) : null;
+  // ヘッダーの表示 tier は perk 判定（サブスク / 管理者 / クレジット残高あり）。
+  const tier = user
+    ? (await getEntitlements(user.id, user.email)).perkTier === "paid"
+      ? ("paid" as const)
+      : ("free" as const)
+    : null;
   const isAdmin = isAdminEmail(user?.email);
 
   return (

@@ -7,7 +7,7 @@ export async function GET(request: Request): Promise<Response> {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (user) {
-    const usage = await getUserUsage(user.id);
+    const usage = await getUserUsage(user.id, user.email);
     return Response.json(usage);
   }
 
