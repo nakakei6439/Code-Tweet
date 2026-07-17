@@ -496,8 +496,9 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
   }
 
   // AppSS: リポジトリ URL → README → スクショ用コピー生成 → /appss へ受け渡し。
-  async function handleAppssGenerate() {
-    const trimmedUrl = githubUrl.trim();
+  // urlOverride はモーダルで選んだリポジトリ URL を直接渡す用（state 反映を待たない）。
+  async function handleAppssGenerate(urlOverride?: string) {
+    const trimmedUrl = (urlOverride ?? githubUrl).trim();
     clearErrorState();
     const repo = parseGitHubRepoUrl(trimmedUrl);
     if (!repo) {
@@ -621,44 +622,108 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
       <GenerateTabs activeTab={activeTab} onChange={handleTabChange} />
 
       {activeTab === "appss" ? (
-        <section className="mx-auto">
-          <div className="mx-auto flex min-h-14 max-w-2xl items-center rounded-full bg-gray-700/80 px-6 shadow-lg shadow-black/20 ring-1 ring-white/10 transition-shadow focus-within:shadow-xl focus-within:ring-gray-500/80">
-            <input
-              type="url"
-              value={githubUrl}
-              onChange={(e) => setGithubUrl(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  void handleAppssGenerate();
-                }
-              }}
-              placeholder="https://github.com/owner/repo"
-              disabled={formDisabled}
-              className="w-full bg-transparent text-base text-white placeholder-gray-400 outline-none disabled:cursor-not-allowed disabled:opacity-50"
-            />
-          </div>
+        isLoggedIn ? (
+          <div className="mt-4 bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden">
+            <div className="h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
+            <div className="p-8 space-y-6">
+              <div>
+                <p className="text-sm font-semibold text-white">READMEからスクショの見出しを作る</p>
+                <p className="mt-1 text-xs text-gray-400">
+                  GitHubからリポジトリを選ぶか、URLを入力してください。非公開リポジトリはクレジット購入者向けの機能です。
+                </p>
+              </div>
 
-          <div className="mt-7 flex justify-center">
-            <button
-              onClick={() => void handleAppssGenerate()}
-              disabled={formDisabled}
-              className="inline-flex min-h-11 items-center justify-center rounded-lg px-6 text-sm font-semibold
-                bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400 text-white
-                shadow-lg shadow-fuchsia-500/20 transition-opacity hover:opacity-90
-                disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isFetchingReadme
-                ? "READMEを読んでいます..."
-                : isAppssLoading
-                  ? "見出しを生成中..."
-                  : "READMEからスクショを作る"}
-            </button>
+              <div className="rounded-2xl border border-cyan-400/25 bg-cyan-400/10 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button
+                    onClick={handleOpenRepoModal}
+                    disabled={formDisabled}
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-cyan-300/70 px-5 text-sm font-semibold
+                      bg-cyan-300 text-gray-950 shadow-lg shadow-cyan-500/25 transition-all
+                      hover:bg-cyan-200 hover:shadow-cyan-500/40
+                      disabled:cursor-not-allowed disabled:opacity-50 sm:whitespace-nowrap"
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+                    </svg>
+                    GitHubからREADMEを選ぶ
+                  </button>
+                  <input
+                    type="url"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void handleAppssGenerate();
+                      }
+                    }}
+                    placeholder="例：https://github.com/owner/repo"
+                    disabled={formDisabled}
+                    className="w-full flex-1 rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 text-sm text-white placeholder-gray-500 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={() => void handleAppssGenerate()}
+                disabled={formDisabled || githubUrl.trim() === ""}
+                className="mx-auto flex w-full items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-all
+                  sm:w-1/2 sm:min-w-52
+                  bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400 text-white shadow-lg shadow-cyan-500/20
+                  hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+              >
+                {isFetchingReadme
+                  ? "READMEを読んでいます..."
+                  : isAppssLoading
+                    ? "見出しを生成中..."
+                    : "READMEからスクショを作る"}
+              </button>
+              <p className="text-xs leading-5 text-gray-400">
+                READMEを読んで、App Store用スクショの見出しをAIが作成します。画像はエディタで入れられます（生成に1回分を消費します）。
+              </p>
+            </div>
           </div>
-          <p className="mx-auto mt-4 max-w-xl text-center text-xs leading-5 text-gray-400">
-            READMEを読んで、App Store用スクショの見出しをAIが作成します。画像はエディタで入れられます（生成に1回分を消費します）。
-          </p>
-        </section>
+        ) : (
+          <section className="mx-auto">
+            <div className="mx-auto flex min-h-14 max-w-2xl items-center rounded-full bg-gray-700/80 px-6 shadow-lg shadow-black/20 ring-1 ring-white/10 transition-shadow focus-within:shadow-xl focus-within:ring-gray-500/80">
+              <input
+                type="url"
+                value={githubUrl}
+                onChange={(e) => setGithubUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void handleAppssGenerate();
+                  }
+                }}
+                placeholder="https://github.com/owner/repo"
+                disabled={formDisabled}
+                className="w-full bg-transparent text-base text-white placeholder-gray-400 outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+
+            <div className="mt-7 flex justify-center">
+              <button
+                onClick={() => void handleAppssGenerate()}
+                disabled={formDisabled}
+                className="inline-flex min-h-11 items-center justify-center rounded-lg px-6 text-sm font-semibold
+                  bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400 text-white
+                  shadow-lg shadow-fuchsia-500/20 transition-opacity hover:opacity-90
+                  disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isFetchingReadme
+                  ? "READMEを読んでいます..."
+                  : isAppssLoading
+                    ? "見出しを生成中..."
+                    : "READMEからスクショを作る"}
+              </button>
+            </div>
+            <p className="mx-auto mt-4 max-w-xl text-center text-xs leading-5 text-gray-400">
+              READMEを読んで、App Store用スクショの見出しをAIが作成します。画像はエディタで入れられます（生成に1回分を消費します）。
+            </p>
+          </section>
+        )
       ) : (
         <GenerateInputs
         projectText={projectText}
@@ -743,6 +808,10 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         onClose={() => setIsRepoModalOpen(false)}
         onSelect={(htmlUrl) => {
           setGithubUrl(htmlUrl);
+          if (activeTab === "appss") {
+            void handleAppssGenerate(htmlUrl);
+            return;
+          }
           if (!url.trim()) {
             setUrl(htmlUrl);
           }
@@ -750,6 +819,10 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         }}
         onRepoUrlSubmit={(htmlUrl) => {
           setGithubUrl(htmlUrl);
+          if (activeTab === "appss") {
+            void handleAppssGenerate(htmlUrl);
+            return;
+          }
           if (!url.trim()) {
             setUrl(htmlUrl);
           }
