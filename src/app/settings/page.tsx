@@ -65,57 +65,22 @@ export default async function SettingsPage() {
 
       <div className="mb-6 bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl p-6 flex items-center justify-between gap-4">
         <div>
-          <p className="text-gray-400 text-sm mb-1">現在のプラン</p>
-          {isSubscriber ? (
-            <p className="text-white text-lg font-bold flex items-center gap-2">
-              Pro
-              <span className="text-xs font-medium text-fuchsia-400 bg-fuchsia-950/50 border border-fuchsia-800 px-2 py-0.5 rounded-full">
-                ¥500 / 月
-              </span>
-            </p>
-          ) : (
-            <p className="text-white text-lg font-bold">無料プラン</p>
-          )}
-          <p className="text-gray-400 text-xs mt-1">
-            {isSubscriber
-              ? `月 ${monthlyLimit} 回まで生成・README上限 ${PROJECT_TEXT_LIMITS.paid.toLocaleString("ja-JP")} 文字・プライベートリポジトリ対応`
-              : hasProAccess
-                ? `無料枠は月 ${monthlyLimit} 回まで生成`
-                : `無料枠は月 ${monthlyLimit} 回まで生成・README上限 ${PROJECT_TEXT_LIMITS.free.toLocaleString("ja-JP")} 文字・公開リポジトリのみ`}
+          <p className="text-gray-400 text-sm mb-1">利用状況</p>
+          <p className="text-white text-lg font-bold">
+            無料枠 月 {monthlyLimit} 回 + クレジット {entitlements.creditBalance.toLocaleString("ja-JP")} 回
           </p>
-          {hasProAccess && !isSubscriber && (
+          <p className="text-gray-400 text-xs mt-1">
+            毎月の無料枠を使い切ったあと、購入クレジットが 1 回ずつ消費されます。クレジットに有効期限はありません。
+          </p>
+          {hasProAccess ? (
             <p className="text-emerald-300/90 text-xs mt-1">
               利用できる特典: README上限 {PROJECT_TEXT_LIMITS.paid.toLocaleString("ja-JP")} 文字・生成履歴・プライベートリポジトリ対応
             </p>
+          ) : (
+            <p className="text-gray-400 text-xs mt-1">
+              README上限 {PROJECT_TEXT_LIMITS.free.toLocaleString("ja-JP")} 文字・公開リポジトリのみ（クレジット購入で 10,000 文字・履歴・非公開リポジトリが利用可能）
+            </p>
           )}
-        </div>
-        {isSubscriber && stripeReady ? (
-          <StripeActionButton
-            action="portal"
-            className="shrink-0 px-4 py-2 rounded-lg text-xs font-medium border border-gray-700 text-gray-100 transition-colors hover:border-gray-600 hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            解約・支払い管理
-          </StripeActionButton>
-        ) : isSubscriber ? (
-          <button
-            disabled
-            title="決済機能は近日公開予定です"
-            className="shrink-0 px-4 py-2 rounded-lg text-xs font-medium border border-gray-700 text-gray-500 cursor-not-allowed"
-          >
-            解約・支払い管理
-          </button>
-        ) : null}
-      </div>
-
-      <div className="mb-6 bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl p-6 flex items-center justify-between gap-4">
-        <div>
-          <p className="text-gray-400 text-sm mb-1">購入クレジット</p>
-          <p className="text-white text-lg font-bold">
-            残り {entitlements.creditBalance.toLocaleString("ja-JP")} 回
-          </p>
-          <p className="text-gray-400 text-xs mt-1">
-            毎月の無料枠を使い切ったあとに 1 回ずつ消費されます。有効期限はありません。
-          </p>
         </div>
         <Link
           href="/pricing"
@@ -126,6 +91,37 @@ export default async function SettingsPage() {
           クレジットを購入
         </Link>
       </div>
+
+      {isSubscriber && (
+        <div className="mb-6 bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl p-6 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-gray-400 text-sm mb-1">サブスクリプション</p>
+            <p className="text-white text-lg font-bold flex items-center gap-2">
+              Pro
+              <span className="text-xs font-medium text-fuchsia-400 bg-fuchsia-950/50 border border-fuchsia-800 px-2 py-0.5 rounded-full">
+                ¥500 / 月
+              </span>
+            </p>
+            <p className="text-gray-400 text-xs mt-1">契約中のサブスクリプションの解約・支払い方法の変更ができます。</p>
+          </div>
+          {stripeReady ? (
+            <StripeActionButton
+              action="portal"
+              className="shrink-0 px-4 py-2 rounded-lg text-xs font-medium border border-gray-700 text-gray-100 transition-colors hover:border-gray-600 hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              解約・支払い管理
+            </StripeActionButton>
+          ) : (
+            <button
+              disabled
+              title="決済機能は近日公開予定です"
+              className="shrink-0 px-4 py-2 rounded-lg text-xs font-medium border border-gray-700 text-gray-500 cursor-not-allowed"
+            >
+              解約・支払い管理
+            </button>
+          )}
+        </div>
+      )}
 
       <SettingsForm
         isConnected={!!data}
