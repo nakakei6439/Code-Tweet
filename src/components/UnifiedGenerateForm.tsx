@@ -25,7 +25,10 @@ import {
   NOTE_LENGTH_PRESETS,
 } from "@/lib/noteLengthPresets";
 import { postJson } from "@/lib/apiClient";
+import { parseGitHubRepoUrl } from "@/lib/githubReadme";
+import { writeHandoff } from "@/lib/appss/handoff";
 import { trackCoreAction, trackActivationOnce } from "@/lib/analytics";
+import type { AppSSCopyResponse } from "@/types/appss";
 import type {
   Tweet,
   GenerateRequest,
@@ -204,20 +207,20 @@ function LengthPresetSelector({
 }
 
 function Hero({ activeTab }: { activeTab: GenerateTabKey }) {
+  const gradient =
+    "bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-yellow-200 bg-clip-text text-transparent";
   const title =
     activeTab === "note" ? (
       <>
-        note{" "}
-        <span className="bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-yellow-200 bg-clip-text text-transparent">
-          Draft
-        </span>
+        note <span className={gradient}>Draft</span>
+      </>
+    ) : activeTab === "appss" ? (
+      <>
+        App<span className={gradient}>SS</span>
       </>
     ) : (
       <>
-        Code{" "}
-        <span className="bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-yellow-200 bg-clip-text text-transparent">
-          Tweet
-        </span>
+        Code <span className={gradient}>Tweet</span>
       </>
     );
   const subtitle =
@@ -225,6 +228,11 @@ function Hero({ activeTab }: { activeTab: GenerateTabKey }) {
       <>
         <span className="block">GitHubリポジトリURLを貼るだけで、</span>
         <span className="block">note.com に貼り付けられるMarkdown Draftを1本生成します。</span>
+      </>
+    ) : activeTab === "appss" ? (
+      <>
+        <span className="block">GitHubリポジトリURLを貼るだけで、</span>
+        <span className="block">App Store用スクショの見出しをAIが考えます。</span>
       </>
     ) : (
       <>
@@ -270,8 +278,10 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
   // タブ固有 ローディング/エラー
   const [isTweetLoading, setIsTweetLoading] = useState(false);
   const [isNoteLoading, setIsNoteLoading] = useState(false);
+  const [isAppssLoading, setIsAppssLoading] = useState(false);
   const [tweetErrorState, setTweetErrorState] = useState<ErrorState>(EMPTY_ERROR);
   const [noteErrorState, setNoteErrorState] = useState<ErrorState>(EMPTY_ERROR);
+  const [appssErrorState, setAppssErrorState] = useState<ErrorState>(EMPTY_ERROR);
 
   // 共通ステータス
   const [isFetchingReadme, setIsFetchingReadme] = useState(false);
@@ -288,10 +298,16 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
   const isLoggedIn = usage?.tier === "free" || usage?.tier === "paid";
   const projectTextLimit = getProjectTextLimit(usage?.tier ?? "guest");
 
-  const isLoading = activeTab === "tweet" ? isTweetLoading : isNoteLoading;
-  const currentErrorState = activeTab === "tweet" ? tweetErrorState : noteErrorState;
+  const isLoading =
+    activeTab === "tweet" ? isTweetLoading : activeTab === "note" ? isNoteLoading : isAppssLoading;
+  const currentErrorState =
+    activeTab === "tweet" ? tweetErrorState : activeTab === "note" ? noteErrorState : appssErrorState;
   const setCurrentErrorState =
-    activeTab === "tweet" ? setTweetErrorState : setNoteErrorState;
+    activeTab === "tweet"
+      ? setTweetErrorState
+      : activeTab === "note"
+        ? setNoteErrorState
+        : setAppssErrorState;
   const formDisabled = isLoading || isFetchingReadme;
   const isDisabled = formDisabled || projectText.trim() === "";
 
@@ -300,6 +316,8 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
       const params = new URLSearchParams(searchParams?.toString() ?? "");
       if (next === "note") {
         params.set("tab", "note");
+      } else if (next === "appss") {
+        params.set("tab", "appss");
       } else {
         params.delete("tab");
       }
@@ -477,6 +495,49 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
     }
   }
 
+  // AppSS: リポジトリ URL → README → スクショ用コピー生成 → /appss へ受け渡し。
+  async function handleAppssGenerate() {
+    const trimmedUrl = githubUrl.trim();
+    clearErrorState();
+    const repo = parseGitHubRepoUrl(trimmedUrl);
+    if (!repo) {
+      setCurrentErrorState({
+        error: "GitHub のリポジトリ URL を入力してください。",
+        errorCode: null,
+        errorField: null,
+      });
+      return;
+    }
+
+    setIsAppssLoading(true);
+    let navigating = false;
+    try {
+      const content = await fetchReadmeContent(trimmedUrl);
+      if (!content) return; // fetchReadmeContent 内でエラー表示済み
+
+      const result = await postJson<AppSSCopyResponse>("/api/appss/copy", {
+        appName: repo.repo,
+        // /api/appss/copy の appDescription 上限（2000字）に合わせて先頭を渡す
+        appDescription: content.slice(0, 2000),
+        features: [],
+      });
+      if (!result.ok) {
+        setApiError(result.error);
+        refreshUsage();
+        return;
+      }
+
+      writeHandoff(repo.repo, result.data.slides);
+      trackActivationOnce();
+      refreshUsage();
+      navigating = true;
+      router.push("/appss");
+    } finally {
+      // 遷移時はオーバーレイを出したままにする（成功時は false にしない）
+      if (!navigating) setIsAppssLoading(false);
+    }
+  }
+
   async function handleQuickGenerate() {
     const trimmedUrl = githubUrl.trim();
     clearErrorState();
@@ -520,12 +581,19 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
           generateLabel: "ポストを生成する",
           loadingTitle: "AIがポストを作成しています",
         }
-      : {
-          quickGenerateLabel: "READMEからnote Draftを作る",
-          quickFetchingLabel: "READMEを読んでいます...",
-          generateLabel: "note Draftを生成する",
-          loadingTitle: "AIがnote Draftを書いています",
-        };
+      : activeTab === "appss"
+        ? {
+            quickGenerateLabel: "READMEからスクショを作る",
+            quickFetchingLabel: "READMEを読んでいます...",
+            generateLabel: "READMEからスクショを作る",
+            loadingTitle: "AIがスクショの見出しを考えています",
+          }
+        : {
+            quickGenerateLabel: "READMEからnote Draftを作る",
+            quickFetchingLabel: "READMEを読んでいます...",
+            generateLabel: "note Draftを生成する",
+            loadingTitle: "AIがnote Draftを書いています",
+          };
 
   const { error, errorCode, errorField } = currentErrorState;
 
@@ -552,7 +620,47 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
 
       <GenerateTabs activeTab={activeTab} onChange={handleTabChange} />
 
-      <GenerateInputs
+      {activeTab === "appss" ? (
+        <section className="mx-auto">
+          <div className="mx-auto flex min-h-14 max-w-2xl items-center rounded-full bg-gray-700/80 px-6 shadow-lg shadow-black/20 ring-1 ring-white/10 transition-shadow focus-within:shadow-xl focus-within:ring-gray-500/80">
+            <input
+              type="url"
+              value={githubUrl}
+              onChange={(e) => setGithubUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void handleAppssGenerate();
+                }
+              }}
+              placeholder="https://github.com/owner/repo"
+              disabled={formDisabled}
+              className="w-full bg-transparent text-base text-white placeholder-gray-400 outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </div>
+
+          <div className="mt-7 flex justify-center">
+            <button
+              onClick={() => void handleAppssGenerate()}
+              disabled={formDisabled}
+              className="inline-flex min-h-11 items-center justify-center rounded-lg px-6 text-sm font-semibold
+                bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400 text-white
+                shadow-lg shadow-fuchsia-500/20 transition-opacity hover:opacity-90
+                disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isFetchingReadme
+                ? "READMEを読んでいます..."
+                : isAppssLoading
+                  ? "見出しを生成中..."
+                  : "READMEからスクショを作る"}
+            </button>
+          </div>
+          <p className="mx-auto mt-4 max-w-xl text-center text-xs leading-5 text-gray-400">
+            READMEを読んで、App Store用スクショの見出しをAIが作成します。画像はエディタで入れられます（生成に1回分を消費します）。
+          </p>
+        </section>
+      ) : (
+        <GenerateInputs
         projectText={projectText}
         onProjectTextChange={setProjectText}
         toneMemo={toneMemo}
@@ -588,7 +696,8 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
             />
           ) : undefined
         }
-      />
+        />
+      )}
 
       {error && (
         <div className="mt-6 border border-red-800 bg-red-950/50 rounded-lg px-4 py-3 text-red-300 text-sm space-y-3">

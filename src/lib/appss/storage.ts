@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { PROJECT_SCHEMA_VERSION, STORAGE_KEY, THEMES } from "./constants";
 import { makeDefaultProject, nid } from "./defaults";
+import { consumeHandoff } from "./handoff";
 import type {
   AppSSProject,
   AppSSSlide,
@@ -144,11 +145,12 @@ type Updater = AppSSProject | ((prev: AppSSProject) => AppSSProject);
 const emptySubscribe = () => () => {};
 
 export function useAppSSProject() {
-  // 初期値は lazy initializer で localStorage から読む（SSR 時はデフォルト）。
+  // 初期値は lazy initializer で決定（SSR 時はデフォルト）。
+  // トップページからの受け渡し（handoff）> localStorage の WIP > デフォルト の優先順。
   // hydrated はサーバー描画時 false / クライアントで true になり、
   // ハイドレーション不一致を防ぐ（両者ともスピナーを描画してから編集UIへ）。
   const [state, _setState] = useState<AppSSProject>(
-    () => loadFromLocalStorage() ?? makeDefaultProject(),
+    () => consumeHandoff() ?? loadFromLocalStorage() ?? makeDefaultProject(),
   );
   const hydrated = useSyncExternalStore(
     emptySubscribe,

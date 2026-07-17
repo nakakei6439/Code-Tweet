@@ -20,7 +20,8 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   const params = await searchParams;
   const onboardingParam = Array.isArray(params.onboarding) ? params.onboarding[0] : params.onboarding;
   const tabParam = Array.isArray(params.tab) ? params.tab[0] : params.tab;
-  const initialTab: GenerateTabKey = tabParam === "note" ? "note" : "tweet";
+  const initialTab: GenerateTabKey =
+    tabParam === "note" ? "note" : tabParam === "appss" ? "appss" : "tweet";
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
