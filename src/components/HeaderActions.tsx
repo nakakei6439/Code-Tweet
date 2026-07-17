@@ -35,8 +35,6 @@ const MENU_ITEM_CLASS =
 export default function HeaderActions({ isAuthenticated, email, tier, isAdmin }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
-  const [isPortalPending, setIsPortalPending] = useState(false);
-  const [portalError, setPortalError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -62,24 +60,6 @@ export default function HeaderActions({ isAuthenticated, email, tier, isAdmin }:
     });
   }
 
-  async function handleOpenPortal() {
-    if (isPortalPending) return;
-    setIsPortalPending(true);
-    setPortalError(null);
-    try {
-      const res = await fetch("/api/stripe/portal", { method: "POST" });
-      const data = await res.json().catch(() => null);
-      if (!res.ok || !data?.url) {
-        setPortalError(data?.error ?? "解約ページの作成に失敗しました。");
-        return;
-      }
-      window.location.href = data.url;
-    } catch {
-      setPortalError("通信に失敗しました。時間をおいて再度お試しください。");
-    } finally {
-      setIsPortalPending(false);
-    }
-  }
 
   return (
     <div className="relative flex items-center gap-2" ref={menuRef}>
@@ -190,37 +170,17 @@ export default function HeaderActions({ isAuthenticated, email, tier, isAdmin }:
                 管理
               </Link>
             )}
-            {tier !== "paid" && (
-              <Link
-                href="/pricing"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center px-3 py-2 rounded-lg text-sm text-fuchsia-300 hover:bg-fuchsia-950/40 transition-colors"
-              >
-                料金プランを見る
-              </Link>
-            )}
-            {tier === "paid" && (
-              <Link
-                href="/pricing"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
-              >
-                プラン
-              </Link>
-            )}
-            {tier === "paid" && (
-              <button
-                type="button"
-                onClick={handleOpenPortal}
-                disabled={isPortalPending}
-                className="w-full text-left flex items-center px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isPortalPending ? "移動中..." : "支払い・解約管理"}
-              </button>
-            )}
-            {portalError && (
-              <p className="px-3 py-1 text-[11px] text-red-300">{portalError}</p>
-            )}
+            <Link
+              href="/pricing"
+              onClick={() => setIsOpen(false)}
+              className={
+                tier === "paid"
+                  ? MENU_ITEM_CLASS
+                  : "flex items-center px-3 py-2 rounded-lg text-sm text-fuchsia-300 hover:bg-fuchsia-950/40 transition-colors"
+              }
+            >
+              {tier === "paid" ? "料金プラン" : "料金プランを見る"}
+            </Link>
             <form action="/auth/signout" method="post">
               <button
                 type="submit"
