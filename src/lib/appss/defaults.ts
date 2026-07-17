@@ -1,5 +1,5 @@
 // AppSS — 日本語スターターデッキ。
-import { DEFAULT_FONT_ID, DEFAULT_THEME_ID, PROJECT_SCHEMA_VERSION } from "./constants";
+import { DEFAULT_FONT_ID, DEFAULT_THEME_ID, PROJECT_SCHEMA_VERSION, THEMES } from "./constants";
 import type { AppSSProject, AppSSSlide } from "./types";
 import type { AppSSCopySlideIdea } from "@/types/appss";
 
@@ -61,7 +61,12 @@ export function makeDefaultProject(): AppSSProject {
 // AI が生成したコピー案から新規プロジェクトを構築する。
 // スクショ画像は空（ユーザーがエディタで入れる）。トップからの導線・
 // エディタ内の「全て適用」で共通利用する。
-export function projectFromCopy(appName: string, ideas: AppSSCopySlideIdea[]): AppSSProject {
+// themeId を渡すとその配色・連動フォントで着地する（不正値は既定にフォールバック）。
+export function projectFromCopy(
+  appName: string,
+  ideas: AppSSCopySlideIdea[],
+  themeId?: string,
+): AppSSProject {
   const slides: AppSSSlide[] = ideas.map((idea) => ({
     id: nid(),
     layout: idea.layoutHint,
@@ -71,11 +76,12 @@ export function projectFromCopy(appName: string, ideas: AppSSCopySlideIdea[]): A
     ...(idea.layoutHint === "two-devices" ? { screenshotSecondaryRef: "" } : {}),
     ...(idea.layoutHint === "device-top" ? { inverted: true } : {}),
   }));
+  const theme = themeId ? THEMES[themeId] : undefined;
   return {
     schemaVersion: PROJECT_SCHEMA_VERSION,
     appName: appName.trim() || "マイアプリ",
-    themeId: DEFAULT_THEME_ID,
-    fontId: DEFAULT_FONT_ID,
+    themeId: theme ? theme.id : DEFAULT_THEME_ID,
+    fontId: theme?.fontId ?? DEFAULT_FONT_ID,
     slides: slides.length > 0 ? slides : makeStarterSlides(),
   };
 }

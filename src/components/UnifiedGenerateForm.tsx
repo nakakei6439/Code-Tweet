@@ -27,6 +27,7 @@ import {
 import { postJson } from "@/lib/apiClient";
 import { parseGitHubRepoUrl } from "@/lib/githubReadme";
 import { writeHandoff } from "@/lib/appss/handoff";
+import { DEFAULT_THEME_ID, THEMES } from "@/lib/appss/constants";
 import { trackCoreAction, trackActivationOnce } from "@/lib/analytics";
 import type { AppSSCopyResponse } from "@/types/appss";
 import type {
@@ -159,6 +160,58 @@ function UsageBadge({ usage }: { usage: UsageInfo }) {
   );
 }
 
+// AppSS 生成前の「追加プロンプト（雰囲気・文体）」と「テーマ（配色）」入力。
+// ゲスト用・ログイン用の両方に差し込む。
+function AppssOptions({
+  tone,
+  onToneChange,
+  themeId,
+  onThemeChange,
+  disabled,
+}: {
+  tone: string;
+  onToneChange: (v: string) => void;
+  themeId: string;
+  onThemeChange: (v: string) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="mx-auto grid max-w-2xl gap-3 sm:grid-cols-2">
+      <div>
+        <label className="mb-1.5 block text-xs font-medium text-gray-300">
+          追加プロンプト <span className="font-normal text-gray-500">（任意・雰囲気や文体）</span>
+        </label>
+        <input
+          type="text"
+          value={tone}
+          onChange={(e) => onToneChange(e.target.value)}
+          maxLength={200}
+          placeholder="例：やわらかく親しみやすい / ミニマルで上質"
+          disabled={disabled}
+          className="w-full rounded-lg border border-gray-700 bg-gray-800/50 px-3 py-2.5 text-sm text-white placeholder-gray-500 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+        />
+      </div>
+      <div>
+        <label className="mb-1.5 block text-xs font-medium text-gray-300">
+          テーマ <span className="font-normal text-gray-500">（配色・あとで変更可）</span>
+        </label>
+        <select
+          value={themeId}
+          onChange={(e) => onThemeChange(e.target.value)}
+          disabled={disabled}
+          className="w-full rounded-lg border border-gray-700 bg-gray-800/50 px-3 py-2.5 text-sm text-white transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {Object.values(THEMES).map((theme) => (
+            <option key={theme.id} value={theme.id}>
+              {theme.name}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
 function LengthPresetSelector({
   value,
   onChange,
@@ -270,6 +323,8 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
   // タブ固有入力
   const [hashtags, setHashtags] = useState("");
   const [lengthPreset, setLengthPreset] = useState<NoteLengthPreset>(DEFAULT_NOTE_LENGTH_PRESET);
+  const [appssTone, setAppssTone] = useState("");
+  const [appssThemeId, setAppssThemeId] = useState<string>(DEFAULT_THEME_ID);
 
   // タブ固有結果
   const [tweets, setTweets] = useState<Tweet[]>([]);
@@ -521,6 +576,8 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         // /api/appss/copy の appDescription 上限（2000字）に合わせて先頭を渡す
         appDescription: content.slice(0, 2000),
         features: [],
+        // 追加プロンプト（雰囲気・文体）。空なら送らない
+        tone: appssTone.trim() || undefined,
       });
       if (!result.ok) {
         setApiError(result.error);
@@ -528,7 +585,8 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         return;
       }
 
-      writeHandoff(repo.repo, result.data.slides);
+      // 選んだテーマ（配色・連動フォント）をエディタに引き継ぐ
+      writeHandoff(repo.repo, result.data.slides, appssThemeId);
       trackActivationOnce();
       refreshUsage();
       navigating = true;
@@ -665,6 +723,14 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                 </div>
               </div>
 
+              <AppssOptions
+                tone={appssTone}
+                onToneChange={setAppssTone}
+                themeId={appssThemeId}
+                onThemeChange={setAppssThemeId}
+                disabled={formDisabled}
+              />
+
               <button
                 onClick={() => void handleAppssGenerate()}
                 disabled={formDisabled || githubUrl.trim() === ""}
@@ -700,6 +766,16 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                 placeholder="https://github.com/owner/repo"
                 disabled={formDisabled}
                 className="w-full bg-transparent text-base text-white placeholder-gray-400 outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+
+            <div className="mt-5">
+              <AppssOptions
+                tone={appssTone}
+                onToneChange={setAppssTone}
+                themeId={appssThemeId}
+                onThemeChange={setAppssThemeId}
+                disabled={formDisabled}
               />
             </div>
 

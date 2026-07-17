@@ -9,10 +9,14 @@ import type { AppSSCopySlideIdea } from "@/types/appss";
 
 const HANDOFF_KEY = "code-tweet:appss:handoff";
 
-export function writeHandoff(appName: string, ideas: AppSSCopySlideIdea[]): void {
+export function writeHandoff(
+  appName: string,
+  ideas: AppSSCopySlideIdea[],
+  themeId?: string,
+): void {
   if (typeof window === "undefined") return;
   try {
-    window.sessionStorage.setItem(HANDOFF_KEY, JSON.stringify({ appName, ideas }));
+    window.sessionStorage.setItem(HANDOFF_KEY, JSON.stringify({ appName, ideas, themeId }));
   } catch {
     /* sessionStorage 不可（プライベートブラウズ等）は握りつぶす */
   }
@@ -26,10 +30,14 @@ export function consumeHandoff(): AppSSProject | null {
     const raw = window.sessionStorage.getItem(HANDOFF_KEY);
     if (!raw) return null;
     window.sessionStorage.removeItem(HANDOFF_KEY);
-    const parsed = JSON.parse(raw) as { appName?: string; ideas?: AppSSCopySlideIdea[] };
+    const parsed = JSON.parse(raw) as {
+      appName?: string;
+      ideas?: AppSSCopySlideIdea[];
+      themeId?: string;
+    };
     if (!Array.isArray(parsed.ideas) || parsed.ideas.length === 0) return null;
     // projectFromCopy の出力も migrate 経路に通して不正値をサニタイズする
-    return mergeWithDefaults(projectFromCopy(parsed.appName ?? "", parsed.ideas));
+    return mergeWithDefaults(projectFromCopy(parsed.appName ?? "", parsed.ideas, parsed.themeId));
   } catch {
     return null;
   }
