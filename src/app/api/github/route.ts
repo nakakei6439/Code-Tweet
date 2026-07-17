@@ -90,7 +90,7 @@ export async function POST(request: Request): Promise<Response> {
     }
     if (!isPaid) {
       return Response.json(
-        { error: "非公開リポジトリの README 取得は Pro プランの機能です。公開リポジトリをご利用ください。" },
+        { error: "非公開リポジトリの README 取得はクレジット購入者向けの機能です。公開リポジトリをご利用ください。" },
         { status: 403 },
       );
     }

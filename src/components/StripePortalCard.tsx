@@ -38,10 +38,10 @@ export default function StripePortalCard() {
         className="block w-full rounded-xl border border-gray-800 bg-gray-900/70 p-5 text-left transition-colors hover:border-gray-700 hover:bg-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <p className="text-sm font-semibold text-white">
-          {isPending ? "解約ページへ移動中..." : "Pro プランを解約する"}
+          {isPending ? "解約ページへ移動中..." : "サブスクリプションを解約する"}
         </p>
         <p className="mt-2 text-sm leading-6 text-gray-400">
-          Stripe カスタマーポータルへ移動し、サブスクリプションの解約・支払い方法の変更・領収書の確認ができます。ログイン状態の Pro プラン契約者のみご利用いただけます。
+          Stripe カスタマーポータルへ移動し、サブスクリプションの解約・支払い方法の変更・領収書の確認ができます。ログイン状態のサブスクリプション契約者のみご利用いただけます。
         </p>
       </button>
       {error && <p className="text-xs text-red-300">{error}</p>}

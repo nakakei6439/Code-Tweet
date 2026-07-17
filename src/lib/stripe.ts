@@ -11,20 +11,13 @@ export function getStripe() {
   return stripe;
 }
 
-export function getStripePriceId() {
-  const priceId = process.env.STRIPE_PRICE_ID;
-  if (!priceId) {
-    throw new Error("STRIPE_PRICE_ID is not set");
-  }
-  return priceId;
-}
-
-export function getMissingStripeCheckoutEnv() {
-  return ["STRIPE_SECRET_KEY", "STRIPE_PRICE_ID"].filter((key) => !process.env[key]);
-}
-
 // クレジットパックは price_data をインライン指定するため Price ID は不要。
 export function getMissingStripeCreditsEnv() {
+  return ["STRIPE_SECRET_KEY"].filter((key) => !process.env[key]);
+}
+
+// カスタマーポータル（解約・支払い管理）も SECRET のみで動く。
+export function getMissingStripePortalEnv() {
   return ["STRIPE_SECRET_KEY"].filter((key) => !process.env[key]);
 }
 

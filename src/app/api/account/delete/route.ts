@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     return Response.json(
       {
         error:
-          "Pro プラン契約中はアカウントを削除できません。先に Stripe カスタマーポータルから解約してください（解約直後は反映まで少し時間がかかる場合があります）。",
+          "サブスクリプション契約中はアカウントを削除できません。先に Stripe カスタマーポータルから解約してください（解約直後は反映まで少し時間がかかる場合があります）。",
         needsCancel: true,
       },
       { status: 409 },
@@ -61,6 +61,8 @@ export async function POST(request: Request) {
     logError("account/delete", "github_app_installations cleanup error", installDeleteError, { userId: user.id });
   }
 
+  // auth.users の削除で subscriptions / usage_logs / user_credits / credit_grants など
+  // user_id 参照の全テーブルが on delete cascade で連鎖削除される。
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) {
     logError("account/delete", "failed to delete user", error, { userId: user.id });
@@ -68,22 +70,6 @@ export async function POST(request: Request) {
       { error: "アカウントの削除に失敗しました。時間をおいて再度お試しください。" },
       { status: 500 },
     );
-  }
-
-  const { error: subDeleteError } = await admin
-    .from("subscriptions")
-    .delete()
-    .eq("user_id", user.id);
-  if (subDeleteError) {
-    logError("account/delete", "subscriptions cleanup error", subDeleteError, { userId: user.id });
-  }
-
-  const { error: usageDeleteError } = await admin
-    .from("usage_logs")
-    .delete()
-    .eq("user_id", user.id);
-  if (usageDeleteError) {
-    logError("account/delete", "usage_logs cleanup error", usageDeleteError, { userId: user.id });
   }
 
   await supabase.auth.signOut();

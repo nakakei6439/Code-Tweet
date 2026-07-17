@@ -196,7 +196,7 @@ export default function HeaderActions({ isAuthenticated, email, tier, isAdmin }:
                 onClick={() => setIsOpen(false)}
                 className="flex items-center px-3 py-2 rounded-lg text-sm text-fuchsia-300 hover:bg-fuchsia-950/40 transition-colors"
               >
-                Pro プランを見る
+                料金プランを見る
               </Link>
             )}
             {tier === "paid" && (
