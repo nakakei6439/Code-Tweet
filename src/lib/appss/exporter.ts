@@ -41,6 +41,44 @@ export async function warmupCapture(el: HTMLElement, fontEmbedCSS?: string) {
   }
 }
 
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+// 書き出し結果が真っ黒／単色（＝Safari の描画失敗）かを縮小サンプルで判定する。
+// 実データは PNG の data:URL なので canvas 読み出しは汚染されない。
+// 反転（ダーク）背景の正常スライドは文字やデバイスで輝度差が大きいため誤検知しない。
+export async function isMostlyBlank(dataUrl: string): Promise<boolean> {
+  try {
+    const img = await loadImage(dataUrl);
+    const w = 48;
+    const h = Math.max(1, Math.round((w * img.height) / img.width));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return false;
+    ctx.drawImage(img, 0, 0, w, h);
+    const { data } = ctx.getImageData(0, 0, w, h);
+    let minL = 255;
+    let maxL = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const l = (data[i] + data[i + 1] + data[i + 2]) / 3;
+      if (l < minL) minL = l;
+      if (l > maxL) maxL = l;
+    }
+    // 全体が真っ黒、またはほぼ単色（輝度差が極小）なら描画失敗とみなす
+    return maxL < 12 || maxL - minL < 4;
+  } catch {
+    return false;
+  }
+}
+
 export async function captureSlide(
   el: HTMLElement,
   sourceW: number,
@@ -76,13 +114,19 @@ export async function captureSlide(
       backgroundColor: "#ffffff",
       fontEmbedCSS,
     };
-    try {
-      return await toPng(el, options);
-    } catch {
-      // 一度だけリトライ（Safari の一時的な描画失敗対策）
+    // Safari は初回レンダリングが空／黒になることがあるため、真っ黒判定で最大3回まで再試行する。
+    let last = "";
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        last = await toPng(el, options);
+      } catch {
+        await waitForPaint();
+        continue;
+      }
+      if (!(await isMostlyBlank(last))) return last;
       await waitForPaint();
-      return await toPng(el, options);
     }
+    return last;
   } finally {
     el.style.left = prev.left || "-99999px";
     el.style.top = prev.top || "0px";

@@ -187,15 +187,16 @@ function backgroundFor(theme: Theme, inverted?: boolean) {
   return `linear-gradient(160deg, ${theme.bg} 0%, ${shade(theme.bg, -6)} 100%)`;
 }
 
+// ソフトな光彩。CSS filter:blur() は Safari の foreignObject→canvas 描画
+// （html-to-image が使う方式）で全体が黒化する既知バグがあるため、
+// フィルターを使わず radial-gradient で同等のぼかしを表現する。
 function Blob({
-  cW,
   color,
   x,
   y,
   size,
   opacity = 0.4,
 }: {
-  cW: number;
   color: string;
   x: number;
   y: number;
@@ -210,9 +211,7 @@ function Blob({
         top: `${y}%`,
         width: `${size}%`,
         aspectRatio: "1 / 1",
-        background: color,
-        borderRadius: "50%",
-        filter: `blur(${cW * 0.06}px)`,
+        background: `radial-gradient(circle at center, ${color} 0%, transparent 68%)`,
         opacity,
         pointerEvents: "none",
       }}
@@ -220,7 +219,7 @@ function Blob({
   );
 }
 
-function SlideBackground({ slide, cW, theme }: { slide: AppSSSlide; cW: number; theme: Theme }) {
+function SlideBackground({ slide, theme }: { slide: AppSSSlide; theme: Theme }) {
   const inverted = !!slide.inverted;
   return (
     <div
@@ -232,8 +231,8 @@ function SlideBackground({ slide, cW, theme }: { slide: AppSSSlide; cW: number; 
         color: inverted ? theme.fgAlt : theme.fg,
       }}
     >
-      <Blob cW={cW} color={theme.accent} x={-15} y={-10} size={55} opacity={inverted ? 0.25 : 0.32} />
-      <Blob cW={cW} color={theme.accent} x={70} y={75} size={45} opacity={inverted ? 0.18 : 0.25} />
+      <Blob color={theme.accent} x={-15} y={-10} size={70} opacity={inverted ? 0.35 : 0.42} />
+      <Blob color={theme.accent} x={65} y={70} size={60} opacity={inverted ? 0.28 : 0.35} />
     </div>
   );
 }
@@ -390,7 +389,7 @@ export function SlideCanvas({
       onMouseDown={handleBackgroundMouseDown}
       style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}
     >
-      <SlideBackground slide={slide} cW={CANVAS.w} theme={theme} />
+      <SlideBackground slide={slide} theme={theme} />
       <SlideElements
         slide={slide}
         theme={theme}
@@ -466,7 +465,7 @@ export function DeckStrip({
               overflow: "hidden",
             }}
           >
-            <SlideBackground slide={slide} cW={cW} theme={theme} />
+            <SlideBackground slide={slide} theme={theme} />
             <SlideElements
               slide={slide}
               theme={theme}
