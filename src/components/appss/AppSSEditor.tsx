@@ -10,7 +10,7 @@ import type {
   SelectedElement,
   TextElement,
 } from "@/lib/appss/types";
-import { BEZEL, CANVAS, EXPORT_SIZES, FONTS, THEMES, themeById } from "@/lib/appss/constants";
+import { BEZEL, CANVAS, EXPORT_SIZES, FONTS, MAX_SLIDES, THEMES, themeById } from "@/lib/appss/constants";
 import { isTextElementId, textElementKey } from "@/lib/appss/elements";
 import { preloadImages } from "@/lib/appss/imageCache";
 import { useAppSSProject } from "@/lib/appss/storage";
@@ -177,11 +177,12 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
   // ---------- スライド操作 ----------
 
   const addSlide = React.useCallback(() => {
+    if (slides.length >= MAX_SLIDES) return; // 上限（6枚）を超えて追加しない
     const starter = makeStarterSlides()[1];
     const slide: AppSSSlide = { ...starter, id: nid(), label: "新しいスライド", headline: "見出しを\n入力" };
     setState((prev) => ({ ...prev, slides: [...prev.slides, slide] }));
     setActiveSlideId(slide.id);
-  }, [setState]);
+  }, [setState, slides.length]);
 
   const duplicateSlide = React.useCallback(
     (slideId: string) => {

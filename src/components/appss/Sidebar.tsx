@@ -2,7 +2,7 @@
 // AppSS — スライド一覧サイドバー（サムネ・選択・追加/複製/削除・上下並べ替え）。
 import * as React from "react";
 import type { AppSSSlide, BackgroundStyle, Theme } from "@/lib/appss/types";
-import { CANVAS } from "@/lib/appss/constants";
+import { CANVAS, MAX_SLIDES } from "@/lib/appss/constants";
 import { SlideCanvas } from "./SlideCanvas";
 
 const THUMB_W = 84;
@@ -33,6 +33,7 @@ export function Sidebar({
   onDelete,
   onMove,
 }: Props) {
+  const atMax = slides.length >= MAX_SLIDES;
   return (
     <div className="flex h-full w-40 flex-col border-r border-gray-800 bg-gray-950/60">
       <div className="flex items-center justify-between px-3 py-2 text-xs text-gray-400">
@@ -40,12 +41,16 @@ export function Sidebar({
         <button
           type="button"
           onClick={onAdd}
-          className="rounded px-1.5 py-0.5 text-cyan-300 hover:bg-gray-800"
-          title="スライドを追加"
+          disabled={atMax}
+          className="rounded px-1.5 py-0.5 text-cyan-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-600 disabled:hover:bg-transparent"
+          title={atMax ? `最大${MAX_SLIDES}枚まで` : "スライドを追加"}
         >
           ＋追加
         </button>
       </div>
+      {atMax && (
+        <p className="px-3 pb-1 text-[10px] leading-4 text-gray-500">最大{MAX_SLIDES}枚まで</p>
+      )}
       <div className="flex-1 space-y-2 overflow-y-auto px-3 pb-3">
         {slides.map((slide, index) => {
           const active = slide.id === activeSlideId;

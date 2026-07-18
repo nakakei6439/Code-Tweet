@@ -75,17 +75,30 @@ export function projectFromCopy(
   ideas: AppSSCopySlideIdea[],
   themeId?: string,
   backgroundStyle?: string,
+  screenshotRefs?: string[],
 ): AppSSProject {
-  const slides: AppSSSlide[] = ideas.map((idea) => ({
-    id: nid(),
-    layout: idea.layoutHint,
-    label: idea.label,
-    headline: idea.headline,
-    ...(idea.emphasis ? { emphasis: idea.emphasis } : {}),
-    screenshotRef: "",
-    ...(idea.layoutHint === "two-devices" ? { screenshotSecondaryRef: "" } : {}),
-    ...(idea.layoutHint === "device-top" ? { inverted: true } : {}),
-  }));
+  // 事前登録したスクショを、デバイスを持つスライドへ登録順に割り当てる。
+  // no-device のスライドは画像を持たないためスキップ。two-devices は余りがあれば
+  // 副画像にも次の ref を充てる。ref は idb:参照（端末内のみ・サーバー非経由）。
+  const refs = screenshotRefs ?? [];
+  let cursor = 0;
+  const nextRef = () => (cursor < refs.length ? refs[cursor++] : "");
+
+  const slides: AppSSSlide[] = ideas.map((idea) => {
+    const hasDevice = idea.layoutHint !== "no-device";
+    const primary = hasDevice ? nextRef() : "";
+    const secondary = idea.layoutHint === "two-devices" ? nextRef() : "";
+    return {
+      id: nid(),
+      layout: idea.layoutHint,
+      label: idea.label,
+      headline: idea.headline,
+      ...(idea.emphasis ? { emphasis: idea.emphasis } : {}),
+      screenshotRef: primary,
+      ...(idea.layoutHint === "two-devices" ? { screenshotSecondaryRef: secondary } : {}),
+      ...(idea.layoutHint === "device-top" ? { inverted: true } : {}),
+    };
+  });
   const theme = themeId ? THEMES[themeId] : undefined;
   const bg: BackgroundStyle = isBackgroundStyle(backgroundStyle)
     ? backgroundStyle
