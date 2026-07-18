@@ -179,7 +179,7 @@ function AppssOptions({
   disabled: boolean;
 }) {
   return (
-    <div className="mx-auto grid max-w-2xl gap-3 sm:grid-cols-2">
+    <div className="mx-auto grid max-w-2xl gap-3">
       <div>
         <label className="mb-1.5 block text-xs font-medium text-gray-300">
           追加プロンプト <span className="font-normal text-gray-500">（任意・雰囲気や文体）</span>
@@ -558,27 +558,34 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
   // urlOverride はモーダルで選んだリポジトリ URL を直接渡す用（state 反映を待たない）。
   async function handleAppssGenerate(urlOverride?: string) {
     const trimmedUrl = (urlOverride ?? githubUrl).trim();
-    clearErrorState();
     const repo = parseGitHubRepoUrl(trimmedUrl);
-    if (!repo) {
-      setCurrentErrorState({
-        error: "GitHub のリポジトリ URL を入力してください。",
-        errorCode: null,
-        errorField: null,
-      });
-      return;
-    }
+    clearErrorState();
 
     setIsAppssLoading(true);
     let navigating = false;
     try {
-      const content = await fetchReadmeContent(trimmedUrl);
-      if (!content) return; // fetchReadmeContent 内でエラー表示済み
+      // ログイン時は「プロジェクト説明」欄（projectText）を優先して使う。
+      // ゲスト／未読込のときは URL から README を取得する。
+      let description = isLoggedIn ? projectText.trim() : "";
+      if (!description) {
+        if (!repo) {
+          setCurrentErrorState({
+            error: "GitHub のリポジトリ URL を入力してください。",
+            errorCode: null,
+            errorField: null,
+          });
+          return;
+        }
+        const content = await fetchReadmeContent(trimmedUrl);
+        if (!content) return; // fetchReadmeContent 内でエラー表示済み
+        description = content;
+      }
 
+      const appName = repo?.repo ?? "マイアプリ";
       const result = await postJson<AppSSCopyResponse>("/api/appss/copy", {
-        appName: repo.repo,
+        appName,
         // /api/appss/copy の appDescription 上限（2000字）に合わせて先頭を渡す
-        appDescription: content.slice(0, 2000),
+        appDescription: description.slice(0, 2000),
         features: [],
         // 追加プロンプト（雰囲気・文体）。空なら送らない
         tone: appssTone.trim() || undefined,
@@ -597,7 +604,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
           : appssThemeId;
       // 背景スタイルは常に AI 推奨に従う（未指定なら handoff 側で既定にフォールバック）。
       writeHandoff(
-        repo.repo,
+        appName,
         result.data.slides,
         themeForHandoff,
         result.data.recommendedBackgroundStyle,
@@ -728,7 +735,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
-                        void handleAppssGenerate();
+                        void loadReadmeIntoProjectText(githubUrl.trim());
                       }
                     }}
                     placeholder="例：https://github.com/owner/repo"
@@ -736,6 +743,26 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                     className="w-full flex-1 rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 text-sm text-white placeholder-gray-500 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-300">
+                  プロジェクト説明（README） <span className="text-red-400">*</span>
+                </label>
+                <textarea
+                  rows={7}
+                  value={projectText}
+                  onChange={(e) => {
+                    setProjectText(e.target.value);
+                    clearFieldError("projectText");
+                  }}
+                  placeholder="READMEを読み込むと自動で入ります。ここを編集して、伝えたい内容に絞るとコピーの精度が上がります。"
+                  disabled={formDisabled}
+                  className="w-full resize-none rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 text-sm text-white placeholder-gray-500 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+                <p className="mt-1.5 text-xs text-gray-500">
+                  見出し生成にはこの説明の先頭2,000文字を使います。
+                </p>
               </div>
 
               <AppssOptions
@@ -748,7 +775,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
 
               <button
                 onClick={() => void handleAppssGenerate()}
-                disabled={formDisabled || githubUrl.trim() === ""}
+                disabled={formDisabled || projectText.trim() === ""}
                 className="mx-auto flex w-full items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-all
                   sm:w-1/2 sm:min-w-52
                   bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400 text-white shadow-lg shadow-cyan-500/20
@@ -899,22 +926,15 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         onClose={() => setIsRepoModalOpen(false)}
         onSelect={(htmlUrl) => {
           setGithubUrl(htmlUrl);
-          if (activeTab === "appss") {
-            void handleAppssGenerate(htmlUrl);
-            return;
-          }
-          if (!url.trim()) {
+          // AppSS でも README を「プロジェクト説明」欄に読み込む（生成は別ボタン）
+          if (activeTab !== "appss" && !url.trim()) {
             setUrl(htmlUrl);
           }
           void loadReadmeIntoProjectText(htmlUrl);
         }}
         onRepoUrlSubmit={(htmlUrl) => {
           setGithubUrl(htmlUrl);
-          if (activeTab === "appss") {
-            void handleAppssGenerate(htmlUrl);
-            return;
-          }
-          if (!url.trim()) {
+          if (activeTab !== "appss" && !url.trim()) {
             setUrl(htmlUrl);
           }
           void loadReadmeIntoProjectText(htmlUrl);
