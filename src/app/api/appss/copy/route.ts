@@ -30,7 +30,8 @@ export const maxDuration = 60;
 // 入力が小さい機能なので generate(256KB) より絞る
 const MAX_REQUEST_BYTES = 64 * 1024;
 const MAX_APP_NAME_LENGTH = 50;
-const MAX_DESCRIPTION_LENGTH = 2000;
+// 他機能（Pro の README 上限 10,000字）と統一。リクエスト 64KB 上限内に十分収まる。
+const MAX_DESCRIPTION_LENGTH = 10000;
 const MAX_FEATURES = 8;
 const MAX_FEATURE_LENGTH = 100;
 const MAX_TONE_LENGTH = 200;

@@ -110,6 +110,11 @@ export function themeById(themeId: string | undefined): Theme {
 export const STORAGE_KEY = "code-tweet:appss:project:v1";
 export const PROJECT_SCHEMA_VERSION = 1;
 
+// スライド（＝スクリーンショット）の最大枚数。
+// App Store の1機種あたり上限（10枚）より絞り、事前登録・スライド追加の両方に適用する。
+// サーバ側の生成上限は geminiAppSS.ts の APPSS_MAX_SLIDES（同値）で別管理。
+export const MAX_SLIDES = 6;
+
 // ---------- 背景スタイル ----------
 export const DEFAULT_BACKGROUND_STYLE: BackgroundStyle = "soft";
 

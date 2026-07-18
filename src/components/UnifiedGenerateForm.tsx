@@ -27,7 +27,8 @@ import {
 import { postJson } from "@/lib/apiClient";
 import { parseGitHubRepoUrl } from "@/lib/githubReadme";
 import { writeHandoff } from "@/lib/appss/handoff";
-import { DEFAULT_THEME_ID } from "@/lib/appss/constants";
+import { DEFAULT_THEME_ID, THEMES } from "@/lib/appss/constants";
+import { AppssUploadTray } from "@/components/appss/AppssUploadTray";
 import { trackCoreAction, trackActivationOnce } from "@/lib/analytics";
 import type { AppSSCopyResponse } from "@/types/appss";
 import type {
@@ -207,6 +208,45 @@ function LengthPresetSelector({
   );
 }
 
+function ThemeChip({
+  label,
+  active,
+  disabled,
+  swatch,
+  swatchBg,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  disabled?: boolean;
+  swatch?: string;
+  swatchBg?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={active}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+        active
+          ? "border-cyan-500 bg-cyan-500/10 text-white"
+          : "border-gray-700 bg-gray-800/40 text-gray-300 hover:border-gray-500 hover:bg-gray-800/60"
+      }`}
+    >
+      {swatch && (
+        <span
+          aria-hidden
+          className="h-3 w-3 rounded-full border border-white/20"
+          style={{ background: `linear-gradient(135deg, ${swatchBg ?? "#fff"} 50%, ${swatch} 50%)` }}
+        />
+      )}
+      {label}
+    </button>
+  );
+}
+
 function Hero({ activeTab }: { activeTab: GenerateTabKey }) {
   const gradient =
     "bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-yellow-200 bg-clip-text text-transparent";
@@ -271,6 +311,11 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
   // タブ固有入力
   const [hashtags, setHashtags] = useState("");
   const [lengthPreset, setLengthPreset] = useState<NoteLengthPreset>(DEFAULT_NOTE_LENGTH_PRESET);
+
+  // AppSS 固有入力（ログイン時のみ利用）
+  const [appssTone, setAppssTone] = useState("");
+  const [appssThemeId, setAppssThemeId] = useState(""); // "" = AIおまかせ
+  const [appssShots, setAppssShots] = useState<string[]>([]);
 
   // タブ固有結果
   const [tweets, setTweets] = useState<Tweet[]>([]);
@@ -526,9 +571,10 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
       const appName = repo?.repo ?? "マイアプリ";
       const result = await postJson<AppSSCopyResponse>("/api/appss/copy", {
         appName,
-        // /api/appss/copy の appDescription 上限（2000字）に合わせて先頭を渡す
-        appDescription: description.slice(0, 2000),
+        // /api/appss/copy の appDescription 上限（10,000字）に合わせて先頭を渡す
+        appDescription: description.slice(0, 10000),
         features: [],
+        tone: appssTone.trim(),
       });
       if (!result.ok) {
         setApiError(result.error);
@@ -536,12 +582,16 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         return;
       }
 
-      // テーマ・背景は常に AI 推奨をエディタに引き継ぐ（未指定なら既定にフォールバック）。
+      // テーマは明示選択があればそれを優先、なければ AI 推奨（未指定なら既定）。
+      // 事前登録したスクショ（idb:参照）は登録順にスライドへ配置される。
+      const chosenTheme =
+        appssThemeId || result.data.recommendedThemeId || DEFAULT_THEME_ID;
       writeHandoff(
         appName,
         result.data.slides,
-        result.data.recommendedThemeId ?? DEFAULT_THEME_ID,
+        chosenTheme,
         result.data.recommendedBackgroundStyle,
+        appssShots,
       );
       trackActivationOnce();
       refreshUsage();
@@ -695,9 +745,53 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                   className="w-full resize-none rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 text-sm text-white placeholder-gray-500 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <p className="mt-1.5 text-xs text-gray-500">
-                  見出し生成にはこの説明の先頭2,000文字を使います。配色テーマはAIが自動で選びます（エディタで変更可）。
+                  見出し生成にはこの説明の先頭10,000文字を使います。
                 </p>
               </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-300">
+                  追加プロンプト <span className="text-gray-500 font-normal">（任意）</span>
+                </label>
+                <textarea
+                  rows={2}
+                  value={appssTone}
+                  maxLength={200}
+                  onChange={(e) => setAppssTone(e.target.value)}
+                  placeholder="例：やさしく親しみやすいトーンで。20〜30代の女性向け。"
+                  disabled={formDisabled}
+                  className="w-full resize-none rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 text-sm text-white placeholder-gray-500 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+                <p className="mt-1.5 text-xs text-gray-500">見出しの雰囲気・ターゲットを自然文で指定できます（最大200字）。</p>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-300">
+                  配色テーマ <span className="text-gray-500 font-normal">（任意）</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <ThemeChip
+                    label="AIおまかせ"
+                    active={appssThemeId === ""}
+                    disabled={formDisabled}
+                    onClick={() => setAppssThemeId("")}
+                  />
+                  {Object.values(THEMES).map((theme) => (
+                    <ThemeChip
+                      key={theme.id}
+                      label={theme.name}
+                      active={appssThemeId === theme.id}
+                      disabled={formDisabled}
+                      swatch={theme.accent}
+                      swatchBg={theme.bg}
+                      onClick={() => setAppssThemeId(theme.id)}
+                    />
+                  ))}
+                </div>
+                <p className="mt-1.5 text-xs text-gray-500">「AIおまかせ」だとアプリ内容から自動で選びます（エディタで変更可）。</p>
+              </div>
+
+              <AppssUploadTray value={appssShots} onChange={setAppssShots} disabled={formDisabled} />
 
               <button
                 onClick={() => void handleAppssGenerate()}
@@ -714,7 +808,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                     : "READMEからスクショを作る"}
               </button>
               <p className="text-xs leading-5 text-gray-400">
-                READMEを読んで、App Store用スクショの見出しをAIが作成します。画像はエディタで入れられます（生成に1回分を消費します）。
+                READMEを読んで、App Store用スクショの見出しをAIが作成します。登録したスクショは最初から配置され、エディタで差し替え・追加もできます（生成に1回分を消費します）。
               </p>
             </div>
           </div>
