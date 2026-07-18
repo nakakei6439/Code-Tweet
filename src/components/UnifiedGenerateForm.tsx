@@ -27,7 +27,7 @@ import {
 import { postJson } from "@/lib/apiClient";
 import { parseGitHubRepoUrl } from "@/lib/githubReadme";
 import { writeHandoff } from "@/lib/appss/handoff";
-import { DEFAULT_THEME_ID, THEMES } from "@/lib/appss/constants";
+import { DEFAULT_THEME_ID } from "@/lib/appss/constants";
 import { trackCoreAction, trackActivationOnce } from "@/lib/analytics";
 import type { AppSSCopyResponse } from "@/types/appss";
 import type {
@@ -65,9 +65,6 @@ type ErrorState = {
 };
 
 const EMPTY_ERROR: ErrorState = { error: null, errorCode: null, errorField: null };
-
-// テーマ選択の「AIにおまかせ」を表すセンチネル値
-const APPSS_THEME_AUTO = "auto";
 
 function formatCount(value: number) {
   return value.toLocaleString("ja-JP");
@@ -159,59 +156,6 @@ function UsageBadge({ usage }: { usage: UsageInfo }) {
           月の生成回数はポストとnote Draftで合算カウントされます（README上限 {PROJECT_TEXT_LIMITS[usage.tier].toLocaleString("ja-JP")} 文字）。
         </p>
       )}
-    </div>
-  );
-}
-
-// AppSS 生成前の「追加プロンプト（雰囲気・文体）」と「テーマ（配色）」入力。
-// ゲスト用・ログイン用の両方に差し込む。
-function AppssOptions({
-  tone,
-  onToneChange,
-  themeId,
-  onThemeChange,
-  disabled,
-}: {
-  tone: string;
-  onToneChange: (v: string) => void;
-  themeId: string;
-  onThemeChange: (v: string) => void;
-  disabled: boolean;
-}) {
-  return (
-    <div className="mx-auto grid max-w-2xl gap-3">
-      <div>
-        <label className="mb-1.5 block text-xs font-medium text-gray-300">
-          追加プロンプト <span className="font-normal text-gray-500">（任意・雰囲気や文体）</span>
-        </label>
-        <input
-          type="text"
-          value={tone}
-          onChange={(e) => onToneChange(e.target.value)}
-          maxLength={200}
-          placeholder="例：やわらかく親しみやすい / ミニマルで上質"
-          disabled={disabled}
-          className="w-full rounded-lg border border-gray-700 bg-gray-800/50 px-3 py-2.5 text-sm text-white placeholder-gray-500 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
-        />
-      </div>
-      <div>
-        <label className="mb-1.5 block text-xs font-medium text-gray-300">
-          テーマ <span className="font-normal text-gray-500">（配色・あとで変更可）</span>
-        </label>
-        <select
-          value={themeId}
-          onChange={(e) => onThemeChange(e.target.value)}
-          disabled={disabled}
-          className="w-full rounded-lg border border-gray-700 bg-gray-800/50 px-3 py-2.5 text-sm text-white transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <option value={APPSS_THEME_AUTO}>✨ AIにおまかせ</option>
-          {Object.values(THEMES).map((theme) => (
-            <option key={theme.id} value={theme.id}>
-              {theme.name}
-            </option>
-          ))}
-        </select>
-      </div>
     </div>
   );
 }
@@ -327,8 +271,6 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
   // タブ固有入力
   const [hashtags, setHashtags] = useState("");
   const [lengthPreset, setLengthPreset] = useState<NoteLengthPreset>(DEFAULT_NOTE_LENGTH_PRESET);
-  const [appssTone, setAppssTone] = useState("");
-  const [appssThemeId, setAppssThemeId] = useState<string>(APPSS_THEME_AUTO);
 
   // タブ固有結果
   const [tweets, setTweets] = useState<Tweet[]>([]);
@@ -587,8 +529,6 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         // /api/appss/copy の appDescription 上限（2000字）に合わせて先頭を渡す
         appDescription: description.slice(0, 2000),
         features: [],
-        // 追加プロンプト（雰囲気・文体）。空なら送らない
-        tone: appssTone.trim() || undefined,
       });
       if (!result.ok) {
         setApiError(result.error);
@@ -596,17 +536,11 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         return;
       }
 
-      // テーマをエディタに引き継ぐ。「AIにおまかせ」なら AI 推奨テーマ、
-      // 明示選択ならそれを使う（推奨が無ければ既定にフォールバック）。
-      const themeForHandoff =
-        appssThemeId === APPSS_THEME_AUTO
-          ? result.data.recommendedThemeId ?? DEFAULT_THEME_ID
-          : appssThemeId;
-      // 背景スタイルは常に AI 推奨に従う（未指定なら handoff 側で既定にフォールバック）。
+      // テーマ・背景は常に AI 推奨をエディタに引き継ぐ（未指定なら既定にフォールバック）。
       writeHandoff(
         appName,
         result.data.slides,
-        themeForHandoff,
+        result.data.recommendedThemeId ?? DEFAULT_THEME_ID,
         result.data.recommendedBackgroundStyle,
       );
       trackActivationOnce();
@@ -761,17 +695,9 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                   className="w-full resize-none rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 text-sm text-white placeholder-gray-500 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <p className="mt-1.5 text-xs text-gray-500">
-                  見出し生成にはこの説明の先頭2,000文字を使います。
+                  見出し生成にはこの説明の先頭2,000文字を使います。配色テーマはAIが自動で選びます（エディタで変更可）。
                 </p>
               </div>
-
-              <AppssOptions
-                tone={appssTone}
-                onToneChange={setAppssTone}
-                themeId={appssThemeId}
-                onThemeChange={setAppssThemeId}
-                disabled={formDisabled}
-              />
 
               <button
                 onClick={() => void handleAppssGenerate()}
@@ -811,24 +737,13 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
               />
             </div>
 
-            <div className="mt-5">
-              <AppssOptions
-                tone={appssTone}
-                onToneChange={setAppssTone}
-                themeId={appssThemeId}
-                onThemeChange={setAppssThemeId}
-                disabled={formDisabled}
-              />
-            </div>
-
             <div className="mt-7 flex justify-center">
               <button
                 onClick={() => void handleAppssGenerate()}
                 disabled={formDisabled}
-                className="inline-flex min-h-11 items-center justify-center rounded-lg px-6 text-sm font-semibold
-                  bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400 text-white
-                  shadow-lg shadow-fuchsia-500/20 transition-opacity hover:opacity-90
-                  disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex min-h-9 items-center justify-center rounded-lg border border-gray-700
+                  bg-gray-800 px-5 text-sm font-medium text-gray-100 transition-colors
+                  hover:border-gray-600 hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isFetchingReadme
                   ? "READMEを読んでいます..."
@@ -837,9 +752,16 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                     : "READMEからスクショを作る"}
               </button>
             </div>
-            <p className="mx-auto mt-4 max-w-xl text-center text-xs leading-5 text-gray-400">
-              READMEを読んで、App Store用スクショの見出しをAIが作成します。画像はエディタで入れられます（生成に1回分を消費します）。
-            </p>
+            <div className="mt-4 flex justify-center">
+              <a
+                href="https://github.com/"
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-medium text-gray-400 transition-colors hover:text-gray-200"
+              >
+                GitHubを開いてリポジトリURLをコピーする
+              </a>
+            </div>
           </section>
         )
       ) : (
