@@ -1,6 +1,6 @@
 "use client";
 
-export type GenerateTabKey = "tweet" | "note";
+export type GenerateTabKey = "tweet" | "note" | "appss";
 
 type Props = {
   activeTab: GenerateTabKey;
@@ -38,6 +38,15 @@ export default function GenerateTabs({ activeTab, onChange }: Props) {
           className={`px-5 py-2 text-sm font-semibold rounded-full transition-all cursor-pointer ${pillClass(activeTab === "note")}`}
         >
           note Draft
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "appss"}
+          onClick={() => onChange("appss")}
+          className={`px-5 py-2 text-sm font-semibold rounded-full transition-all cursor-pointer ${pillClass(activeTab === "appss")}`}
+        >
+          AppSS
         </button>
       </div>
     </div>

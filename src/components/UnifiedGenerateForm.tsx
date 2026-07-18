@@ -25,7 +25,11 @@ import {
   NOTE_LENGTH_PRESETS,
 } from "@/lib/noteLengthPresets";
 import { postJson } from "@/lib/apiClient";
+import { parseGitHubRepoUrl } from "@/lib/githubReadme";
+import { writeHandoff } from "@/lib/appss/handoff";
+import { DEFAULT_THEME_ID, THEMES } from "@/lib/appss/constants";
 import { trackCoreAction, trackActivationOnce } from "@/lib/analytics";
+import type { AppSSCopyResponse } from "@/types/appss";
 import type {
   Tweet,
   GenerateRequest,
@@ -61,6 +65,9 @@ type ErrorState = {
 };
 
 const EMPTY_ERROR: ErrorState = { error: null, errorCode: null, errorField: null };
+
+// テーマ選択の「AIにおまかせ」を表すセンチネル値
+const APPSS_THEME_AUTO = "auto";
 
 function formatCount(value: number) {
   return value.toLocaleString("ja-JP");
@@ -156,6 +163,59 @@ function UsageBadge({ usage }: { usage: UsageInfo }) {
   );
 }
 
+// AppSS 生成前の「追加プロンプト（雰囲気・文体）」と「テーマ（配色）」入力。
+// ゲスト用・ログイン用の両方に差し込む。
+function AppssOptions({
+  tone,
+  onToneChange,
+  themeId,
+  onThemeChange,
+  disabled,
+}: {
+  tone: string;
+  onToneChange: (v: string) => void;
+  themeId: string;
+  onThemeChange: (v: string) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="mx-auto grid max-w-2xl gap-3 sm:grid-cols-2">
+      <div>
+        <label className="mb-1.5 block text-xs font-medium text-gray-300">
+          追加プロンプト <span className="font-normal text-gray-500">（任意・雰囲気や文体）</span>
+        </label>
+        <input
+          type="text"
+          value={tone}
+          onChange={(e) => onToneChange(e.target.value)}
+          maxLength={200}
+          placeholder="例：やわらかく親しみやすい / ミニマルで上質"
+          disabled={disabled}
+          className="w-full rounded-lg border border-gray-700 bg-gray-800/50 px-3 py-2.5 text-sm text-white placeholder-gray-500 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+        />
+      </div>
+      <div>
+        <label className="mb-1.5 block text-xs font-medium text-gray-300">
+          テーマ <span className="font-normal text-gray-500">（配色・あとで変更可）</span>
+        </label>
+        <select
+          value={themeId}
+          onChange={(e) => onThemeChange(e.target.value)}
+          disabled={disabled}
+          className="w-full rounded-lg border border-gray-700 bg-gray-800/50 px-3 py-2.5 text-sm text-white transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <option value={APPSS_THEME_AUTO}>✨ AIにおまかせ</option>
+          {Object.values(THEMES).map((theme) => (
+            <option key={theme.id} value={theme.id}>
+              {theme.name}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
 function LengthPresetSelector({
   value,
   onChange,
@@ -204,20 +264,20 @@ function LengthPresetSelector({
 }
 
 function Hero({ activeTab }: { activeTab: GenerateTabKey }) {
+  const gradient =
+    "bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-yellow-200 bg-clip-text text-transparent";
   const title =
     activeTab === "note" ? (
       <>
-        note{" "}
-        <span className="bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-yellow-200 bg-clip-text text-transparent">
-          Draft
-        </span>
+        note <span className={gradient}>Draft</span>
+      </>
+    ) : activeTab === "appss" ? (
+      <>
+        App<span className={gradient}>SS</span>
       </>
     ) : (
       <>
-        Code{" "}
-        <span className="bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-yellow-200 bg-clip-text text-transparent">
-          Tweet
-        </span>
+        Code <span className={gradient}>Tweet</span>
       </>
     );
   const subtitle =
@@ -225,6 +285,11 @@ function Hero({ activeTab }: { activeTab: GenerateTabKey }) {
       <>
         <span className="block">GitHubリポジトリURLを貼るだけで、</span>
         <span className="block">note.com に貼り付けられるMarkdown Draftを1本生成します。</span>
+      </>
+    ) : activeTab === "appss" ? (
+      <>
+        <span className="block">GitHubリポジトリURLを貼るだけで、</span>
+        <span className="block">App Store用スクショの見出しをAIが考えます。</span>
       </>
     ) : (
       <>
@@ -262,6 +327,8 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
   // タブ固有入力
   const [hashtags, setHashtags] = useState("");
   const [lengthPreset, setLengthPreset] = useState<NoteLengthPreset>(DEFAULT_NOTE_LENGTH_PRESET);
+  const [appssTone, setAppssTone] = useState("");
+  const [appssThemeId, setAppssThemeId] = useState<string>(APPSS_THEME_AUTO);
 
   // タブ固有結果
   const [tweets, setTweets] = useState<Tweet[]>([]);
@@ -270,8 +337,10 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
   // タブ固有 ローディング/エラー
   const [isTweetLoading, setIsTweetLoading] = useState(false);
   const [isNoteLoading, setIsNoteLoading] = useState(false);
+  const [isAppssLoading, setIsAppssLoading] = useState(false);
   const [tweetErrorState, setTweetErrorState] = useState<ErrorState>(EMPTY_ERROR);
   const [noteErrorState, setNoteErrorState] = useState<ErrorState>(EMPTY_ERROR);
+  const [appssErrorState, setAppssErrorState] = useState<ErrorState>(EMPTY_ERROR);
 
   // 共通ステータス
   const [isFetchingReadme, setIsFetchingReadme] = useState(false);
@@ -288,10 +357,16 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
   const isLoggedIn = usage?.tier === "free" || usage?.tier === "paid";
   const projectTextLimit = getProjectTextLimit(usage?.tier ?? "guest");
 
-  const isLoading = activeTab === "tweet" ? isTweetLoading : isNoteLoading;
-  const currentErrorState = activeTab === "tweet" ? tweetErrorState : noteErrorState;
+  const isLoading =
+    activeTab === "tweet" ? isTweetLoading : activeTab === "note" ? isNoteLoading : isAppssLoading;
+  const currentErrorState =
+    activeTab === "tweet" ? tweetErrorState : activeTab === "note" ? noteErrorState : appssErrorState;
   const setCurrentErrorState =
-    activeTab === "tweet" ? setTweetErrorState : setNoteErrorState;
+    activeTab === "tweet"
+      ? setTweetErrorState
+      : activeTab === "note"
+        ? setNoteErrorState
+        : setAppssErrorState;
   const formDisabled = isLoading || isFetchingReadme;
   const isDisabled = formDisabled || projectText.trim() === "";
 
@@ -300,6 +375,8 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
       const params = new URLSearchParams(searchParams?.toString() ?? "");
       if (next === "note") {
         params.set("tab", "note");
+      } else if (next === "appss") {
+        params.set("tab", "appss");
       } else {
         params.delete("tab");
       }
@@ -477,6 +554,64 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
     }
   }
 
+  // AppSS: リポジトリ URL → README → スクショ用コピー生成 → /appss へ受け渡し。
+  // urlOverride はモーダルで選んだリポジトリ URL を直接渡す用（state 反映を待たない）。
+  async function handleAppssGenerate(urlOverride?: string) {
+    const trimmedUrl = (urlOverride ?? githubUrl).trim();
+    clearErrorState();
+    const repo = parseGitHubRepoUrl(trimmedUrl);
+    if (!repo) {
+      setCurrentErrorState({
+        error: "GitHub のリポジトリ URL を入力してください。",
+        errorCode: null,
+        errorField: null,
+      });
+      return;
+    }
+
+    setIsAppssLoading(true);
+    let navigating = false;
+    try {
+      const content = await fetchReadmeContent(trimmedUrl);
+      if (!content) return; // fetchReadmeContent 内でエラー表示済み
+
+      const result = await postJson<AppSSCopyResponse>("/api/appss/copy", {
+        appName: repo.repo,
+        // /api/appss/copy の appDescription 上限（2000字）に合わせて先頭を渡す
+        appDescription: content.slice(0, 2000),
+        features: [],
+        // 追加プロンプト（雰囲気・文体）。空なら送らない
+        tone: appssTone.trim() || undefined,
+      });
+      if (!result.ok) {
+        setApiError(result.error);
+        refreshUsage();
+        return;
+      }
+
+      // テーマをエディタに引き継ぐ。「AIにおまかせ」なら AI 推奨テーマ、
+      // 明示選択ならそれを使う（推奨が無ければ既定にフォールバック）。
+      const themeForHandoff =
+        appssThemeId === APPSS_THEME_AUTO
+          ? result.data.recommendedThemeId ?? DEFAULT_THEME_ID
+          : appssThemeId;
+      // 背景スタイルは常に AI 推奨に従う（未指定なら handoff 側で既定にフォールバック）。
+      writeHandoff(
+        repo.repo,
+        result.data.slides,
+        themeForHandoff,
+        result.data.recommendedBackgroundStyle,
+      );
+      trackActivationOnce();
+      refreshUsage();
+      navigating = true;
+      router.push("/appss");
+    } finally {
+      // 遷移時はオーバーレイを出したままにする（成功時は false にしない）
+      if (!navigating) setIsAppssLoading(false);
+    }
+  }
+
   async function handleQuickGenerate() {
     const trimmedUrl = githubUrl.trim();
     clearErrorState();
@@ -520,12 +655,19 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
           generateLabel: "ポストを生成する",
           loadingTitle: "AIがポストを作成しています",
         }
-      : {
-          quickGenerateLabel: "READMEからnote Draftを作る",
-          quickFetchingLabel: "READMEを読んでいます...",
-          generateLabel: "note Draftを生成する",
-          loadingTitle: "AIがnote Draftを書いています",
-        };
+      : activeTab === "appss"
+        ? {
+            quickGenerateLabel: "READMEからスクショを作る",
+            quickFetchingLabel: "READMEを読んでいます...",
+            generateLabel: "READMEからスクショを作る",
+            loadingTitle: "AIがスクショの見出しを考えています",
+          }
+        : {
+            quickGenerateLabel: "READMEからnote Draftを作る",
+            quickFetchingLabel: "READMEを読んでいます...",
+            generateLabel: "note Draftを生成する",
+            loadingTitle: "AIがnote Draftを書いています",
+          };
 
   const { error, errorCode, errorField } = currentErrorState;
 
@@ -552,7 +694,129 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
 
       <GenerateTabs activeTab={activeTab} onChange={handleTabChange} />
 
-      <GenerateInputs
+      {activeTab === "appss" ? (
+        isLoggedIn ? (
+          <div className="mt-4 bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden">
+            <div className="h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
+            <div className="p-8 space-y-6">
+              <div>
+                <p className="text-sm font-semibold text-white">READMEからスクショの見出しを作る</p>
+                <p className="mt-1 text-xs text-gray-400">
+                  GitHubからリポジトリを選ぶか、URLを入力してください。非公開リポジトリはクレジット購入者向けの機能です。
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-cyan-400/25 bg-cyan-400/10 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button
+                    onClick={handleOpenRepoModal}
+                    disabled={formDisabled}
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-cyan-300/70 px-5 text-sm font-semibold
+                      bg-cyan-300 text-gray-950 shadow-lg shadow-cyan-500/25 transition-all
+                      hover:bg-cyan-200 hover:shadow-cyan-500/40
+                      disabled:cursor-not-allowed disabled:opacity-50 sm:whitespace-nowrap"
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+                    </svg>
+                    GitHubからREADMEを選ぶ
+                  </button>
+                  <input
+                    type="url"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void handleAppssGenerate();
+                      }
+                    }}
+                    placeholder="例：https://github.com/owner/repo"
+                    disabled={formDisabled}
+                    className="w-full flex-1 rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 text-sm text-white placeholder-gray-500 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
+              <AppssOptions
+                tone={appssTone}
+                onToneChange={setAppssTone}
+                themeId={appssThemeId}
+                onThemeChange={setAppssThemeId}
+                disabled={formDisabled}
+              />
+
+              <button
+                onClick={() => void handleAppssGenerate()}
+                disabled={formDisabled || githubUrl.trim() === ""}
+                className="mx-auto flex w-full items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-all
+                  sm:w-1/2 sm:min-w-52
+                  bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400 text-white shadow-lg shadow-cyan-500/20
+                  hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+              >
+                {isFetchingReadme
+                  ? "READMEを読んでいます..."
+                  : isAppssLoading
+                    ? "見出しを生成中..."
+                    : "READMEからスクショを作る"}
+              </button>
+              <p className="text-xs leading-5 text-gray-400">
+                READMEを読んで、App Store用スクショの見出しをAIが作成します。画像はエディタで入れられます（生成に1回分を消費します）。
+              </p>
+            </div>
+          </div>
+        ) : (
+          <section className="mx-auto">
+            <div className="mx-auto flex min-h-14 max-w-2xl items-center rounded-full bg-gray-700/80 px-6 shadow-lg shadow-black/20 ring-1 ring-white/10 transition-shadow focus-within:shadow-xl focus-within:ring-gray-500/80">
+              <input
+                type="url"
+                value={githubUrl}
+                onChange={(e) => setGithubUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void handleAppssGenerate();
+                  }
+                }}
+                placeholder="https://github.com/owner/repo"
+                disabled={formDisabled}
+                className="w-full bg-transparent text-base text-white placeholder-gray-400 outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+
+            <div className="mt-5">
+              <AppssOptions
+                tone={appssTone}
+                onToneChange={setAppssTone}
+                themeId={appssThemeId}
+                onThemeChange={setAppssThemeId}
+                disabled={formDisabled}
+              />
+            </div>
+
+            <div className="mt-7 flex justify-center">
+              <button
+                onClick={() => void handleAppssGenerate()}
+                disabled={formDisabled}
+                className="inline-flex min-h-11 items-center justify-center rounded-lg px-6 text-sm font-semibold
+                  bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400 text-white
+                  shadow-lg shadow-fuchsia-500/20 transition-opacity hover:opacity-90
+                  disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isFetchingReadme
+                  ? "READMEを読んでいます..."
+                  : isAppssLoading
+                    ? "見出しを生成中..."
+                    : "READMEからスクショを作る"}
+              </button>
+            </div>
+            <p className="mx-auto mt-4 max-w-xl text-center text-xs leading-5 text-gray-400">
+              READMEを読んで、App Store用スクショの見出しをAIが作成します。画像はエディタで入れられます（生成に1回分を消費します）。
+            </p>
+          </section>
+        )
+      ) : (
+        <GenerateInputs
         projectText={projectText}
         onProjectTextChange={setProjectText}
         toneMemo={toneMemo}
@@ -588,7 +852,8 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
             />
           ) : undefined
         }
-      />
+        />
+      )}
 
       {error && (
         <div className="mt-6 border border-red-800 bg-red-950/50 rounded-lg px-4 py-3 text-red-300 text-sm space-y-3">
@@ -634,6 +899,10 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         onClose={() => setIsRepoModalOpen(false)}
         onSelect={(htmlUrl) => {
           setGithubUrl(htmlUrl);
+          if (activeTab === "appss") {
+            void handleAppssGenerate(htmlUrl);
+            return;
+          }
           if (!url.trim()) {
             setUrl(htmlUrl);
           }
@@ -641,6 +910,10 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         }}
         onRepoUrlSubmit={(htmlUrl) => {
           setGithubUrl(htmlUrl);
+          if (activeTab === "appss") {
+            void handleAppssGenerate(htmlUrl);
+            return;
+          }
           if (!url.trim()) {
             setUrl(htmlUrl);
           }

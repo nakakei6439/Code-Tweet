@@ -33,6 +33,12 @@ const SLIDES: Slide[] = [
     body: "文字数チェック・推奨投稿時間まで自動で出してくれるので、迷いません。",
     emoji: "🚀",
   },
+  {
+    badge: "AppSS",
+    title: "App Storeのスクショも\nAIで“広告”として作れる",
+    body: "READMEから見出しコピー・配色・レイアウトをAIが提案。自分のアプリ画面を入れて、提出用スクショを一括書き出しできます。",
+    emoji: "📱",
+  },
 ];
 
 export default function OnboardingStep({ forced, onClose }: Props) {

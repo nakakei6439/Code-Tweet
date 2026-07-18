@@ -26,6 +26,9 @@ export default async function Header() {
             <Link href="/about/note" className="transition-colors hover:text-white">
               note Draftとは
             </Link>
+            <Link href="/about/appss" className="transition-colors hover:text-white">
+              AppSSとは
+            </Link>
             <Link href="/pricing" className="transition-colors hover:text-white">
               プラン
             </Link>
