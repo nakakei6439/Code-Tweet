@@ -27,7 +27,7 @@ export default async function Header() {
               note Draftとは
             </Link>
             <Link href="/about/appss" className="transition-colors hover:text-white">
-              AppSSとは
+              App SSとは
             </Link>
             <Link href="/pricing" className="transition-colors hover:text-white">
               プラン

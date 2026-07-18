@@ -257,7 +257,7 @@ function Hero({ activeTab }: { activeTab: GenerateTabKey }) {
       </>
     ) : activeTab === "appss" ? (
       <>
-        App<span className={gradient}>SS</span>
+        App <span className={gradient}>SS</span>
       </>
     ) : (
       <>
@@ -734,7 +734,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                   プロジェクト説明（README） <span className="text-red-400">*</span>
                 </label>
                 <textarea
-                  rows={7}
+                  rows={8}
                   value={projectText}
                   onChange={(e) => {
                     setProjectText(e.target.value);
@@ -742,11 +742,26 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                   }}
                   placeholder="READMEを読み込むと自動で入ります。ここを編集して、伝えたい内容に絞るとコピーの精度が上がります。"
                   disabled={formDisabled}
-                  className="w-full resize-none rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 text-sm text-white placeholder-gray-500 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  className={`w-full resize-none rounded-lg border bg-gray-800/50 px-4 py-3 text-sm text-white placeholder-gray-500 transition-colors focus:border-transparent focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+                    errorField === "projectText"
+                      ? "border-red-500 bg-red-950/20 ring-1 ring-red-500 focus:ring-red-500"
+                      : "border-gray-700 focus:ring-cyan-500"
+                  }`}
                 />
-                <p className="mt-1.5 text-xs text-gray-500">
-                  見出し生成にはこの説明の先頭10,000文字を使います。
-                </p>
+                <div className="mt-1.5 flex items-start justify-between gap-3 text-xs">
+                  <p className={errorField === "projectText" && error ? "font-semibold text-red-300" : "text-gray-400"}>
+                    {errorField === "projectText" && error
+                      ? error
+                      : "README全文、リリースノート、機能説明のどれでも使えます。"}
+                  </p>
+                  <span
+                    className={`shrink-0 tabular-nums ${
+                      projectText.length > projectTextLimit ? "font-semibold text-red-300" : "text-gray-500"
+                    }`}
+                  >
+                    {formatCount(projectText.length)} / {formatCount(projectTextLimit)}
+                  </span>
+                </div>
               </div>
 
               <div>

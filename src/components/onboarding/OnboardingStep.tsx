@@ -34,7 +34,7 @@ const SLIDES: Slide[] = [
     emoji: "🚀",
   },
   {
-    badge: "AppSS",
+    badge: "App SS",
     title: "App Storeのスクショも\nAIで“広告”として作れる",
     body: "READMEから見出しコピー・配色・レイアウトをAIが提案。自分のアプリ画面を入れて、提出用スクショを一括書き出しできます。",
     emoji: "📱",

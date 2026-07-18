@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 const sections = [
   {
     title: "1. サービスの内容",
-    body: "Code Tweet は、GitHub リポジトリの README やユーザーが入力した説明文をもとに、X 向け投稿案を生成する下書き支援ツールです。また、App Store 提出用スクリーンショット画像を作成できるエディタ機能（AppSS）を提供します。生成結果は投稿・提出前に必ずユーザー自身で確認してください。",
+    body: "Code Tweet は、GitHub リポジトリの README やユーザーが入力した説明文をもとに、X 向け投稿案を生成する下書き支援ツールです。また、App Store 提出用スクリーンショット画像を作成できるエディタ機能（App SS）を提供します。生成結果は投稿・提出前に必ずユーザー自身で確認してください。",
   },
   {
     title: "2. アカウントと認証",
