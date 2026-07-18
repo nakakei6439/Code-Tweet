@@ -46,7 +46,7 @@ export default function GenerateTabs({ activeTab, onChange }: Props) {
           onClick={() => onChange("appss")}
           className={`px-5 py-2 text-sm font-semibold rounded-full transition-all cursor-pointer ${pillClass(activeTab === "appss")}`}
         >
-          AppSS
+          App SS
         </button>
       </div>
     </div>

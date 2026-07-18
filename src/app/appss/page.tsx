@@ -28,7 +28,7 @@ const mincho = Noto_Serif_JP({
 });
 
 export const metadata: Metadata = {
-  title: "AppSS — App Store スクショ作成",
+  title: "App SS — App Store スクショ作成",
   description:
     "アプリのスクリーンショットから App Store 提出用のマーケティング画像をブラウザだけで作成。AIキャッチコピー生成付き。画像はサーバーに送信されません。",
 };

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "AppSS とは",
+  title: "App SS とは",
   description:
     "GitHub の README から、App Store 提出用スクリーンショット（＝ダウンロードを左右する“広告”）を AI と一緒に作成。日本語コピー生成・テーマ/背景のAIおまかせ・強調ワード・全サイズ一括書き出しまで、ブラウザだけで完結します。",
 };
@@ -53,9 +53,9 @@ const features = [
 ] as const;
 
 const demos = [
-  { src: "/appss/demo/01.jpg", alt: "AppSS 出力サンプル：ヒーロー（続ける力が手に入る）" },
-  { src: "/appss/demo/02.jpg", alt: "AppSS 出力サンプル：機能（ワンタップで今日も完了）" },
-  { src: "/appss/demo/03.jpg", alt: "AppSS 出力サンプル：成長（積み重ねがひと目でわかる）" },
+  { src: "/appss/demo/01.jpg", alt: "App SS 出力サンプル：ヒーロー（続ける力が手に入る）" },
+  { src: "/appss/demo/02.jpg", alt: "App SS 出力サンプル：機能（ワンタップで今日も完了）" },
+  { src: "/appss/demo/03.jpg", alt: "App SS 出力サンプル：成長（積み重ねがひと目でわかる）" },
 ] as const;
 
 export default function AppSSAboutPage() {
@@ -63,7 +63,7 @@ export default function AppSSAboutPage() {
     <main className="min-h-screen bg-gray-950 px-4 py-20 text-gray-200">
       <article className="mx-auto max-w-2xl">
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-400">
-          App
+          App{" "}
           <span className="bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-yellow-200 bg-clip-text text-transparent">
             SS
           </span>
@@ -110,7 +110,7 @@ export default function AppSSAboutPage() {
             App Store Connect にアップロードするスクリーンショットは、単なるアプリの画面写真ではありません。ストアを訪れた見込みユーザーが「ダウンロードするかどうか」を数秒で判断する、最重要のマーケティング素材＝<span className="font-semibold text-white">広告</span>です。
           </p>
           <p className="mt-3 text-sm leading-7 text-gray-300">
-            だからこそ、機能を並べるのではなく「ユーザーが得られる価値」を、伝わる言葉と映えるデザインでアピールする必要があります。<span className="font-semibold text-white">AppSS は、その“広告”をAIと一緒に作り込むためのツール</span>です。個人開発者でも、上位アプリのような訴求力あるスクショを短時間で用意できます。
+            だからこそ、機能を並べるのではなく「ユーザーが得られる価値」を、伝わる言葉と映えるデザインでアピールする必要があります。<span className="font-semibold text-white">App SS は、その“広告”をAIと一緒に作り込むためのツール</span>です。個人開発者でも、上位アプリのような訴求力あるスクショを短時間で用意できます。
           </p>
         </section>
 
@@ -186,7 +186,7 @@ export default function AppSSAboutPage() {
             参考元・クレジット
           </h2>
           <p className="mt-3 text-sm leading-7 text-gray-400">
-            AppSS のエディタ設計・書き出しの仕組みは、MIT ライセンスで公開されている{" "}
+            App SS のエディタ設計・書き出しの仕組みは、MIT ライセンスで公開されている{" "}
             <a
               href="https://github.com/ParthJadhav/app-store-screenshots"
               target="_blank"
