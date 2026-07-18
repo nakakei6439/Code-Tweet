@@ -54,6 +54,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
 
   const theme = themeById(state.themeId);
   const fontFamily = FONTS[state.fontId].cssVar;
+  const backgroundStyle = state.backgroundStyle;
   const slides = state.slides;
   // activeSlideId が削除済みスライドを指していても先頭へフォールバックする（補正 effect は不要）
   const activeSlide = slides.find((s) => s.id === activeSlideId) || slides[0] || null;
@@ -400,6 +401,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
         appName={state.appName}
         themeId={state.themeId}
         fontId={state.fontId}
+        backgroundStyle={backgroundStyle}
         savedAt={savedAt}
         saveError={saveError}
         exporting={exporting}
@@ -413,6 +415,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
           }));
         }}
         onFontChange={(id: FontId) => setState((prev) => ({ ...prev, fontId: id }))}
+        onBackgroundStyleChange={(id) => setState((prev) => ({ ...prev, backgroundStyle: id }))}
         onExport={() => void exportAll()}
         onReset={() => {
           if (window.confirm("編集内容を破棄して初期状態に戻しますか？")) {
@@ -451,6 +454,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
           slides={slides}
           activeSlideId={activeSlide?.id ?? null}
           theme={theme}
+          backgroundStyle={backgroundStyle}
           fontFamily={fontFamily}
           onSelect={(id) => {
             setActiveSlideId(id);
@@ -467,6 +471,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
             slides={slides}
             activeSlideId={activeSlide?.id ?? null}
             theme={theme}
+            backgroundStyle={backgroundStyle}
             fontFamily={fontFamily}
             selectedElement={selectedElement}
             onActiveSlideChange={setActiveSlideId}
@@ -521,7 +526,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
             pointerEvents: "none",
           }}
         >
-          <SlideCanvas slide={exportSlide} theme={theme} hideEmpty />
+          <SlideCanvas slide={exportSlide} theme={theme} backgroundStyle={backgroundStyle} hideEmpty />
         </div>
       )}
     </div>

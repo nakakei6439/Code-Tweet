@@ -77,6 +77,21 @@ export function Inspector({
           />
           背景を反転（ダーク）
         </label>
+        <div className="mt-3">
+          <label className="mb-1 block text-[11px] text-gray-500">
+            強調ワード <span className="text-gray-600">（見出し内の語句をアクセント色に）</span>
+          </label>
+          <input
+            type="text"
+            value={slide.emphasis ?? ""}
+            onChange={(e) => onUpdateSlide({ emphasis: e.target.value || undefined })}
+            placeholder="例：ラク"
+            className="w-full rounded-md border border-gray-700 bg-gray-900 px-2 py-1.5 text-sm text-gray-100 placeholder:text-gray-600"
+          />
+          {slide.emphasis && !slide.headline.includes(slide.emphasis) && (
+            <p className="mt-1 text-[10px] text-amber-400">見出しに含まれない語句は色が付きません</p>
+          )}
+        </div>
       </section>
 
       {slide.layout !== "no-device" && (

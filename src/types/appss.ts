@@ -13,12 +13,16 @@ export interface AppSSCopySlideIdea {
   label: string;
   headline: string;
   layoutHint: SlideLayout;
+  // 見出し内で強調する語句（headline の部分文字列）
+  emphasis?: string;
 }
 
 export interface AppSSCopyResponse {
   slides: AppSSCopySlideIdea[];
   // AI が選んだ推奨テーマ（「AIにおまかせ」選択時に採用）
   recommendedThemeId?: string;
+  // AI が選んだ推奨背景スタイル
+  recommendedBackgroundStyle?: string;
 }
 
 export type AppSSCopyErrorField = "appName" | "appDescription" | "features" | "tone";

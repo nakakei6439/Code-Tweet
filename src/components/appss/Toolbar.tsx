@@ -1,19 +1,21 @@
 "use client";
 // AppSS — 上部ツールバー：アプリ名・テーマ・フォント・保存状態・書き出し。
 import * as React from "react";
-import type { FontId } from "@/lib/appss/types";
-import { FONTS, THEMES } from "@/lib/appss/constants";
+import type { BackgroundStyle, FontId } from "@/lib/appss/types";
+import { BACKGROUND_STYLES, FONTS, THEMES } from "@/lib/appss/constants";
 
 type Props = {
   appName: string;
   themeId: string;
   fontId: FontId;
+  backgroundStyle: BackgroundStyle;
   savedAt: number | null;
   saveError: string | null;
   exporting: string | null;
   onAppNameChange: (v: string) => void;
   onThemeChange: (id: string) => void;
   onFontChange: (id: FontId) => void;
+  onBackgroundStyleChange: (id: BackgroundStyle) => void;
   onExport: () => void;
   onReset: () => void;
   onExportProject: () => void;
@@ -26,12 +28,14 @@ export function Toolbar({
   appName,
   themeId,
   fontId,
+  backgroundStyle,
   savedAt,
   saveError,
   exporting,
   onAppNameChange,
   onThemeChange,
   onFontChange,
+  onBackgroundStyleChange,
   onExport,
   onReset,
   onExportProject,
@@ -76,6 +80,21 @@ export function Toolbar({
           {(Object.keys(FONTS) as FontId[]).map((id) => (
             <option key={id} value={id}>
               {FONTS[id].name}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="flex items-center gap-1.5 text-xs text-gray-400">
+        背景
+        <select
+          value={backgroundStyle}
+          onChange={(e) => onBackgroundStyleChange(e.target.value as BackgroundStyle)}
+          className="rounded-md border border-gray-700 bg-gray-900 px-2 py-1.5 text-sm text-gray-100"
+        >
+          {BACKGROUND_STYLES.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
             </option>
           ))}
         </select>

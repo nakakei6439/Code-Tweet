@@ -13,10 +13,14 @@ export function writeHandoff(
   appName: string,
   ideas: AppSSCopySlideIdea[],
   themeId?: string,
+  backgroundStyle?: string,
 ): void {
   if (typeof window === "undefined") return;
   try {
-    window.sessionStorage.setItem(HANDOFF_KEY, JSON.stringify({ appName, ideas, themeId }));
+    window.sessionStorage.setItem(
+      HANDOFF_KEY,
+      JSON.stringify({ appName, ideas, themeId, backgroundStyle }),
+    );
   } catch {
     /* sessionStorage 不可（プライベートブラウズ等）は握りつぶす */
   }
@@ -34,10 +38,13 @@ export function consumeHandoff(): AppSSProject | null {
       appName?: string;
       ideas?: AppSSCopySlideIdea[];
       themeId?: string;
+      backgroundStyle?: string;
     };
     if (!Array.isArray(parsed.ideas) || parsed.ideas.length === 0) return null;
     // projectFromCopy の出力も migrate 経路に通して不正値をサニタイズする
-    return mergeWithDefaults(projectFromCopy(parsed.appName ?? "", parsed.ideas, parsed.themeId));
+    return mergeWithDefaults(
+      projectFromCopy(parsed.appName ?? "", parsed.ideas, parsed.themeId, parsed.backgroundStyle),
+    );
   } catch {
     return null;
   }

@@ -1,7 +1,7 @@
 "use client";
 // AppSS — スライド一覧サイドバー（サムネ・選択・追加/複製/削除・上下並べ替え）。
 import * as React from "react";
-import type { AppSSSlide, Theme } from "@/lib/appss/types";
+import type { AppSSSlide, BackgroundStyle, Theme } from "@/lib/appss/types";
 import { CANVAS } from "@/lib/appss/constants";
 import { SlideCanvas } from "./SlideCanvas";
 
@@ -12,6 +12,7 @@ type Props = {
   slides: AppSSSlide[];
   activeSlideId: string | null;
   theme: Theme;
+  backgroundStyle: BackgroundStyle;
   fontFamily: string;
   onSelect: (id: string) => void;
   onAdd: () => void;
@@ -24,6 +25,7 @@ export function Sidebar({
   slides,
   activeSlideId,
   theme,
+  backgroundStyle,
   fontFamily,
   onSelect,
   onAdd,
@@ -69,7 +71,7 @@ export function Sidebar({
                     fontFamily,
                   }}
                 >
-                  <SlideCanvas slide={slide} theme={theme} />
+                  <SlideCanvas slide={slide} theme={theme} backgroundStyle={backgroundStyle} />
                 </div>
                 <span className="absolute left-1 top-1 rounded bg-gray-950/80 px-1 text-[10px] text-gray-300">
                   {index + 1}

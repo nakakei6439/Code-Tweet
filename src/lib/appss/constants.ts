@@ -1,7 +1,7 @@
 // AppSS — キャンバス寸法・書き出しサイズ・ベゼル座標・テーマ定義。
 // Based on MIT-licensed https://github.com/ParthJadhav/app-store-screenshots
 
-import type { FontId, SlideLayout, Theme } from "./types";
+import type { BackgroundStyle, FontId, SlideLayout, Theme } from "./types";
 
 // 設計キャンバス = App Store 最大要求解像度（iPhone 6.9インチ）
 export const CANVAS = { w: 1320, h: 2868 };
@@ -109,6 +109,21 @@ export function themeById(themeId: string | undefined): Theme {
 
 export const STORAGE_KEY = "code-tweet:appss:project:v1";
 export const PROJECT_SCHEMA_VERSION = 1;
+
+// ---------- 背景スタイル ----------
+export const DEFAULT_BACKGROUND_STYLE: BackgroundStyle = "soft";
+
+export const BACKGROUND_STYLES: { id: BackgroundStyle; name: string; vibe: string }[] = [
+  { id: "soft", name: "ソフト光彩", vibe: "やわらかい光のにじみ。万能・親しみ" },
+  { id: "plain", name: "無地グラデ", vibe: "装飾なしの上品なグラデ。ミニマル/ビジネス" },
+  { id: "grid", name: "ドットグリッド", vibe: "細かなドット格子。テック/ツール/整然" },
+  { id: "spotlight", name: "スポットライト", vibe: "上部からの光。プロダクトを主役に演出" },
+  { id: "stripes", name: "斜めストライプ", vibe: "動きのある斜め帯。ポップ/エンタメ/元気" },
+];
+
+export function isBackgroundStyle(v: unknown): v is BackgroundStyle {
+  return BACKGROUND_STYLES.some((s) => s.id === v);
+}
 
 export const LAYOUT_LABEL: Record<SlideLayout, string> = {
   hero: "ヒーロー",

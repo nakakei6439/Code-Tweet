@@ -1,7 +1,14 @@
 "use client";
 // AppSS — 中央プレビュー。実寸キャンバスを CSS scale で縮小し、デッキ全体を横スクロールで見せる。
 import * as React from "react";
-import type { AppSSSlide, ElementId, ElementTransform, SelectedElement, Theme } from "@/lib/appss/types";
+import type {
+  AppSSSlide,
+  BackgroundStyle,
+  ElementId,
+  ElementTransform,
+  SelectedElement,
+  Theme,
+} from "@/lib/appss/types";
 import { CANVAS, LAYOUT_LABEL } from "@/lib/appss/constants";
 import { DeckStrip } from "./SlideCanvas";
 
@@ -9,6 +16,7 @@ type Props = {
   slides: AppSSSlide[];
   activeSlideId: string | null;
   theme: Theme;
+  backgroundStyle: BackgroundStyle;
   fontFamily: string;
   selectedElement: SelectedElement | null;
   onActiveSlideChange: (id: string) => void;
@@ -23,6 +31,7 @@ export function PreviewStage({
   slides,
   activeSlideId,
   theme,
+  backgroundStyle,
   fontFamily,
   selectedElement,
   onActiveSlideChange,
@@ -107,6 +116,7 @@ export function PreviewStage({
             <DeckStrip
               slides={slides}
               theme={theme}
+              backgroundStyle={backgroundStyle}
               editable
               previewScale={scale}
               selectedElement={selectedElement}

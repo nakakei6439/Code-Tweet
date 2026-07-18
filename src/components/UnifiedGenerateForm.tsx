@@ -595,7 +595,13 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         appssThemeId === APPSS_THEME_AUTO
           ? result.data.recommendedThemeId ?? DEFAULT_THEME_ID
           : appssThemeId;
-      writeHandoff(repo.repo, result.data.slides, themeForHandoff);
+      // 背景スタイルは常に AI 推奨に従う（未指定なら handoff 側で既定にフォールバック）。
+      writeHandoff(
+        repo.repo,
+        result.data.slides,
+        themeForHandoff,
+        result.data.recommendedBackgroundStyle,
+      );
       trackActivationOnce();
       refreshUsage();
       navigating = true;

@@ -170,7 +170,7 @@ export async function POST(request: Request): Promise<Response> {
   );
 
   try {
-    const { slides, recommendedThemeId } = await generateAppSSCopy(
+    const { slides, recommendedThemeId, recommendedBackgroundStyle } = await generateAppSSCopy(
       body.appName.trim(),
       body.appDescription.trim(),
       (body.features ?? []).map((f) => f.trim()).filter(Boolean),
@@ -186,7 +186,10 @@ export async function POST(request: Request): Promise<Response> {
     } else if (ipHash) {
       await recordGuestUsage(ipHash);
     }
-    return Response.json({ slides, recommendedThemeId } satisfies AppSSCopyResponse, { status: 200 });
+    return Response.json(
+      { slides, recommendedThemeId, recommendedBackgroundStyle } satisfies AppSSCopyResponse,
+      { status: 200 },
+    );
   } catch (err) {
     const { message, status } = mapGeminiError(err);
     return Response.json({ error: message } satisfies AppSSCopyErrorResponse, { status });

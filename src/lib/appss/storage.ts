@@ -3,7 +3,7 @@
 // Based on MIT-licensed https://github.com/ParthJadhav/app-store-screenshots
 // 画像本体は IndexedDB(imageStore.ts) に置き、ここには "idb:<id>" 参照のみ保存する。
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { PROJECT_SCHEMA_VERSION, STORAGE_KEY, THEMES } from "./constants";
+import { PROJECT_SCHEMA_VERSION, STORAGE_KEY, THEMES, isBackgroundStyle } from "./constants";
 import { makeDefaultProject, nid } from "./defaults";
 import { consumeHandoff } from "./handoff";
 import type {
@@ -92,6 +92,7 @@ export function migrateSlide(value: unknown): AppSSSlide | null {
     layout: LAYOUTS.includes(raw.layout as SlideLayout) ? (raw.layout as SlideLayout) : "device-bottom",
     label: typeof raw.label === "string" ? raw.label : "",
     headline: typeof raw.headline === "string" ? raw.headline : "",
+    ...(typeof raw.emphasis === "string" && raw.emphasis.trim() ? { emphasis: raw.emphasis } : {}),
     screenshotRef: cleanScreenshotRef(raw.screenshotRef),
     ...(raw.screenshotSecondaryRef !== undefined
       ? { screenshotSecondaryRef: cleanScreenshotRef(raw.screenshotSecondaryRef) }
@@ -114,6 +115,9 @@ export function mergeWithDefaults(parsed: unknown): AppSSProject {
     appName: typeof raw.appName === "string" && raw.appName.trim() ? raw.appName : defaults.appName,
     themeId: typeof raw.themeId === "string" && THEMES[raw.themeId] ? raw.themeId : defaults.themeId,
     fontId: FONT_IDS.includes(raw.fontId as FontId) ? (raw.fontId as FontId) : defaults.fontId,
+    backgroundStyle: isBackgroundStyle(raw.backgroundStyle)
+      ? raw.backgroundStyle
+      : defaults.backgroundStyle,
     slides: slides.length > 0 ? slides : defaults.slides,
   };
 }

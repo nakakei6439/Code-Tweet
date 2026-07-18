@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { GEMINI_MODEL, GEMINI_THINKING_OFF, generateContentWithRetry } from "./gemini";
-import { THEMES } from "./appss/constants";
+import { BACKGROUND_STYLES, THEMES, isBackgroundStyle } from "./appss/constants";
 import type { AppSSCopySlideIdea } from "@/types/appss";
 import type { SlideLayout } from "./appss/types";
 
@@ -55,19 +55,31 @@ ${slideCount}枚目: 締め — 信頼感や行動喚起（例：今すぐ無料
 このアプリの内容${tone ? "と上記トーン指示" : ""}に最も合う配色テーマを次から1つ選ぶ：
 ${THEME_GUIDE.map((t) => `- ${t.id}: ${t.vibe}`).join("\n")}
 
-【出力形式】
-説明・前置き・空行は不要。まず1行目に選んだテーマを「THEME: <id>」形式で出力し、続けて ${slideCount} ブロック出力する：
+【背景スタイルの選択】
+このアプリの雰囲気に最も合う背景装飾を次から1つ選ぶ：
+${BACKGROUND_STYLES.map((s) => `- ${s.id}: ${s.vibe}`).join("\n")}
 
-THEME: <上記から選んだ id>
+【強調ワード】
+各スライドで、HEADLINE の中で最も訴求したい語句を1つだけ EMPHASIS に書く。
+- EMPHASIS は HEADLINE に含まれる連続した部分文字列にする（改行「／」をまたがない、1〜6文字程度）
+- アプリの価値が一番伝わるキーワードを選ぶ（例: HEADLINE「毎日が／ラクに」→ EMPHASIS: ラク）
+
+【出力形式】
+説明・前置き・空行は不要。まず1行目にテーマ、2行目に背景を「THEME: <id>」「BG: <id>」形式で出力し、続けて ${slideCount} ブロック出力する：
+
+THEME: <上記テーマから選んだ id>
+BG: <上記背景から選んだ id>
 SLIDE: 1
 LAYOUT: hero
 LABEL: [ラベル]
 HEADLINE: [1行目]／[2行目]
+EMPHASIS: [強調ワード]
 
 SLIDE: 2
 LAYOUT: device-bottom
 LABEL: [ラベル]
 HEADLINE: [1行目]／[2行目]
+EMPHASIS: [強調ワード]
 
 （以下同様に SLIDE: ${slideCount} まで）`;
 }
@@ -79,6 +91,13 @@ export function parseRecommendedTheme(text: string): string | undefined {
   return id && THEMES[id] ? id : undefined;
 }
 
+// 出力から推奨背景スタイル id を取り出す。未検出/不正なら undefined。
+export function parseRecommendedBackground(text: string): string | undefined {
+  const m = text.match(/BG:\s*([a-z-]+)/i);
+  const id = m?.[1]?.toLowerCase();
+  return id && isBackgroundStyle(id) ? id : undefined;
+}
+
 export function parseAppSSCopy(text: string, slideCount: number): AppSSCopySlideIdea[] {
   const blocks = text.split(/(?:^|\n)\s*SLIDE:\s*\d+\s*/).filter((b) => b.trim());
   const slides: AppSSCopySlideIdea[] = [];
@@ -87,6 +106,7 @@ export function parseAppSSCopy(text: string, slideCount: number): AppSSCopySlide
     const layoutMatch = block.match(/LAYOUT:\s*([a-z-]+)/i);
     const labelMatch = block.match(/LABEL:\s*([^\n]+)/);
     const headlineMatch = block.match(/HEADLINE:\s*([^\n]+)/);
+    const emphasisMatch = block.match(/EMPHASIS:\s*([^\n]+)/);
     if (!headlineMatch) continue;
 
     const layoutRaw = (layoutMatch?.[1] || "").toLowerCase() as SlideLayout;
@@ -102,7 +122,11 @@ export function parseAppSSCopy(text: string, slideCount: number): AppSSCopySlide
       .join("\n");
     if (!headline) continue;
 
-    slides.push({ label, headline, layoutHint });
+    // 強調ワードは headline の部分文字列である場合のみ採用（一致しなければ無視）
+    const emphasisRaw = (emphasisMatch?.[1] || "").trim().replace(/^[[［]|[\]］]$/g, "");
+    const emphasis = emphasisRaw && headline.includes(emphasisRaw) ? emphasisRaw : undefined;
+
+    slides.push({ label, headline, layoutHint, ...(emphasis ? { emphasis } : {}) });
   }
 
   if (slides.length < slideCount) {
@@ -114,6 +138,7 @@ export function parseAppSSCopy(text: string, slideCount: number): AppSSCopySlide
 export type AppSSCopyResult = {
   slides: AppSSCopySlideIdea[];
   recommendedThemeId?: string;
+  recommendedBackgroundStyle?: string;
 };
 
 export async function generateAppSSCopy(
@@ -148,5 +173,6 @@ export async function generateAppSSCopy(
   return {
     slides: parseAppSSCopy(text, slideCount),
     recommendedThemeId: parseRecommendedTheme(text),
+    recommendedBackgroundStyle: parseRecommendedBackground(text),
   };
 }

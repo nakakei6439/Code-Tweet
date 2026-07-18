@@ -6,6 +6,7 @@ import * as React from "react";
 import { Rnd } from "react-rnd";
 import type {
   AppSSSlide,
+  BackgroundStyle,
   BuiltInElementId,
   ElementId,
   ElementTransform,
@@ -13,7 +14,13 @@ import type {
   TextElement,
   Theme,
 } from "@/lib/appss/types";
-import { BEZEL_RATIO, CANVAS, phoneW, phoneWSmall } from "@/lib/appss/constants";
+import {
+  BEZEL_RATIO,
+  CANVAS,
+  DEFAULT_BACKGROUND_STYLE,
+  phoneW,
+  phoneWSmall,
+} from "@/lib/appss/constants";
 import { toTextElementId } from "@/lib/appss/elements";
 import { Phone } from "./DeviceFrame";
 
@@ -36,6 +43,25 @@ type DeckEditHandlers = {
 
 // ---------- インライン編集テキスト ----------
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// 強調ワードをアクセント色の span で囲んだ HTML を生成（一致しなければプレーン）。
+// value は自前で escape するので XSS の心配はない。
+function emphasisHtml(value: string, emphasis: string | undefined, color: string): string {
+  if (!emphasis) return escapeHtml(value);
+  const idx = value.indexOf(emphasis);
+  if (idx < 0) return escapeHtml(value);
+  return (
+    escapeHtml(value.slice(0, idx)) +
+    `<span style="color:${color}">` +
+    escapeHtml(value.slice(idx, idx + emphasis.length)) +
+    "</span>" +
+    escapeHtml(value.slice(idx + emphasis.length))
+  );
+}
+
 function EditableText({
   value,
   editable,
@@ -44,6 +70,8 @@ function EditableText({
   multiline = false,
   placeholder,
   onFocus,
+  emphasis,
+  emphasisColor,
 }: {
   value: string;
   editable?: boolean;
@@ -52,16 +80,31 @@ function EditableText({
   multiline?: boolean;
   placeholder?: string;
   onFocus?: () => void;
+  // 指定時は value 内の一致部分をアクセント色で描画（非フォーカス時のみ）。
+  emphasis?: string;
+  emphasisColor?: string;
 }) {
   const ref = React.useRef<HTMLDivElement>(null);
+
+  // フォーカス外の表示を同期する。emphasis 指定時は色付き HTML、通常は textContent。
+  const syncDisplay = React.useCallback(
+    (el: HTMLDivElement) => {
+      const incoming = value || "";
+      if (emphasis && emphasisColor) {
+        const html = emphasisHtml(incoming, emphasis, emphasisColor);
+        if (el.innerHTML !== html) el.innerHTML = html;
+      } else if (el.textContent !== incoming) {
+        el.textContent = incoming;
+      }
+    },
+    [value, emphasis, emphasisColor],
+  );
+
   React.useEffect(() => {
     const el = ref.current;
-    if (!el) return;
-    const incoming = value || "";
-    if (el.textContent !== incoming && document.activeElement !== el) {
-      el.textContent = incoming;
-    }
-  }, [value]);
+    if (!el || document.activeElement === el) return;
+    syncDisplay(el);
+  }, [syncDisplay]);
 
   const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
     if (!onChange) return;
@@ -76,7 +119,17 @@ function EditableText({
       suppressContentEditableWarning
       data-placeholder={placeholder}
       onInput={handleInput}
-      onFocus={() => onFocus?.()}
+      onFocus={(e) => {
+        // 編集開始時は色付き span を外してプレーンにする（キャレット安定のため）
+        if (emphasis && emphasisColor && e.currentTarget.textContent !== value) {
+          e.currentTarget.textContent = value || "";
+        }
+        onFocus?.();
+      }}
+      onBlur={(e) => {
+        // 編集終了時に色付き表示へ戻す
+        if (emphasis && emphasisColor) syncDisplay(e.currentTarget);
+      }}
       onKeyDown={(e) => {
         if (!multiline && e.key === "Enter") {
           e.preventDefault();
@@ -153,6 +206,8 @@ function Caption({
         onChange={edit?.onHeadlineChange}
         onFocus={onFocus}
         placeholder="見出しを入力"
+        emphasis={slide.emphasis}
+        emphasisColor={theme.accent}
         style={{
           fontSize: unit * 0.088,
           fontWeight: 900,
@@ -219,7 +274,78 @@ function Blob({
   );
 }
 
-function SlideBackground({ slide, theme }: { slide: AppSSSlide; theme: Theme }) {
+// 背景装飾。全て CSS グラデ/影のみ（filter:blur 不使用）で export 安全。
+function BackgroundDecor({
+  style,
+  accent,
+  inverted,
+}: {
+  style: BackgroundStyle;
+  accent: string;
+  inverted?: boolean;
+}) {
+  switch (style) {
+    case "plain":
+      return null;
+    case "grid":
+      return (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            opacity: inverted ? 0.18 : 0.12,
+            backgroundImage: `radial-gradient(${accent} 1.5px, transparent 1.6px)`,
+            backgroundSize: "48px 48px",
+            maskImage: "radial-gradient(120% 90% at 50% 20%, #000 55%, transparent 100%)",
+            WebkitMaskImage: "radial-gradient(120% 90% at 50% 20%, #000 55%, transparent 100%)",
+          }}
+        />
+      );
+    case "spotlight":
+      return (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            background: `radial-gradient(80% 55% at 50% 8%, ${accent} 0%, transparent 60%)`,
+            opacity: inverted ? 0.4 : 0.5,
+          }}
+        />
+      );
+    case "stripes":
+      return (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            opacity: inverted ? 0.16 : 0.12,
+            background: `repeating-linear-gradient(-45deg, ${accent} 0 3%, transparent 3% 9%)`,
+          }}
+        />
+      );
+    case "soft":
+    default:
+      return (
+        <>
+          <Blob color={accent} x={-15} y={-10} size={70} opacity={inverted ? 0.35 : 0.42} />
+          <Blob color={accent} x={65} y={70} size={60} opacity={inverted ? 0.28 : 0.35} />
+        </>
+      );
+  }
+}
+
+function SlideBackground({
+  slide,
+  theme,
+  backgroundStyle,
+}: {
+  slide: AppSSSlide;
+  theme: Theme;
+  backgroundStyle: BackgroundStyle;
+}) {
   const inverted = !!slide.inverted;
   return (
     <div
@@ -231,8 +357,7 @@ function SlideBackground({ slide, theme }: { slide: AppSSSlide; theme: Theme }) 
         color: inverted ? theme.fgAlt : theme.fg,
       }}
     >
-      <Blob color={theme.accent} x={-15} y={-10} size={70} opacity={inverted ? 0.35 : 0.42} />
-      <Blob color={theme.accent} x={65} y={70} size={60} opacity={inverted ? 0.28 : 0.35} />
+      <BackgroundDecor style={backgroundStyle} accent={theme.accent} inverted={inverted} />
     </div>
   );
 }
@@ -361,6 +486,7 @@ function defaultElementZ(id: BuiltInElementId): number {
 type Props = {
   slide: AppSSSlide;
   theme: Theme;
+  backgroundStyle?: BackgroundStyle;
   editable?: boolean;
   edit?: EditHandlers;
   selectedElementId?: ElementId | null;
@@ -372,6 +498,7 @@ type Props = {
 export function SlideCanvas({
   slide,
   theme,
+  backgroundStyle = DEFAULT_BACKGROUND_STYLE,
   editable,
   edit,
   selectedElementId = null,
@@ -389,7 +516,7 @@ export function SlideCanvas({
       onMouseDown={handleBackgroundMouseDown}
       style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}
     >
-      <SlideBackground slide={slide} theme={theme} />
+      <SlideBackground slide={slide} theme={theme} backgroundStyle={backgroundStyle} />
       <SlideElements
         slide={slide}
         theme={theme}
@@ -408,6 +535,7 @@ export function SlideCanvas({
 export function DeckStrip({
   slides,
   theme,
+  backgroundStyle = DEFAULT_BACKGROUND_STYLE,
   editable,
   edit,
   selectedElement = null,
@@ -418,6 +546,7 @@ export function DeckStrip({
 }: {
   slides: AppSSSlide[];
   theme: Theme;
+  backgroundStyle?: BackgroundStyle;
   editable?: boolean;
   edit?: DeckEditHandlers;
   selectedElement?: SelectedElement | null;
@@ -465,7 +594,7 @@ export function DeckStrip({
               overflow: "hidden",
             }}
           >
-            <SlideBackground slide={slide} theme={theme} />
+            <SlideBackground slide={slide} theme={theme} backgroundStyle={backgroundStyle} />
             <SlideElements
               slide={slide}
               theme={theme}

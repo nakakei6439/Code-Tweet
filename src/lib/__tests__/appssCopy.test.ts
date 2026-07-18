@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildAppSSCopyPrompt, parseAppSSCopy, parseRecommendedTheme } from "../geminiAppSS";
+import {
+  buildAppSSCopyPrompt,
+  parseAppSSCopy,
+  parseRecommendedBackground,
+  parseRecommendedTheme,
+} from "../geminiAppSS";
 
 const SAMPLE = `SLIDE: 1
 LAYOUT: hero
@@ -35,6 +40,15 @@ describe("parseAppSSCopy", () => {
     expect(slides[0].layoutHint).toBe("device-bottom");
   });
 
+  it("EMPHASIS が headline の部分文字列なら採用、なければ無視", () => {
+    const ok = parseAppSSCopy(`SLIDE: 1\nLAYOUT: hero\nLABEL: a\nHEADLINE: 毎日が／ラクに\nEMPHASIS: ラク`, 1);
+    expect(ok[0].emphasis).toBe("ラク");
+    const miss = parseAppSSCopy(`SLIDE: 1\nLAYOUT: hero\nLABEL: a\nHEADLINE: 毎日が／ラクに\nEMPHASIS: 存在しない`, 1);
+    expect(miss[0].emphasis).toBeUndefined();
+    const none = parseAppSSCopy(`SLIDE: 1\nLAYOUT: hero\nLABEL: a\nHEADLINE: 毎日が`, 1);
+    expect(none[0].emphasis).toBeUndefined();
+  });
+
   it("コードフェンスや前置きが混ざっても HEADLINE を回収する", () => {
     const text = "以下が生成結果です。\n```\n" + SAMPLE + "\n```";
     const slides = parseAppSSCopy(text, 3);
@@ -62,6 +76,18 @@ describe("parseRecommendedTheme", () => {
     expect(parseRecommendedTheme("THEME: unknown-theme")).toBeUndefined();
     expect(parseRecommendedTheme(SAMPLE)).toBeUndefined();
     expect(parseRecommendedTheme("")).toBeUndefined();
+  });
+});
+
+describe("parseRecommendedBackground", () => {
+  it("BG 行から有効な背景スタイル id を取り出す", () => {
+    expect(parseRecommendedBackground("BG: grid\n" + SAMPLE)).toBe("grid");
+    expect(parseRecommendedBackground("bg: spotlight")).toBe("spotlight");
+  });
+
+  it("不明な背景 id / 未指定は undefined", () => {
+    expect(parseRecommendedBackground("BG: rainbow")).toBeUndefined();
+    expect(parseRecommendedBackground(SAMPLE)).toBeUndefined();
   });
 });
 
