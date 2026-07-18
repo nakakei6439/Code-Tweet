@@ -107,6 +107,89 @@ export function themeById(themeId: string | undefined): Theme {
   return THEMES[themeId || ""] || THEMES[DEFAULT_THEME_ID];
 }
 
+// ---------- AI 生成パレット（プリセットから選ぶのではなく都度生成） ----------
+// AI がアプリ専用の配色を生成した場合の「疑似テーマ」id。プリセット THEMES には含めない。
+export const AI_CUSTOM_THEME_ID = "ai-custom";
+
+const HEX_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+// #rgb / #rrggbb のみ許可し #rrggbb 小文字へ正規化する。それ以外は undefined。
+// AI 出力・保存データの両方をここに通し、CSS へ渡る色を安全な値だけに限定する。
+export function sanitizeHex(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const v = value.trim();
+  if (!HEX_RE.test(v)) return undefined;
+  if (v.length === 4) {
+    const [, r, g, b] = v;
+    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+  }
+  return v.toLowerCase();
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const c = hex.replace("#", "");
+  const full = c.length === 3 ? c.split("").map((x) => x + x).join("") : c;
+  const num = parseInt(full, 16);
+  return { r: (num >> 16) & 0xff, g: (num >> 8) & 0xff, b: num & 0xff };
+}
+
+// 2色を t(0..1) で線形補間。muted 色の自動導出などに使う。
+export function mixHex(a: string, b: string, t: number): string {
+  const ca = hexToRgb(a);
+  const cb = hexToRgb(b);
+  const r = Math.round(ca.r + (cb.r - ca.r) * t);
+  const g = Math.round(ca.g + (cb.g - ca.g) * t);
+  const bl = Math.round(ca.b + (cb.b - ca.b) * t);
+  return `#${((r << 16) | (g << 8) | bl).toString(16).padStart(6, "0")}`;
+}
+
+// AI が返した配色(bg/fg/accent[/muted]) から完全な Theme を構築する。
+// 反転背景 bgAlt / 反転前景 fgAlt は前景・背景を入れ替えて導出（既存プリセットと同じ関係）。
+// 必須3色(bg/fg/accent)が有効な hex で揃わなければ undefined（＝プリセットへフォールバック）。
+export function buildCustomTheme(
+  palette: { bg?: unknown; fg?: unknown; accent?: unknown; muted?: unknown },
+  fontId?: FontId,
+): Theme | undefined {
+  const bg = sanitizeHex(palette.bg);
+  const fg = sanitizeHex(palette.fg);
+  const accent = sanitizeHex(palette.accent);
+  if (!bg || !fg || !accent) return undefined;
+  const muted = sanitizeHex(palette.muted) ?? mixHex(fg, bg, 0.5);
+  return {
+    id: AI_CUSTOM_THEME_ID,
+    name: "AI生成",
+    bg,
+    bgAlt: fg,
+    fg,
+    fgAlt: bg,
+    accent,
+    muted,
+    ...(fontId ? { fontId } : {}),
+  };
+}
+
+// 保存データ(localStorage / import zip)内の customTheme を検証・正規化する。
+// 全色を sanitizeHex に通し、欠けた派生色は導出。必須3色が無ければ undefined。
+export function sanitizeTheme(value: unknown): Theme | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const raw = value as Partial<Theme>;
+  const bg = sanitizeHex(raw.bg);
+  const fg = sanitizeHex(raw.fg);
+  const accent = sanitizeHex(raw.accent);
+  if (!bg || !fg || !accent) return undefined;
+  return {
+    id: typeof raw.id === "string" && raw.id.trim() ? raw.id : AI_CUSTOM_THEME_ID,
+    name: typeof raw.name === "string" && raw.name.trim() ? raw.name : "AI生成",
+    bg,
+    bgAlt: sanitizeHex(raw.bgAlt) ?? fg,
+    fg,
+    fgAlt: sanitizeHex(raw.fgAlt) ?? bg,
+    accent,
+    muted: sanitizeHex(raw.muted) ?? mixHex(fg, bg, 0.5),
+    ...(raw.fontId && raw.fontId in FONTS ? { fontId: raw.fontId } : {}),
+  };
+}
+
 export const STORAGE_KEY = "code-tweet:appss:project:v1";
 export const PROJECT_SCHEMA_VERSION = 1;
 
@@ -135,6 +218,8 @@ export const LAYOUT_LABEL: Record<SlideLayout, string> = {
   "device-bottom": "デバイス下",
   "device-top": "デバイス上",
   "two-devices": "2台重ね",
+  "collage-duo": "2枚コラージュ",
+  "collage-trio": "3枚コラージュ",
   "no-device": "見出しのみ",
 };
 
@@ -143,5 +228,7 @@ export const LAYOUT_HINT: Record<SlideLayout, string> = {
   "device-bottom": "小さめ見出し + 下部デバイス",
   "device-top": "デバイスを上に（リズム変化用）",
   "two-devices": "前後2画面を重ねて表示",
+  "collage-duo": "2画面を大胆に傾けて重ね、見出しをまたがせる",
+  "collage-trio": "3画面を扇状に配置（中央正立・左右は傾けて背面）",
   "no-device": "デバイス無しの大見出し",
 };

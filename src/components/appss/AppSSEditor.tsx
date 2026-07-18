@@ -4,13 +4,23 @@
 import * as React from "react";
 import type {
   AppSSSlide,
+  BackgroundStyle,
   ElementId,
   ElementTransform,
   FontId,
   SelectedElement,
   TextElement,
 } from "@/lib/appss/types";
-import { BEZEL, CANVAS, EXPORT_SIZES, FONTS, MAX_SLIDES, THEMES, themeById } from "@/lib/appss/constants";
+import {
+  BEZEL,
+  CANVAS,
+  EXPORT_SIZES,
+  FONTS,
+  MAX_SLIDES,
+  THEMES,
+  buildCustomTheme,
+  themeById,
+} from "@/lib/appss/constants";
 import { isTextElementId, textElementKey } from "@/lib/appss/elements";
 import { preloadImages } from "@/lib/appss/imageCache";
 import { useAppSSProject } from "@/lib/appss/storage";
@@ -27,7 +37,8 @@ import {
   warmupCapture,
 } from "@/lib/appss/exporter";
 import { exportProjectZip, importProjectZip } from "@/lib/appss/projectFile";
-import type { AppSSCopySlideIdea } from "@/types/appss";
+import { postJson } from "@/lib/apiClient";
+import type { AppSSCopySlideIdea, AppSSExportUnlockResponse, GeneratedPalette } from "@/types/appss";
 import type { UsageInfo } from "@/types/usage";
 import { PreviewStage } from "./PreviewStage";
 import { Sidebar } from "./Sidebar";
@@ -48,11 +59,24 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
   const [exporting, setExporting] = React.useState<string | null>(null);
   const [exportSlideIndex, setExportSlideIndex] = React.useState(0);
   const [exportError, setExportError] = React.useState<string | null>(null);
+  // 現在実行中の書き出しに透かしを焼き込むか（無料=true、透かし解除=false）
+  const [exportWatermark, setExportWatermark] = React.useState(true);
   const [copyAssistantOpen, setCopyAssistantOpen] = React.useState(false);
+  const [usage, setUsage] = React.useState<UsageInfo | null>(initialUsage);
   const [, forceRender] = React.useReducer((n: number) => n + 1, 0);
   const exportRef = React.useRef<HTMLDivElement | null>(null);
 
-  const theme = themeById(state.themeId);
+  async function refreshUsage() {
+    try {
+      const res = await fetch("/api/usage");
+      if (res.ok) setUsage((await res.json()) as UsageInfo);
+    } catch {
+      /* 表示用のため失敗は無視 */
+    }
+  }
+
+  // AI が都度生成したパレット（customTheme）があればプリセットより優先して描画する
+  const theme = state.customTheme ?? themeById(state.themeId);
   const fontFamily = FONTS[state.fontId].cssVar;
   const backgroundStyle = state.backgroundStyle;
   const slides = state.slides;
@@ -65,6 +89,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
     for (const slide of slides) {
       if (slide.screenshotRef) refs.add(slide.screenshotRef);
       if (slide.screenshotSecondaryRef) refs.add(slide.screenshotSecondaryRef);
+      if (slide.screenshotTertiaryRef) refs.add(slide.screenshotTertiaryRef);
     }
     return Array.from(refs);
   }, [slides]);
@@ -231,7 +256,11 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
   // ---------- AIコピー適用 ----------
 
   const applyCopyIdeas = React.useCallback(
-    (ideas: AppSSCopySlideIdea[], mode: "replace" | "append") => {
+    (
+      ideas: AppSSCopySlideIdea[],
+      mode: "replace" | "append",
+      style?: { themeId?: string; backgroundStyle?: BackgroundStyle; generatedPalette?: GeneratedPalette },
+    ) => {
       setState((prev) => {
         if (mode === "replace") {
           const slides = ideas.map((idea, i) => {
@@ -241,16 +270,31 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
               layout: idea.layoutHint,
               label: idea.label,
               headline: idea.headline,
+              ...(idea.emphasis ? { emphasis: idea.emphasis } : {}),
               screenshotRef: existing?.screenshotRef ?? "",
               ...(existing?.screenshotSecondaryRef !== undefined
                 ? { screenshotSecondaryRef: existing.screenshotSecondaryRef }
+                : {}),
+              ...(existing?.screenshotTertiaryRef !== undefined
+                ? { screenshotTertiaryRef: existing.screenshotTertiaryRef }
                 : {}),
               ...(existing?.inverted ? { inverted: true } : {}),
               ...(existing?.transforms ? { transforms: existing.transforms } : {}),
               ...(existing?.textElements ? { textElements: existing.textElements } : {}),
             } satisfies AppSSSlide;
           });
-          return { ...prev, slides };
+          const themeId = style?.themeId && THEMES[style.themeId] ? style.themeId : prev.themeId;
+          const customTheme = style?.generatedPalette
+            ? buildCustomTheme(style.generatedPalette, THEMES[themeId]?.fontId)
+            : prev.customTheme;
+          return {
+            ...prev,
+            slides,
+            themeId,
+            ...(customTheme ? { customTheme } : { customTheme: undefined }),
+            fontId: THEMES[themeId]?.fontId ?? prev.fontId,
+            backgroundStyle: style?.backgroundStyle ?? prev.backgroundStyle,
+          };
         }
         const appended = ideas.map(
           (idea) =>
@@ -259,6 +303,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
               layout: idea.layoutHint,
               label: idea.label,
               headline: idea.headline,
+              ...(idea.emphasis ? { emphasis: idea.emphasis } : {}),
               screenshotRef: "",
             }) satisfies AppSSSlide,
         );
@@ -313,9 +358,12 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
 
   const exportSlide = slides[exportSlideIndex] || null;
 
-  async function exportAll() {
+  // watermark=true: 無料・常に許可（サーバー通信なし）。false: 透かし解除（有料、呼び出し元で
+  // /api/appss/export-unlock によるクレジット消費が成功した後にのみ呼ばれる想定。
+  async function exportAll(watermark: boolean) {
     if (!slides.length || exporting) return;
     setExportError(null);
+    setExportWatermark(watermark);
     setExporting("準備中");
 
     try {
@@ -378,6 +426,22 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
     }
   }
 
+  // 透かし解除書き出し。まずクレジット消費の許可を取り、通れば透かし無しで exportAll する。
+  // 画像は一切送信しない（許可チェックのみのAPI）。
+  async function exportUnlocked() {
+    if (!slides.length || exporting) return;
+    setExportError(null);
+    setExporting("確認中");
+    const outcome = await postJson<AppSSExportUnlockResponse>("/api/appss/export-unlock", {});
+    if (!outcome.ok) {
+      setExporting(null);
+      setExportError(outcome.error.error);
+      return;
+    }
+    void refreshUsage();
+    await exportAll(false);
+  }
+
   // ---------- Render ----------
 
   if (!hydrated) {
@@ -401,6 +465,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       <Toolbar
         appName={state.appName}
         themeId={state.themeId}
+        hasCustomTheme={!!state.customTheme}
         fontId={state.fontId}
         backgroundStyle={backgroundStyle}
         savedAt={savedAt}
@@ -409,15 +474,20 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
         onAppNameChange={(v) => setState((prev) => ({ ...prev, appName: v }))}
         onThemeChange={(id) => {
           const nextFont = THEMES[id]?.fontId;
+          // プリセットを手動選択した場合は AI 生成パレット(customTheme)を解除する
           setState((prev) => ({
             ...prev,
             themeId: id,
+            customTheme: undefined,
             ...(nextFont ? { fontId: nextFont } : {}),
           }));
         }}
         onFontChange={(id: FontId) => setState((prev) => ({ ...prev, fontId: id }))}
         onBackgroundStyleChange={(id) => setState((prev) => ({ ...prev, backgroundStyle: id }))}
-        onExport={() => void exportAll()}
+        onExport={() => void exportAll(true)}
+        onExportUnlocked={() => void exportUnlocked()}
+        usage={usage}
+        isLoggedIn={isLoggedIn}
         onReset={() => {
           if (window.confirm("編集内容を破棄して初期状態に戻しますか？")) {
             reset();
@@ -527,7 +597,13 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
             pointerEvents: "none",
           }}
         >
-          <SlideCanvas slide={exportSlide} theme={theme} backgroundStyle={backgroundStyle} hideEmpty />
+          <SlideCanvas
+            slide={exportSlide}
+            theme={theme}
+            backgroundStyle={backgroundStyle}
+            hideEmpty
+            watermark={exportWatermark}
+          />
         </div>
       )}
     </div>

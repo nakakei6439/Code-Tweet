@@ -5,7 +5,7 @@
 import { mergeWithDefaults } from "./storage";
 import { projectFromCopy } from "./defaults";
 import type { AppSSProject } from "./types";
-import type { AppSSCopySlideIdea } from "@/types/appss";
+import type { AppSSCopySlideIdea, GeneratedPalette } from "@/types/appss";
 
 const HANDOFF_KEY = "code-tweet:appss:handoff";
 
@@ -15,12 +15,13 @@ export function writeHandoff(
   themeId?: string,
   backgroundStyle?: string,
   screenshotRefs?: string[],
+  generatedPalette?: GeneratedPalette,
 ): void {
   if (typeof window === "undefined") return;
   try {
     window.sessionStorage.setItem(
       HANDOFF_KEY,
-      JSON.stringify({ appName, ideas, themeId, backgroundStyle, screenshotRefs }),
+      JSON.stringify({ appName, ideas, themeId, backgroundStyle, screenshotRefs, generatedPalette }),
     );
   } catch {
     /* sessionStorage 不可（プライベートブラウズ等）は握りつぶす */
@@ -41,6 +42,7 @@ export function consumeHandoff(): AppSSProject | null {
       themeId?: string;
       backgroundStyle?: string;
       screenshotRefs?: string[];
+      generatedPalette?: GeneratedPalette;
     };
     if (!Array.isArray(parsed.ideas) || parsed.ideas.length === 0) return null;
     const screenshotRefs = Array.isArray(parsed.screenshotRefs)
@@ -54,6 +56,7 @@ export function consumeHandoff(): AppSSProject | null {
         parsed.themeId,
         parsed.backgroundStyle,
         screenshotRefs,
+        parsed.generatedPalette,
       ),
     );
   } catch {

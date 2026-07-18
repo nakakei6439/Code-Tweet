@@ -13,12 +13,21 @@ import { isTextElementId, textElementKey, toTextElementId } from "@/lib/appss/el
 import { getElementTransform } from "./SlideCanvas";
 import { ScreenshotPicker } from "./ScreenshotPicker";
 
-const LAYOUTS: SlideLayout[] = ["hero", "device-bottom", "device-top", "two-devices", "no-device"];
+const LAYOUTS: SlideLayout[] = [
+  "hero",
+  "device-bottom",
+  "device-top",
+  "two-devices",
+  "collage-duo",
+  "collage-trio",
+  "no-device",
+];
 
 const ELEMENT_LABEL: Record<string, string> = {
   caption: "見出し",
   device: "デバイス",
   deviceSecondary: "背面デバイス",
+  deviceTertiary: "3枚目デバイス",
 };
 
 type Props = {
@@ -102,11 +111,20 @@ export function Inspector({
             currentRef={slide.screenshotRef}
             onChange={(ref) => onUpdateSlide({ screenshotRef: ref })}
           />
-          {slide.layout === "two-devices" && (
+          {(slide.layout === "two-devices" ||
+            slide.layout === "collage-duo" ||
+            slide.layout === "collage-trio") && (
             <ScreenshotPicker
-              label="背面画像"
+              label={slide.layout === "two-devices" ? "背面画像" : "2枚目の画像"}
               currentRef={slide.screenshotSecondaryRef || ""}
               onChange={(ref) => onUpdateSlide({ screenshotSecondaryRef: ref })}
+            />
+          )}
+          {slide.layout === "collage-trio" && (
+            <ScreenshotPicker
+              label="3枚目の画像"
+              currentRef={slide.screenshotTertiaryRef || ""}
+              onChange={(ref) => onUpdateSlide({ screenshotTertiaryRef: ref })}
             />
           )}
         </section>

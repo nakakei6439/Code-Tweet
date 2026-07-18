@@ -22,7 +22,9 @@ describe("CREDIT_PACKS", () => {
 
 describe("getCreditPack", () => {
   it("resolves a defined pack by id", () => {
-    expect(getCreditPack("pack10")).toMatchObject({ credits: 10, amountJpy: 70 });
+    expect(getCreditPack("pack10")).toMatchObject({ credits: 10, amountJpy: 100 });
+    expect(getCreditPack("pack30")).toMatchObject({ credits: 30, amountJpy: 300 });
+    expect(getCreditPack("pack50")).toMatchObject({ credits: 50, amountJpy: 500 });
     expect(getCreditPack("pack100")).toMatchObject({ credits: 100, amountJpy: 700 });
   });
 

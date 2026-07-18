@@ -171,7 +171,7 @@ export async function POST(request: Request): Promise<Response> {
   );
 
   try {
-    const { slides, recommendedThemeId, recommendedBackgroundStyle } = await generateAppSSCopy(
+    const { slides, recommendedThemeId, recommendedBackgroundStyle, generatedPalette } = await generateAppSSCopy(
       body.appName.trim(),
       body.appDescription.trim(),
       (body.features ?? []).map((f) => f.trim()).filter(Boolean),
@@ -188,7 +188,7 @@ export async function POST(request: Request): Promise<Response> {
       await recordGuestUsage(ipHash);
     }
     return Response.json(
-      { slides, recommendedThemeId, recommendedBackgroundStyle } satisfies AppSSCopyResponse,
+      { slides, recommendedThemeId, recommendedBackgroundStyle, generatedPalette } satisfies AppSSCopyResponse,
       { status: 200 },
     );
   } catch (err) {

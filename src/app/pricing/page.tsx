@@ -41,7 +41,7 @@ export default async function PricingPage() {
 
   return (
     <main className="min-h-screen bg-gray-950 px-4 py-16 text-gray-200">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-6xl">
         <header>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
             Pricing · Pay as you go
@@ -59,7 +59,7 @@ export default async function PricingPage() {
           </p>
         </header>
 
-        <section className="mt-12 grid gap-6 md:grid-cols-3">
+        <section className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
           {/* 無料プラン */}
           <div className="flex flex-col rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
             <h2 className="text-base font-bold text-white">無料</h2>

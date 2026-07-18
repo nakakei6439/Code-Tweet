@@ -18,6 +18,7 @@ export async function exportProjectZip(state: AppSSProject): Promise<void> {
   for (const slide of state.slides) {
     if (slide.screenshotRef?.startsWith(IDB_PREFIX)) refs.add(slide.screenshotRef);
     if (slide.screenshotSecondaryRef?.startsWith(IDB_PREFIX)) refs.add(slide.screenshotSecondaryRef);
+    if (slide.screenshotTertiaryRef?.startsWith(IDB_PREFIX)) refs.add(slide.screenshotTertiaryRef);
   }
   for (const ref of refs) {
     const blob = await getImage(ref);

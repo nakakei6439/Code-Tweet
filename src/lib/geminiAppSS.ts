@@ -1,14 +1,22 @@
 import { GoogleGenAI } from "@google/genai";
 import { GEMINI_MODEL, GEMINI_THINKING_OFF, generateContentWithRetry } from "./gemini";
-import { BACKGROUND_STYLES, THEMES, isBackgroundStyle } from "./appss/constants";
-import type { AppSSCopySlideIdea } from "@/types/appss";
+import { BACKGROUND_STYLES, THEMES, isBackgroundStyle, sanitizeHex } from "./appss/constants";
+import type { AppSSCopySlideIdea, GeneratedPalette } from "@/types/appss";
 import type { SlideLayout } from "./appss/types";
 
 export const APPSS_MIN_SLIDES = 3;
 export const APPSS_MAX_SLIDES = 6;
 export const APPSS_DEFAULT_SLIDES = 5;
 
-const LAYOUT_HINTS: SlideLayout[] = ["hero", "device-bottom", "device-top", "two-devices", "no-device"];
+const LAYOUT_HINTS: SlideLayout[] = [
+  "hero",
+  "device-bottom",
+  "device-top",
+  "two-devices",
+  "collage-duo",
+  "collage-trio",
+  "no-device",
+];
 
 // AI がアプリの雰囲気からテーマを選ぶための説明。id は constants.ts の THEMES と一致。
 const THEME_GUIDE: { id: string; vibe: string }[] = [
@@ -48,12 +56,27 @@ ${tone ? `\n【トーン指示】\n${tone}` : ""}
 
 【スライド構成（この順で作る）】
 1枚目: つかみ — アプリの核となる価値をひとことで（LAYOUT: hero）
-2〜${slideCount - 1}枚目: 主要機能・差別化ポイントを 1 スライド 1 つずつ（LAYOUT: device-bottom / device-top / two-devices を交互に使い、同じレイアウトを連続させない）
+2〜${slideCount - 1}枚目: 主要機能・差別化ポイントを 1 スライド 1 つずつ（LAYOUT: device-bottom / device-top / two-devices / collage-duo / collage-trio を交互に使い、同じレイアウトを連続させない）
 ${slideCount}枚目: 締め — 信頼感や行動喚起（例：今すぐ無料ではじめよう）（LAYOUT: no-device）
 
-【配色テーマの選択】
-このアプリの内容${tone ? "と上記トーン指示" : ""}に最も合う配色テーマを次から1つ選ぶ：
+【collage-duo の使いどころ】
+2枚の画面を大胆に傾けて重ねるレイアウト。「Before/After」「使う前と後」「2つの機能を比較」など、
+2枚を対比・並列で見せたいスライドに使うと効果的。
+
+【collage-trio の使いどころ】
+3枚の画面を扇状に並べるレイアウト。「3つの機能が揃っている」「豊富なテンプレート/選択肢」など、
+量・種類の豊富さを一気に見せたいスライドに使う。デッキ全体で使うのは1回まで（多用すると煩雑になる）。
+
+【配色フォント基調の選択】
+このアプリの内容${tone ? "と上記トーン指示" : ""}に最も近い基調を次から1つ選ぶ（フォントの選定に使う）：
 ${THEME_GUIDE.map((t) => `- ${t.id}: ${t.vibe}`).join("\n")}
+
+【配色パレットの生成（重要）】
+既製テーマをそのまま使うのではなく、このアプリ専用の配色パレットを新しく生成する。
+- bg（背景色）・fg（見出し等の文字色）・accent（強調色）・muted（補助色）を #RRGGBB 形式で出す
+- bg と fg は必ず高コントラスト（明るい背景×濃い文字、または暗い背景×明るい文字）
+- accent はアプリの個性が出る鮮やかな1色。App Store のサムネで目を引く色にする
+- アプリのジャンル・雰囲気・トーンに合わせて毎回違う配色にする（無難な使い回しを避ける）
 
 【背景スタイルの選択】
 このアプリの雰囲気に最も合う背景装飾を次から1つ選ぶ：
@@ -65,10 +88,11 @@ ${BACKGROUND_STYLES.map((s) => `- ${s.id}: ${s.vibe}`).join("\n")}
 - アプリの価値が一番伝わるキーワードを選ぶ（例: HEADLINE「毎日が／ラクに」→ EMPHASIS: ラク）
 
 【出力形式】
-説明・前置き・空行は不要。まず1行目にテーマ、2行目に背景を「THEME: <id>」「BG: <id>」形式で出力し、続けて ${slideCount} ブロック出力する：
+説明・前置き・空行は不要。まず基調・背景・パレットを次の3行で出力し、続けて ${slideCount} ブロック出力する：
 
-THEME: <上記テーマから選んだ id>
+THEME: <上記基調から選んだ id>
 BG: <上記背景から選んだ id>
+PALETTE: bg=#RRGGBB fg=#RRGGBB accent=#RRGGBB muted=#RRGGBB
 SLIDE: 1
 LAYOUT: hero
 LABEL: [ラベル]
@@ -96,6 +120,21 @@ export function parseRecommendedBackground(text: string): string | undefined {
   const m = text.match(/BG:\s*([a-z-]+)/i);
   const id = m?.[1]?.toLowerCase();
   return id && isBackgroundStyle(id) ? id : undefined;
+}
+
+// PALETTE 行から AI 生成パレットを取り出す。bg/fg/accent が有効な hex で揃った場合のみ返す。
+// 例: "PALETTE: bg=#0f172a fg=#f8fafc accent=#22d3ee muted=#94a3b8"
+export function parseGeneratedPalette(text: string): GeneratedPalette | undefined {
+  const line = text.match(/PALETTE:\s*([^\n]+)/i)?.[1];
+  if (!line) return undefined;
+  const pick = (key: string) =>
+    sanitizeHex(line.match(new RegExp(`${key}\\s*=\\s*(#[0-9a-fA-F]{3,6})`, "i"))?.[1]);
+  const bg = pick("bg");
+  const fg = pick("fg");
+  const accent = pick("accent");
+  if (!bg || !fg || !accent) return undefined;
+  const muted = pick("muted");
+  return { bg, fg, accent, ...(muted ? { muted } : {}) };
 }
 
 export function parseAppSSCopy(text: string, slideCount: number): AppSSCopySlideIdea[] {
@@ -139,6 +178,7 @@ export type AppSSCopyResult = {
   slides: AppSSCopySlideIdea[];
   recommendedThemeId?: string;
   recommendedBackgroundStyle?: string;
+  generatedPalette?: GeneratedPalette;
 };
 
 export async function generateAppSSCopy(
@@ -174,5 +214,6 @@ export async function generateAppSSCopy(
     slides: parseAppSSCopy(text, slideCount),
     recommendedThemeId: parseRecommendedTheme(text),
     recommendedBackgroundStyle: parseRecommendedBackground(text),
+    generatedPalette: parseGeneratedPalette(text),
   };
 }

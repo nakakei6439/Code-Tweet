@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildAppSSCopyPrompt,
   parseAppSSCopy,
+  parseGeneratedPalette,
   parseRecommendedBackground,
   parseRecommendedTheme,
 } from "../geminiAppSS";
@@ -38,6 +39,18 @@ describe("parseAppSSCopy", () => {
     const text = `SLIDE: 1\nLAYOUT: feature-graphic\nLABEL: a\nHEADLINE: b`;
     const slides = parseAppSSCopy(text, 1);
     expect(slides[0].layoutHint).toBe("device-bottom");
+  });
+
+  it("collage-duo（2枚コラージュ）を LAYOUT として受け付ける", () => {
+    const text = `SLIDE: 1\nLAYOUT: collage-duo\nLABEL: a\nHEADLINE: 使う前と後で／こんなに変わる`;
+    const slides = parseAppSSCopy(text, 1);
+    expect(slides[0].layoutHint).toBe("collage-duo");
+  });
+
+  it("collage-trio（3枚コラージュ）を LAYOUT として受け付ける", () => {
+    const text = `SLIDE: 1\nLAYOUT: collage-trio\nLABEL: a\nHEADLINE: 機能いろいろ／盛りだくさん`;
+    const slides = parseAppSSCopy(text, 1);
+    expect(slides[0].layoutHint).toBe("collage-trio");
   });
 
   it("EMPHASIS が headline の部分文字列なら採用、なければ無視", () => {
@@ -88,6 +101,35 @@ describe("parseRecommendedBackground", () => {
   it("不明な背景 id / 未指定は undefined", () => {
     expect(parseRecommendedBackground("BG: rainbow")).toBeUndefined();
     expect(parseRecommendedBackground(SAMPLE)).toBeUndefined();
+  });
+});
+
+describe("parseGeneratedPalette", () => {
+  it("PALETTE 行から bg/fg/accent/muted を取り出す", () => {
+    const palette = parseGeneratedPalette(
+      "THEME: washi\nBG: grid\nPALETTE: bg=#0f172a fg=#f8fafc accent=#22d3ee muted=#94a3b8\n" + SAMPLE,
+    );
+    expect(palette).toEqual({ bg: "#0f172a", fg: "#f8fafc", accent: "#22d3ee", muted: "#94a3b8" });
+  });
+
+  it("muted 省略時は muted なしで返す", () => {
+    const palette = parseGeneratedPalette("PALETTE: bg=#fff fg=#000 accent=#f00");
+    expect(palette).toEqual({ bg: "#ffffff", fg: "#000000", accent: "#ff0000" });
+  });
+
+  it("bg/fg/accent のいずれかが欠けるか不正なら undefined", () => {
+    expect(parseGeneratedPalette("PALETTE: bg=#fff fg=#000")).toBeUndefined();
+    expect(parseGeneratedPalette("PALETTE: bg=notacolor fg=#000 accent=#f00")).toBeUndefined();
+    expect(parseGeneratedPalette(SAMPLE)).toBeUndefined();
+    expect(parseGeneratedPalette("")).toBeUndefined();
+  });
+
+  it("CSS インジェクションを試みる値は hex として無効なので無視される", () => {
+    // fg に閉じタグ/式を混入させても HEX_RE に一致しないため undefined
+    const palette = parseGeneratedPalette(
+      'PALETTE: bg=#fff fg="></div><script>alert(1)</script> accent=#f00',
+    );
+    expect(palette).toBeUndefined();
   });
 });
 

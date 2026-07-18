@@ -3,20 +3,26 @@
 import * as React from "react";
 import type { BackgroundStyle, FontId } from "@/lib/appss/types";
 import { BACKGROUND_STYLES, FONTS, THEMES } from "@/lib/appss/constants";
+import type { UsageInfo } from "@/types/usage";
 
 type Props = {
   appName: string;
   themeId: string;
+  // AI が都度生成したアプリ専用パレットを現在採用しているか（テーマ選択の表示切り替え用）
+  hasCustomTheme?: boolean;
   fontId: FontId;
   backgroundStyle: BackgroundStyle;
   savedAt: number | null;
   saveError: string | null;
   exporting: string | null;
+  isLoggedIn: boolean;
+  usage: UsageInfo | null;
   onAppNameChange: (v: string) => void;
   onThemeChange: (id: string) => void;
   onFontChange: (id: FontId) => void;
   onBackgroundStyleChange: (id: BackgroundStyle) => void;
   onExport: () => void;
+  onExportUnlocked: () => void;
   onReset: () => void;
   onExportProject: () => void;
   onImportProject: (file: File) => void;
@@ -27,16 +33,20 @@ type Props = {
 export function Toolbar({
   appName,
   themeId,
+  hasCustomTheme,
   fontId,
   backgroundStyle,
   savedAt,
   saveError,
   exporting,
+  isLoggedIn,
+  usage,
   onAppNameChange,
   onThemeChange,
   onFontChange,
   onBackgroundStyleChange,
   onExport,
+  onExportUnlocked,
   onReset,
   onExportProject,
   onImportProject,
@@ -58,10 +68,15 @@ export function Toolbar({
       <label className="flex items-center gap-1.5 text-xs text-gray-400">
         テーマ
         <select
-          value={themeId}
+          value={hasCustomTheme ? "" : themeId}
           onChange={(e) => onThemeChange(e.target.value)}
           className="rounded-md border border-gray-700 bg-gray-900 px-2 py-1.5 text-sm text-gray-100"
         >
+          {hasCustomTheme && (
+            <option value="" disabled>
+              ✦ AI生成配色（適用中）
+            </option>
+          )}
           {Object.values(THEMES).map((theme) => (
             <option key={theme.id} value={theme.id}>
               {theme.name}
@@ -109,7 +124,7 @@ export function Toolbar({
             : "border-gray-700 text-gray-300 hover:border-fuchsia-400/60 hover:text-fuchsia-200"
         }`}
       >
-        ✦ AIコピー生成
+        ✦ AIコピー＆デザイン生成
       </button>
 
       <div className="ml-auto flex items-center gap-3">
@@ -158,10 +173,31 @@ export function Toolbar({
           type="button"
           onClick={onExport}
           disabled={!!exporting}
-          className="rounded-md bg-gradient-to-r from-cyan-400 to-fuchsia-400 px-4 py-1.5 text-sm font-semibold text-gray-950 hover:opacity-90 disabled:opacity-60"
+          title="常に無料。書き出したPNGには透かしが入ります"
+          className="rounded-md border border-gray-700 px-4 py-1.5 text-sm font-semibold text-gray-200 hover:border-gray-500 disabled:opacity-60"
         >
-          {exporting ? `書き出し中… ${exporting}` : "PNG一括書き出し"}
+          {exporting ? `書き出し中… ${exporting}` : "PNG一括書き出し（透かし付き・無料）"}
         </button>
+        <div className="flex flex-col items-end gap-0.5">
+          <button
+            type="button"
+            onClick={onExportUnlocked}
+            disabled={!!exporting}
+            title="透かしを解除して書き出します（1クレジット消費）"
+            className="rounded-md bg-gradient-to-r from-cyan-400 to-fuchsia-400 px-4 py-1.5 text-sm font-semibold text-gray-950 hover:opacity-90 disabled:opacity-60"
+          >
+            透かしを解除して書き出す（1クレジット）
+          </button>
+          {usage && (
+            <span className="text-[10px] text-gray-500">
+              残り無料枠 {Math.max(0, usage.remaining)} 回
+              {usage.credits > 0 && ` ＋ クレジット ${usage.credits} 回`}
+            </span>
+          )}
+          {!isLoggedIn && !usage && (
+            <span className="text-[10px] text-gray-500">ログインするとクレジットで解除できます</span>
+          )}
+        </div>
       </div>
     </div>
   );

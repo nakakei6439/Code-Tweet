@@ -584,6 +584,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
 
       // テーマは明示選択があればそれを優先、なければ AI 推奨（未指定なら既定）。
       // 事前登録したスクショ（idb:参照）は登録順にスライドへ配置される。
+      // AI 生成パレット（customTheme）はユーザーがプリセットを明示選択していない時のみ適用する。
       const chosenTheme =
         appssThemeId || result.data.recommendedThemeId || DEFAULT_THEME_ID;
       writeHandoff(
@@ -592,6 +593,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         chosenTheme,
         result.data.recommendedBackgroundStyle,
         appssShots,
+        appssThemeId ? undefined : result.data.generatedPalette,
       );
       trackActivationOnce();
       refreshUsage();

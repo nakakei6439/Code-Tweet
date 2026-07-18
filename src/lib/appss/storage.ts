@@ -3,7 +3,7 @@
 // Based on MIT-licensed https://github.com/ParthJadhav/app-store-screenshots
 // 画像本体は IndexedDB(imageStore.ts) に置き、ここには "idb:<id>" 参照のみ保存する。
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { PROJECT_SCHEMA_VERSION, STORAGE_KEY, THEMES, isBackgroundStyle } from "./constants";
+import { PROJECT_SCHEMA_VERSION, STORAGE_KEY, THEMES, isBackgroundStyle, sanitizeTheme } from "./constants";
 import { makeDefaultProject, nid } from "./defaults";
 import { consumeHandoff } from "./handoff";
 import type {
@@ -20,7 +20,15 @@ const HISTORY_LIMIT = 50;
 const COALESCE_MS = 500;
 const SAVE_DEBOUNCE_MS = 600;
 
-const LAYOUTS: SlideLayout[] = ["hero", "device-bottom", "device-top", "two-devices", "no-device"];
+const LAYOUTS: SlideLayout[] = [
+  "hero",
+  "device-bottom",
+  "device-top",
+  "two-devices",
+  "collage-duo",
+  "collage-trio",
+  "no-device",
+];
 const FONT_IDS: FontId[] = ["gothic", "maru", "mincho"];
 
 export function cleanTransform(value: unknown): ElementTransform | undefined {
@@ -97,6 +105,9 @@ export function migrateSlide(value: unknown): AppSSSlide | null {
     ...(raw.screenshotSecondaryRef !== undefined
       ? { screenshotSecondaryRef: cleanScreenshotRef(raw.screenshotSecondaryRef) }
       : {}),
+    ...(raw.screenshotTertiaryRef !== undefined
+      ? { screenshotTertiaryRef: cleanScreenshotRef(raw.screenshotTertiaryRef) }
+      : {}),
     ...(raw.inverted === true ? { inverted: true } : {}),
     ...(transforms && Object.keys(transforms).length > 0 ? { transforms } : {}),
     ...(textElements && textElements.length > 0 ? { textElements } : {}),
@@ -110,10 +121,12 @@ export function mergeWithDefaults(parsed: unknown): AppSSProject {
   const slides = Array.isArray(raw.slides)
     ? raw.slides.map(migrateSlide).filter((s): s is AppSSSlide => !!s)
     : [];
+  const customTheme = sanitizeTheme(raw.customTheme);
   return {
     schemaVersion: PROJECT_SCHEMA_VERSION,
     appName: typeof raw.appName === "string" && raw.appName.trim() ? raw.appName : defaults.appName,
     themeId: typeof raw.themeId === "string" && THEMES[raw.themeId] ? raw.themeId : defaults.themeId,
+    ...(customTheme ? { customTheme } : {}),
     fontId: FONT_IDS.includes(raw.fontId as FontId) ? (raw.fontId as FontId) : defaults.fontId,
     backgroundStyle: isBackgroundStyle(raw.backgroundStyle)
       ? raw.backgroundStyle

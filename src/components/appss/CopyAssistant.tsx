@@ -1,17 +1,26 @@
 "use client";
-// AppSS — AIキャッチコピー生成パネル。アプリ情報から Gemini がスライド構成案を生成する。
+// AppSS — AIコピー＆デザイン生成パネル。アプリ情報から Gemini がスライド構成案と
+// このアプリ専用の配色パレット（customTheme）を都度生成する（テンプレ選択ではなく生成）。
 // 生成は既存の無料枠 / 購入クレジットを 1 回分消費する（/api/appss/copy）。
 import * as React from "react";
 import { postJson } from "@/lib/apiClient";
-import type { AppSSCopyRequest, AppSSCopyResponse, AppSSCopySlideIdea } from "@/types/appss";
+import type {
+  AppSSCopyRequest,
+  AppSSCopyResponse,
+  AppSSCopySlideIdea,
+  GeneratedPalette,
+} from "@/types/appss";
 import type { UsageInfo } from "@/types/usage";
+import type { BackgroundStyle } from "@/lib/appss/types";
 import { LAYOUT_LABEL } from "@/lib/appss/constants";
+
+type ApplyStyle = { themeId?: string; backgroundStyle?: BackgroundStyle; generatedPalette?: GeneratedPalette };
 
 type Props = {
   isLoggedIn: boolean;
   initialUsage: UsageInfo | null;
   slideCount: number;
-  onApplyAll: (ideas: AppSSCopySlideIdea[], mode: "replace" | "append") => void;
+  onApplyAll: (ideas: AppSSCopySlideIdea[], mode: "replace" | "append", style?: ApplyStyle) => void;
   onApplyOne: (idea: AppSSCopySlideIdea) => void;
   onClose: () => void;
 };
@@ -32,7 +41,8 @@ export function CopyAssistant({
   const [usage, setUsage] = React.useState<UsageInfo | null>(initialUsage);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [ideas, setIdeas] = React.useState<AppSSCopySlideIdea[] | null>(null);
+  const [result, setResult] = React.useState<AppSSCopyResponse | null>(null);
+  const ideas = result?.slides ?? null;
 
   async function refreshUsage() {
     try {
@@ -72,7 +82,7 @@ export function CopyAssistant({
         setError(outcome.error.error);
         return;
       }
-      setIdeas(outcome.data.slides);
+      setResult(outcome.data);
       void refreshUsage();
     } finally {
       setLoading(false);
@@ -82,7 +92,7 @@ export function CopyAssistant({
   return (
     <div className="flex h-full w-80 flex-col overflow-y-auto border-l border-gray-800 bg-gray-950/60 p-4 text-sm">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-fuchsia-200">✦ AIキャッチコピー生成</h3>
+        <h3 className="text-sm font-semibold text-fuchsia-200">✦ AIコピー＆デザイン生成</h3>
         <button
           type="button"
           onClick={onClose}
@@ -170,26 +180,48 @@ export function CopyAssistant({
           disabled={loading}
           className="w-full rounded-md bg-gradient-to-r from-fuchsia-400 to-cyan-400 px-3 py-2 text-sm font-semibold text-gray-950 hover:opacity-90 disabled:opacity-60"
         >
-          {loading ? "生成中…" : "コピーを生成（1回分消費）"}
+          {loading ? "生成中…" : "コピー＆デザインを生成（1回分消費）"}
         </button>
         {error && <p className="text-xs text-red-400">{error}</p>}
       </div>
 
-      {ideas && (
+      {ideas && result && (
         <div className="mt-4 border-t border-gray-800 pt-3">
           <div className="mb-2 flex items-center justify-between">
             <h4 className="text-xs font-semibold text-gray-300">生成結果</h4>
             <div className="flex gap-1">
               <button
                 type="button"
-                onClick={() => onApplyAll(ideas, "replace")}
+                onClick={() =>
+                  onApplyAll(ideas, "replace", {
+                    themeId: result.recommendedThemeId,
+                    backgroundStyle: result.recommendedBackgroundStyle as BackgroundStyle | undefined,
+                    generatedPalette: result.generatedPalette,
+                  })
+                }
                 className="rounded bg-cyan-400/15 px-2 py-1 text-[11px] text-cyan-200 hover:bg-cyan-400/25"
-                title="現在のスライドの見出しを置き換える"
+                title="現在のスライドの見出し・配色・背景を置き換える"
               >
                 全て適用
               </button>
             </div>
           </div>
+          {result.generatedPalette && (
+            <div className="mb-2 flex items-center gap-1.5 rounded-md border border-fuchsia-400/30 bg-fuchsia-400/5 px-2 py-1.5 text-[11px] text-fuchsia-200">
+              <span className="flex shrink-0 gap-0.5">
+                {[result.generatedPalette.bg, result.generatedPalette.accent, result.generatedPalette.fg].map(
+                  (c, i) => (
+                    <span
+                      key={i}
+                      className="h-3 w-3 rounded-full border border-white/20"
+                      style={{ background: c }}
+                    />
+                  ),
+                )}
+              </span>
+              このアプリ専用に配色を生成しました
+            </div>
+          )}
           <ul className="space-y-2">
             {ideas.map((idea, i) => (
               <li key={i} className="rounded-md border border-gray-800 bg-gray-900/50 p-2">
@@ -212,7 +244,7 @@ export function CopyAssistant({
             ))}
           </ul>
           <p className="mt-2 text-[10px] text-gray-600">
-            「全て適用」は各スライドの見出し・レイアウトを置き換えます（スクショ画像・配置は保持）
+            「全て適用」は各スライドの見出し・レイアウト・配色・背景を置き換えます（スクショ画像・配置は保持）
           </p>
         </div>
       )}

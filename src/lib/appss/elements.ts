@@ -5,6 +5,7 @@ export const BUILT_IN_ELEMENT_IDS: BuiltInElementId[] = [
   "caption",
   "device",
   "deviceSecondary",
+  "deviceTertiary",
 ];
 
 export const TEXT_ELEMENT_PREFIX = "text:";

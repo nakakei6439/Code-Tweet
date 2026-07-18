@@ -64,6 +64,32 @@ describe("migrateSlide", () => {
     const slide = migrateSlide({ layout: "hero", label: "", headline: "" });
     expect(slide?.id).toBeTruthy();
   });
+
+  it("collage-trio レイアウトと screenshotTertiaryRef を受け付ける", () => {
+    const slide = migrateSlide({
+      id: "a",
+      layout: "collage-trio",
+      label: "l",
+      headline: "h",
+      screenshotRef: "idb:main",
+      screenshotSecondaryRef: "idb:second",
+      screenshotTertiaryRef: "idb:third",
+    });
+    expect(slide?.layout).toBe("collage-trio");
+    expect(slide?.screenshotSecondaryRef).toBe("idb:second");
+    expect(slide?.screenshotTertiaryRef).toBe("idb:third");
+  });
+
+  it("screenshotTertiaryRef の data:URL は空文字に落とす", () => {
+    const slide = migrateSlide({
+      id: "a",
+      layout: "collage-trio",
+      label: "l",
+      headline: "h",
+      screenshotTertiaryRef: "data:image/png;base64,AAAA",
+    });
+    expect(slide?.screenshotTertiaryRef).toBe("");
+  });
 });
 
 describe("mergeWithDefaults", () => {
@@ -95,5 +121,18 @@ describe("mergeWithDefaults", () => {
   it("slides が空配列ならスターターデッキを使う", () => {
     const project = mergeWithDefaults({ slides: [] });
     expect(project.slides.length).toBeGreaterThan(0);
+  });
+
+  it("正常な customTheme（AI生成パレット）を保持する", () => {
+    const project = mergeWithDefaults({
+      customTheme: { bg: "#fff", fg: "#000", accent: "#22d3ee" },
+    });
+    expect(project.customTheme?.bg).toBe("#ffffff");
+    expect(project.customTheme?.accent).toBe("#22d3ee");
+  });
+
+  it("不正な customTheme は破棄する", () => {
+    const project = mergeWithDefaults({ customTheme: { bg: "notacolor" } });
+    expect(project.customTheme).toBeUndefined();
   });
 });
