@@ -16,10 +16,10 @@ export const metadata: Metadata = {
     default: "Code Tweet",
     template: "%s | Code Tweet",
   },
-  description: "READMEやGitHubリポジトリからX向けマーケティングポストを生成する個人開発者向けAIツール",
+  description: "READMEやGitHubリポジトリから、X向けマーケティングポスト・note記事の下書き・App Store提出用スクリーンショットを生成する個人開発者向けAIツール",
   openGraph: {
     title: "Code Tweet",
-    description: "READMEやGitHubリポジトリからX向けマーケティングポストを生成する個人開発者向けAIツール",
+    description: "READMEやGitHubリポジトリから、X向けマーケティングポスト・note記事の下書き・App Store提出用スクリーンショットを生成する個人開発者向けAIツール",
     url: "https://code-tweet.vercel.app",
     siteName: "Code Tweet",
     locale: "ja_JP",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary",
     title: "Code Tweet",
-    description: "READMEやGitHubリポジトリからX向けマーケティングポストを生成する個人開発者向けAIツール",
+    description: "READMEやGitHubリポジトリから、X向けマーケティングポスト・note記事の下書き・App Store提出用スクリーンショットを生成する個人開発者向けAIツール",
   },
 };
 

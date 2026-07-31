@@ -25,6 +25,12 @@ const THEME_GUIDE: { id: string; vibe: string }[] = [
   { id: "dark-neon", vibe: "先進的でクール。開発ツール/ガジェット/ゲーム/音楽/暗めのUI系" },
   { id: "washi", vibe: "和風で上質・落ち着き。和風/伝統/文化/瞑想/写真/読書系" },
   { id: "pop", vibe: "ポップで高彩度・元気。エンタメ/SNS/フード/若者向け系" },
+  { id: "ocean", vibe: "爽やかで清涼感。旅行/天気/水泳・アウトドア/学習系" },
+  { id: "forest", vibe: "自然で健やか。フィットネス/ヘルスケア/農業・園芸/サステナ系" },
+  { id: "sunset", vibe: "温かく情緒的。恋愛/日記/写真加工/ライフスタイル系" },
+  { id: "mono", vibe: "洗練されたミニマル。デザインツール/高級/プロフェッショナル系" },
+  { id: "midnight", vibe: "高級感・重厚。金融/セキュリティ/プレミアムサブスク系" },
+  { id: "mocha", vibe: "落ち着いた温もり。カフェ/読書/手帳・ノート/趣味系" },
 ];
 
 export function buildAppSSCopyPrompt(
@@ -216,4 +222,69 @@ export async function generateAppSSCopy(
     recommendedBackgroundStyle: parseRecommendedBackground(text),
     generatedPalette: parseGeneratedPalette(text),
   };
+}
+
+// ---------- トップページ「READMEからスクショを作る」フォーム用：軽量アプリ情報推定 ----------
+// スライド生成（1回消費）とは別の、無料・即時のGemini呼び出し。README読み込み直後に自動実行し、
+// 「アプリ名」欄を仮入力するほか、アプリの説明・主な機能も推定して/appssエディタの
+// 「AIコピー＆デザイン生成」パネルの初期値としてハンドオフ経由で引き継ぐ
+// （間違っていればユーザーがその場で編集する前提）。
+const MAX_EXTRACT_README_CHARS = 6000; // 推定に全文は不要。速度・コスト優先で先頭のみ渡す
+
+export type AppSSExtractInfo = {
+  appName?: string;
+  appDescription?: string;
+  features: string[];
+};
+
+export function buildAppSSInfoPrompt(readme: string): string {
+  return `以下は、あるアプリの GitHub README です。次の3つを推定してください。
+
+【README】
+${readme.slice(0, MAX_EXTRACT_README_CHARS)}
+
+【出力形式】
+説明・前置きは不要。次の3行のみを出力する（推定が難しくても常識的に推測し、必ず埋める）：
+APP_NAME: <正式名称。20文字以内>
+APP_DESC: <アプリの説明。何ができて誰のどんな悩みを解決するか。100〜200文字程度>
+FEATURES: <主な機能・特徴を3〜5個、「|」区切りで1行に>`;
+}
+
+export async function extractAppSSInfo(readme: string): Promise<AppSSExtractInfo> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY が設定されていません。");
+  const ai = new GoogleGenAI({ apiKey });
+
+  const result = await generateContentWithRetry(
+    ai,
+    {
+      model: GEMINI_MODEL,
+      contents: buildAppSSInfoPrompt(readme),
+      config: {
+        thinkingConfig: GEMINI_THINKING_OFF,
+        temperature: 0.3,
+        maxOutputTokens: 220,
+      },
+    },
+    2, // 軽量な補助機能のためリトライ回数は控えめ
+  );
+
+  const text = result.text?.trim();
+  if (!text) return { features: [] };
+
+  const nameRaw = text.match(/APP_NAME:\s*([^\n]+)/i)?.[1]?.trim();
+  const appName = nameRaw
+    ? nameRaw.replace(/^["'「『]+|["'」』]+$/g, "").trim().slice(0, 50) || undefined
+    : undefined;
+
+  const descRaw = text.match(/APP_DESC:\s*([^\n]+)/i)?.[1]?.trim();
+  const appDescription = descRaw ? descRaw.slice(0, 2000) : undefined;
+
+  const featuresLine = text.match(/FEATURES:\s*([^\n]+)/i)?.[1];
+  const features = (featuresLine || "")
+    .split("|")
+    .map((f) => f.trim())
+    .filter(Boolean);
+
+  return { appName, appDescription, features };
 }

@@ -120,3 +120,59 @@ export async function recordGuestUsage(ipHash: string): Promise<void> {
   const { error } = await admin.from("ip_usage_logs").insert({ ip_hash: ipHash });
   if (error) logError("rateLimit", "ip_usage_logs insert error", error);
 }
+
+// ---------- 無料エンドポイント向けの粗いスロットル ----------
+// 生成回数を消費しない補助 API（/api/appss/extract-info 等）が、無料の Gemini 呼び出しの
+// 踏み台にされるのを防ぐための緩い上限。`ip_usage_logs` は使わない（そちらに記録すると
+// ゲストの無料生成枠3回を補助機能が食い潰してしまうため）。
+//
+// プロセス内メモリで持つベストエフォート実装で、githubApp.ts の token キャッシュと同じ方針。
+// Fluid Compute はインスタンスを再利用するが複数並走するため、実効上限は台数倍に緩む。
+// 悪意ある無限ループを止めるのが目的で、厳密な課金ゲートではない。
+export const FREE_ENDPOINT_WINDOW_MS = 60 * 1000;
+export const FREE_ENDPOINT_MAX_HITS = 20;
+// メモリ肥大を防ぐ上限。超えたら期限切れを掃除し、それでも溢れるなら最古から捨てる。
+const FREE_ENDPOINT_MAX_KEYS = 10_000;
+
+const freeEndpointHits = new Map<string, number[]>();
+
+function pruneFreeEndpointHits(now: number): void {
+  for (const [key, stamps] of freeEndpointHits) {
+    const alive = stamps.filter((t) => now - t < FREE_ENDPOINT_WINDOW_MS);
+    if (alive.length === 0) freeEndpointHits.delete(key);
+    else freeEndpointHits.set(key, alive);
+  }
+  // 掃除しても上限を超える場合は、挿入順（= 古い順）に捨てる。
+  while (freeEndpointHits.size > FREE_ENDPOINT_MAX_KEYS) {
+    const oldest = freeEndpointHits.keys().next();
+    if (oldest.done) break;
+    freeEndpointHits.delete(oldest.value);
+  }
+}
+
+/**
+ * 無料エンドポイントの呼び出しを記録し、直近ウィンドウ内の上限に収まっていれば true を返す。
+ * ipHash が取れない場合（ローカル実行など）は素通しする。
+ */
+export function allowFreeEndpointHit(ipHash: string | null): boolean {
+  if (!ipHash) return true;
+  const now = Date.now();
+
+  if (freeEndpointHits.size >= FREE_ENDPOINT_MAX_KEYS) pruneFreeEndpointHits(now);
+
+  const stamps = (freeEndpointHits.get(ipHash) ?? []).filter(
+    (t) => now - t < FREE_ENDPOINT_WINDOW_MS,
+  );
+  if (stamps.length >= FREE_ENDPOINT_MAX_HITS) {
+    freeEndpointHits.set(ipHash, stamps);
+    return false;
+  }
+  stamps.push(now);
+  freeEndpointHits.set(ipHash, stamps);
+  return true;
+}
+
+// テスト用。プロセス内状態を初期化する。
+export function resetFreeEndpointHits(): void {
+  freeEndpointHits.clear();
+}

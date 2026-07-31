@@ -75,10 +75,16 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 ## クレジットパック（単発課金）
 
-- パック定義（回数・金額）は `src/lib/creditPacks.ts` に集約。変更はこのファイルだけでよい。
+- パック定義（回数・金額）は `src/lib/creditPacks.ts` に集約。10回¥100 / 30回¥300 / 50回¥500 / 100回¥700 の4種。変更はこのファイルだけでよい。
 - 購入 → `/api/stripe/credits` が `mode: "payment"` の Checkout Session を作成 → webhook の `checkout.session.completed` で `grant_credits` RPC が残高に加算する。`credit_grants.stripe_event_id`（主キー）が冪等性ガードで、リトライ再送でも二重付与されない。
-- 消費は生成成功時のみ。毎月の無料枠（free 3回 / 旧 Pro 契約者 30回）を使い切ったあとに 1 回ずつ `consume_credit` RPC で減算する。
+- 消費は生成成功時のみ。毎月の無料枠（free 3回 / 旧 Pro 契約者 30回）を使い切ったあとに 1 回ずつ `consume_credit` RPC で減算する。Code Tweet / note Draft の生成、App SS のコピー生成、App SS の透かし解除書き出し（`/api/appss/export-unlock`）はすべて同じ共有プールを消費する。
 - クレジット残高が 1 以上あるユーザーは旧 Pro 特典（README 10,000 文字・生成履歴・プライベートリポジトリ）を利用できる。`ADMIN_EMAILS` の管理者は無課金で常に Pro 相当。
+
+## App SS
+
+- コピー生成は `GEMINI_API_KEY` を使う。追加の環境変数・外部サービス連携は不要。
+- スクショ画像はブラウザの IndexedDB にのみ保存され、サーバーへは送信されない。PNG合成・複数サイズ書き出し・zip化もすべてクライアント側で完結する。
+- 透かし解除書き出し（`/api/appss/export-unlock`）は Gemini を呼ばない gating 専用エンドポイントで、上記クレジットパックの共有プールを消費する。
 
 ### ローカルで webhook を試す（stripe listen）
 

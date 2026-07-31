@@ -53,7 +53,8 @@ type Props = {
 };
 
 export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
-  const { state, setState, hydrated, savedAt, saveError, reset, undo, redo } = useAppSSProject();
+  const { state, setState, hydrated, savedAt, saveError, reset, undo, redo, copyAssistantSeed } =
+    useAppSSProject();
   const [activeSlideId, setActiveSlideId] = React.useState<string | null>(null);
   const [selectedElement, setSelectedElement] = React.useState<SelectedElement | null>(null);
   const [exporting, setExporting] = React.useState<string | null>(null);
@@ -559,6 +560,9 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
             isLoggedIn={isLoggedIn}
             initialUsage={initialUsage}
             slideCount={slides.length}
+            initialAppName={state.appName}
+            initialAppDescription={copyAssistantSeed?.appDescription ?? ""}
+            initialFeatures={copyAssistantSeed?.features ?? []}
             onApplyAll={applyCopyIdeas}
             onApplyOne={applySingleIdea}
             onClose={() => setCopyAssistantOpen(false)}

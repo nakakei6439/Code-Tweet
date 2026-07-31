@@ -1,6 +1,16 @@
 import { headers } from "next/headers";
 import type { Metadata } from "next";
-import { Noto_Sans_JP, Noto_Serif_JP, Zen_Maru_Gothic } from "next/font/google";
+import {
+  Dela_Gothic_One,
+  Klee_One,
+  M_PLUS_Rounded_1c,
+  Noto_Sans_JP,
+  Noto_Serif_JP,
+  RocknRoll_One,
+  Shippori_Mincho,
+  Zen_Kaku_Gothic_New,
+  Zen_Maru_Gothic,
+} from "next/font/google";
 import { createClient } from "@/lib/supabase/server";
 import { hashIp } from "@/lib/rateLimit";
 import { getGuestUsage, getUserUsage } from "@/lib/usage";
@@ -24,6 +34,42 @@ const maru = Zen_Maru_Gothic({
 const mincho = Noto_Serif_JP({
   subsets: ["latin"],
   variable: "--font-appss-mincho",
+  display: "swap",
+});
+const rounded = M_PLUS_Rounded_1c({
+  weight: ["400", "700", "900"],
+  subsets: ["latin"],
+  variable: "--font-appss-rounded",
+  display: "swap",
+});
+const dela = Dela_Gothic_One({
+  weight: ["400"],
+  subsets: ["latin"],
+  variable: "--font-appss-dela",
+  display: "swap",
+});
+const shippori = Shippori_Mincho({
+  weight: ["400", "700", "800"],
+  subsets: ["latin"],
+  variable: "--font-appss-shippori",
+  display: "swap",
+});
+const klee = Klee_One({
+  weight: ["400", "600"],
+  subsets: ["latin"],
+  variable: "--font-appss-klee",
+  display: "swap",
+});
+const rocknroll = RocknRoll_One({
+  weight: ["400"],
+  subsets: ["latin"],
+  variable: "--font-appss-rocknroll",
+  display: "swap",
+});
+const kaku = Zen_Kaku_Gothic_New({
+  weight: ["400", "700", "900"],
+  subsets: ["latin"],
+  variable: "--font-appss-kaku",
   display: "swap",
 });
 
@@ -50,7 +96,9 @@ export default async function AppSSPage() {
   }
 
   return (
-    <main className={`min-h-screen bg-gray-950 ${gothic.variable} ${maru.variable} ${mincho.variable}`}>
+    <main
+      className={`min-h-screen bg-gray-950 ${gothic.variable} ${maru.variable} ${mincho.variable} ${rounded.variable} ${dela.variable} ${shippori.variable} ${klee.variable} ${rocknroll.variable} ${kaku.variable}`}
+    >
       <AppSSEditor isLoggedIn={!!user} initialUsage={initialUsage} />
     </main>
   );

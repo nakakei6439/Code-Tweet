@@ -179,7 +179,7 @@ export default function AboutPage() {
             利用枠
           </h2>
           <p className="mt-3 text-sm leading-7 text-gray-400">
-            Code Tweet は GitHub ログイン後、月 3 回まで無料で使えます。足りない分はクレジットパック（10回 ¥70〜）を買い足して使えます。買ったクレジットに有効期限はありません。
+            Code Tweet は GitHub ログイン後、月 3 回まで無料で使えます。足りない分はクレジットパック（10回 ¥100〜）を買い足して使えます。買ったクレジットに有効期限はありません。
           </p>
           <Link
             href="/pricing"

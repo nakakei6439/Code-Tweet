@@ -3,7 +3,7 @@
 // Based on MIT-licensed https://github.com/ParthJadhav/app-store-screenshots
 // 画像本体は IndexedDB(imageStore.ts) に置き、ここには "idb:<id>" 参照のみ保存する。
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { PROJECT_SCHEMA_VERSION, STORAGE_KEY, THEMES, isBackgroundStyle, sanitizeTheme } from "./constants";
+import { FONTS, PROJECT_SCHEMA_VERSION, STORAGE_KEY, THEMES, isBackgroundStyle, sanitizeTheme } from "./constants";
 import { makeDefaultProject, nid } from "./defaults";
 import { consumeHandoff } from "./handoff";
 import type {
@@ -29,7 +29,7 @@ const LAYOUTS: SlideLayout[] = [
   "collage-trio",
   "no-device",
 ];
-const FONT_IDS: FontId[] = ["gothic", "maru", "mincho"];
+const FONT_IDS: FontId[] = Object.keys(FONTS) as FontId[];
 
 export function cleanTransform(value: unknown): ElementTransform | undefined {
   if (!value || typeof value !== "object") return undefined;
@@ -162,13 +162,20 @@ type Updater = AppSSProject | ((prev: AppSSProject) => AppSSProject);
 const emptySubscribe = () => () => {};
 
 export function useAppSSProject() {
+  // ハンドオフは一度きりの受け渡しなので、lazy initializer で一度だけ読み取ってキャプチャする
+  // （project は state の初期値に、appDescription/features は copyAssistantSeed として公開する）。
+  const [handoffResult] = useState(() => consumeHandoff());
   // 初期値は lazy initializer で決定（SSR 時はデフォルト）。
   // トップページからの受け渡し（handoff）> localStorage の WIP > デフォルト の優先順。
   // hydrated はサーバー描画時 false / クライアントで true になり、
   // ハイドレーション不一致を防ぐ（両者ともスピナーを描画してから編集UIへ）。
   const [state, _setState] = useState<AppSSProject>(
-    () => consumeHandoff() ?? loadFromLocalStorage() ?? makeDefaultProject(),
+    () => handoffResult?.project ?? loadFromLocalStorage() ?? makeDefaultProject(),
   );
+  // ハンドオフ経由で来た場合のみ、AIコピー＆デザイン生成パネルの初期値を持つ
+  const copyAssistantSeed = handoffResult
+    ? { appDescription: handoffResult.appDescription, features: handoffResult.features }
+    : null;
   const hydrated = useSyncExternalStore(
     emptySubscribe,
     () => true,
@@ -239,5 +246,5 @@ export function useAppSSProject() {
     setState(makeDefaultProject());
   }, [setState]);
 
-  return { state, setState, hydrated, savedAt, saveError, reset, undo, redo };
+  return { state, setState, hydrated, savedAt, saveError, reset, undo, redo, copyAssistantSeed };
 }

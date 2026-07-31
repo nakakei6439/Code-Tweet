@@ -316,6 +316,16 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
   const [appssTone, setAppssTone] = useState("");
   const [appssThemeId, setAppssThemeId] = useState(""); // "" = AIおまかせ
   const [appssShots, setAppssShots] = useState<string[]>([]);
+  const [appssAppName, setAppssAppName] = useState("");
+  const [isExtractingAppName, setIsExtractingAppName] = useState(false);
+  // ユーザーが「アプリ名」欄を手動編集したら true。以後はAI抽出結果で上書きしない。
+  const appssAppNameTouchedRef = useRef(false);
+  // 直近に情報推定を実行したREADME本文（同一テキストでの再実行を避ける）
+  const lastExtractedReadmeRef = useRef("");
+  // README から推定したアプリの説明・主な機能。トップページ上に編集欄は無く、
+  // /appss エディタの「AIコピー＆デザイン生成」パネルの初期値としてハンドオフ経由で渡すだけ。
+  const [appssExtractedDescription, setAppssExtractedDescription] = useState("");
+  const [appssExtractedFeatures, setAppssExtractedFeatures] = useState<string[]>([]);
 
   // タブ固有結果
   const [tweets, setTweets] = useState<Tweet[]>([]);
@@ -460,8 +470,42 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
           `READMEが長すぎます。現在のプランでは ${formatCount(projectTextLimit)} 文字以内にしてください。`,
         );
       }
+      // 新しいREADMEを取得した＝別プロジェクトの可能性が高いので、アプリ名の自動推定を再度許可する
+      appssAppNameTouchedRef.current = false;
+      void runAppssInfoExtraction(content);
     } finally {
       setIsFetchingReadme(false);
+    }
+  }
+
+  // AppSS: README本文からアプリ名・説明・主な機能を推定する（App SSタブのみ）。
+  // /api/appss/copy（1回消費）とは無関係の、無料・即時の軽量呼び出し。
+  // - アプリ名: ユーザーが既に手入力していれば上書きしない（欄が見えているのはこれだけのため）。
+  // - 説明・機能: トップページ上に編集欄が無いので、常に最新の推定結果で更新し、
+  //   /appss エディタの「AIコピー＆デザイン生成」パネルの初期値としてハンドオフ経由で渡す。
+  // 失敗しても無視（ユーザーが手入力すればよい・フォームは止めない）。
+  async function runAppssInfoExtraction(readme: string) {
+    if (activeTab !== "appss") return;
+    const trimmed = readme.trim();
+    if (!trimmed) return;
+    if (trimmed === lastExtractedReadmeRef.current) return;
+    lastExtractedReadmeRef.current = trimmed;
+    setIsExtractingAppName(true);
+    try {
+      const result = await postJson<{
+        appName: string | null;
+        appDescription: string | null;
+        features: string[];
+      }>("/api/appss/extract-info", { readme: trimmed });
+      if (result.ok) {
+        if (result.data.appName && !appssAppNameTouchedRef.current) {
+          setAppssAppName(result.data.appName);
+        }
+        setAppssExtractedDescription(result.data.appDescription ?? "");
+        setAppssExtractedFeatures(result.data.features ?? []);
+      }
+    } finally {
+      setIsExtractingAppName(false);
     }
   }
 
@@ -568,7 +612,8 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         description = content;
       }
 
-      const appName = repo?.repo ?? "マイアプリ";
+      // 「アプリ名」欄（手入力 or README自動推定）を優先し、無ければリポジトリ名にフォールバック
+      const appName = appssAppName.trim() || repo?.repo || "マイアプリ";
       const result = await postJson<AppSSCopyResponse>("/api/appss/copy", {
         appName,
         // /api/appss/copy の appDescription 上限（10,000字）に合わせて先頭を渡す
@@ -594,6 +639,8 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         result.data.recommendedBackgroundStyle,
         appssShots,
         appssThemeId ? undefined : result.data.generatedPalette,
+        appssExtractedDescription,
+        appssExtractedFeatures,
       );
       trackActivationOnce();
       refreshUsage();
@@ -732,6 +779,32 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
               </div>
 
               <div>
+                <label className="mb-2 block text-sm font-medium text-gray-300">アプリ名</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={appssAppName}
+                    onChange={(e) => {
+                      appssAppNameTouchedRef.current = true;
+                      setAppssAppName(e.target.value);
+                    }}
+                    maxLength={50}
+                    placeholder="例: 家計簿サクッと"
+                    disabled={formDisabled}
+                    className="w-full rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 text-sm text-white placeholder-gray-500 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  {isExtractingAppName && (
+                    <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                      読み取り中…
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1.5 text-xs text-gray-500">
+                  READMEから自動で読み取ります。違う場合はここで直接編集してください。
+                </p>
+              </div>
+
+              <div>
                 <label className="mb-2 block text-sm font-medium text-gray-300">
                   プロジェクト説明（README） <span className="text-red-400">*</span>
                 </label>
@@ -742,6 +815,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                     setProjectText(e.target.value);
                     clearFieldError("projectText");
                   }}
+                  onBlur={(e) => void runAppssInfoExtraction(e.target.value)}
                   placeholder="READMEを読み込むと自動で入ります。ここを編集して、伝えたい内容に絞るとコピーの精度が上がります。"
                   disabled={formDisabled}
                   className={`w-full resize-none rounded-lg border bg-gray-800/50 px-4 py-3 text-sm text-white placeholder-gray-500 transition-colors focus:border-transparent focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 ${

@@ -69,7 +69,16 @@ export type Theme = {
   fontId?: FontId; // テーマ推奨フォント（選択時に連動提案）
 };
 
-export type FontId = "gothic" | "maru" | "mincho";
+export type FontId =
+  | "gothic"
+  | "maru"
+  | "mincho"
+  | "rounded"
+  | "dela"
+  | "shippori"
+  | "klee"
+  | "rocknroll"
+  | "kaku";
 
 // 背景の装飾スタイル（デッキ全体で共通）。全て CSS グラデ/影のみで export 安全
 // （Safari の foreignObject バグ回避のため filter:blur は使わない）。
