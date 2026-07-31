@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "description": "Un outil d'IA pour les développeurs indépendants qui transforme un README ou un dépôt GitHub en posts marketing pour X, brouillons d'articles et captures d'écran pour l'App Store."
+  },
+  "nav": {
+    "aboutCodeTweet": "Qu'est-ce que Code Tweet ?",
+    "aboutNote": "Qu'est-ce que note Draft ?",
+    "aboutAppss": "Qu'est-ce que App SS ?",
+    "pricing": "Tarifs",
+    "home": "Accueil",
+    "settings": "Paramètres",
+    "history": "Historique",
+    "admin": "Administration",
+    "pricingPlans": "Tarifs",
+    "viewPricing": "Voir les tarifs",
+    "login": "Se connecter avec GitHub",
+    "logout": "Se déconnecter",
+    "menu": "Menu"
+  },
+  "footer": {
+    "disclaimer": "Code Tweet génère des brouillons par IA. Vérifiez le contenu avant de publier.",
+    "terms": "Conditions d'utilisation",
+    "privacy": "Politique de confidentialité",
+    "contact": "Contact"
+  },
+  "localeSwitcher": {
+    "label": "Langue"
+  },
+  "legal": {
+    "fallbackNotice": "Ce document n'est disponible qu'en japonais et en anglais. La version anglaise est affichée."
+  },
+  "notePage": {
+    "title": "Créer un brouillon note à partir de votre README",
+    "description": "Générez un brouillon d'article à copier-coller dans note.com, à partir d'un dépôt GitHub ou d'une description de projet."
+  }
+}

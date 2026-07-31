@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "description": "An AI tool for indie developers that turns a README or GitHub repository into X marketing posts, article drafts, and App Store screenshots."
+  },
+  "nav": {
+    "aboutCodeTweet": "What is Code Tweet?",
+    "aboutNote": "What is note Draft?",
+    "aboutAppss": "What is App SS?",
+    "pricing": "Pricing",
+    "home": "Home",
+    "settings": "Settings",
+    "history": "History",
+    "admin": "Admin",
+    "pricingPlans": "Pricing",
+    "viewPricing": "View pricing",
+    "login": "Sign in with GitHub",
+    "logout": "Sign out",
+    "menu": "Menu"
+  },
+  "footer": {
+    "disclaimer": "Code Tweet generates AI drafts. Please review the content before posting.",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "contact": "Contact"
+  },
+  "localeSwitcher": {
+    "label": "Language"
+  },
+  "legal": {
+    "fallbackNotice": "This document is only available in Japanese and English. Showing the English version."
+  },
+  "notePage": {
+    "title": "Create a note Draft from your README",
+    "description": "Generate an article draft you can copy and paste into note.com, from a GitHub repository or project description."
+  }
+}

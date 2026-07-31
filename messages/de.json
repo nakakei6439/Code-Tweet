@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "description": "Ein KI-Tool für Indie-Entwickler, das aus einer README oder einem GitHub-Repository X-Marketing-Posts, Artikelentwürfe und App-Store-Screenshots erzeugt."
+  },
+  "nav": {
+    "aboutCodeTweet": "Was ist Code Tweet?",
+    "aboutNote": "Was ist note Draft?",
+    "aboutAppss": "Was ist App SS?",
+    "pricing": "Preise",
+    "home": "Start",
+    "settings": "Einstellungen",
+    "history": "Verlauf",
+    "admin": "Verwaltung",
+    "pricingPlans": "Preise",
+    "viewPricing": "Preise ansehen",
+    "login": "Mit GitHub anmelden",
+    "logout": "Abmelden",
+    "menu": "Menü"
+  },
+  "footer": {
+    "disclaimer": "Code Tweet erstellt KI-Entwürfe. Bitte prüfe die Inhalte vor dem Veröffentlichen.",
+    "terms": "Nutzungsbedingungen",
+    "privacy": "Datenschutzerklärung",
+    "contact": "Kontakt"
+  },
+  "localeSwitcher": {
+    "label": "Sprache"
+  },
+  "legal": {
+    "fallbackNotice": "Dieses Dokument ist nur auf Japanisch und Englisch verfügbar. Es wird die englische Fassung angezeigt."
+  },
+  "notePage": {
+    "title": "note-Entwurf aus deiner README erstellen",
+    "description": "Erzeuge aus einem GitHub-Repository oder einer Projektbeschreibung einen Artikelentwurf zum Kopieren in note.com."
+  }
+}

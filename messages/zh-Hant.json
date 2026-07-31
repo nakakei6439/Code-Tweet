@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "description": "為獨立開發者打造的 AI 工具，可將 README 或 GitHub 儲存庫轉換為 X 行銷貼文、文章草稿與 App Store 上架用截圖。"
+  },
+  "nav": {
+    "aboutCodeTweet": "什麼是 Code Tweet",
+    "aboutNote": "什麼是 note Draft",
+    "aboutAppss": "什麼是 App SS",
+    "pricing": "價格",
+    "home": "首頁",
+    "settings": "設定",
+    "history": "歷史紀錄",
+    "admin": "管理",
+    "pricingPlans": "價格方案",
+    "viewPricing": "查看價格方案",
+    "login": "使用 GitHub 登入",
+    "logout": "登出",
+    "menu": "選單"
+  },
+  "footer": {
+    "disclaimer": "Code Tweet 生成的是 AI 草稿。發布前請先確認內容。",
+    "terms": "使用條款",
+    "privacy": "隱私權政策",
+    "contact": "聯絡我們"
+  },
+  "localeSwitcher": {
+    "label": "語言"
+  },
+  "legal": {
+    "fallbackNotice": "本文件僅提供日文與英文版本。目前顯示英文版。"
+  },
+  "notePage": {
+    "title": "從 README 產生 note 草稿",
+    "description": "根據 GitHub 儲存庫或專案說明，產生可直接複製貼上到 note.com 的介紹文章草稿。"
+  }
+}

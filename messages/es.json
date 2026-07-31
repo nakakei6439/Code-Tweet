@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "description": "Una herramienta de IA para desarrolladores independientes que convierte un README o repositorio de GitHub en publicaciones de marketing para X, borradores de artículos y capturas de pantalla para la App Store."
+  },
+  "nav": {
+    "aboutCodeTweet": "¿Qué es Code Tweet?",
+    "aboutNote": "¿Qué es note Draft?",
+    "aboutAppss": "¿Qué es App SS?",
+    "pricing": "Precios",
+    "home": "Inicio",
+    "settings": "Ajustes",
+    "history": "Historial",
+    "admin": "Administración",
+    "pricingPlans": "Planes",
+    "viewPricing": "Ver planes",
+    "login": "Iniciar sesión con GitHub",
+    "logout": "Cerrar sesión",
+    "menu": "Menú"
+  },
+  "footer": {
+    "disclaimer": "Code Tweet genera borradores con IA. Revisa el contenido antes de publicar.",
+    "terms": "Términos del servicio",
+    "privacy": "Política de privacidad",
+    "contact": "Contacto"
+  },
+  "localeSwitcher": {
+    "label": "Idioma"
+  },
+  "legal": {
+    "fallbackNotice": "Este documento solo está disponible en japonés e inglés. Se muestra la versión en inglés."
+  },
+  "notePage": {
+    "title": "Crea un borrador de artículo desde tu README",
+    "description": "Genera un borrador de artículo listo para copiar y pegar en note.com, a partir de un repositorio de GitHub o la descripción de tu proyecto."
+  }
+}

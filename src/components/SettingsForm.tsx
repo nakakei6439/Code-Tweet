@@ -312,6 +312,10 @@ function GithubAppSection({ isConnected, appConfigured }: { isConnected: boolean
         </div>
 
         {appConfigured ? (
+          // 遷移先は Route Handler で、GitHub の install URL へサーバー側リダイレクトする。
+          // next/link にすると client 遷移になって外部リダイレクトが壊れるため素の <a> を使う。
+          // ルートを [locale] 配下へ移してから、この href をページ扱いする誤検知が出るので抑制する。
+          // eslint-disable-next-line @next/next/no-html-link-for-pages
           <a
             href="/api/github-app/install"
             className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-lg text-sm font-semibold

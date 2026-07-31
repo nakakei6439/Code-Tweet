@@ -1,10 +1,13 @@
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getEntitlements } from "@/lib/entitlements";
 import { isAdminEmail } from "@/lib/admin";
 import HeaderActions from "@/components/HeaderActions";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
 
 export default async function Header() {
+  const t = await getTranslations("nav");
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   // ヘッダーの表示 tier は perk 判定（サブスク / 管理者 / クレジット残高あり）。
@@ -21,16 +24,16 @@ export default async function Header() {
         <div className="flex-1 flex justify-start min-w-0">
           <nav className="hidden md:flex items-center gap-5 text-sm font-medium text-gray-300">
             <Link href="/about" className="transition-colors hover:text-white">
-              Code Tweetとは
+              {t("aboutCodeTweet")}
             </Link>
             <Link href="/about/note" className="transition-colors hover:text-white">
-              note Draftとは
+              {t("aboutNote")}
             </Link>
             <Link href="/about/appss" className="transition-colors hover:text-white">
-              App SSとは
+              {t("aboutAppss")}
             </Link>
             <Link href="/pricing" className="transition-colors hover:text-white">
-              プラン
+              {t("pricing")}
             </Link>
           </nav>
         </div>
@@ -40,7 +43,8 @@ export default async function Header() {
             Tweet
           </span>
         </Link>
-        <div className="flex-1 flex justify-end min-w-0">
+        <div className="flex-1 flex justify-end min-w-0 items-center gap-1">
+          <LocaleSwitcher />
           <HeaderActions
             isAuthenticated={!!user}
             email={user?.email ?? null}

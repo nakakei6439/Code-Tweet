@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "description": "READMEやGitHubリポジトリから、X向けマーケティングポスト・note記事の下書き・App Store提出用スクリーンショットを生成する個人開発者向けAIツール"
+  },
+  "nav": {
+    "aboutCodeTweet": "Code Tweetとは",
+    "aboutNote": "note Draftとは",
+    "aboutAppss": "App SSとは",
+    "pricing": "プラン",
+    "home": "ホーム",
+    "settings": "設定",
+    "history": "履歴",
+    "admin": "管理",
+    "pricingPlans": "料金プラン",
+    "viewPricing": "料金プランを見る",
+    "login": "GitHubでログイン",
+    "logout": "ログアウト",
+    "menu": "メニュー"
+  },
+  "footer": {
+    "disclaimer": "Code Tweet はAI生成の下書きツールです。投稿前に内容を確認してください。",
+    "terms": "利用規約",
+    "privacy": "プライバシーポリシー",
+    "contact": "問い合わせ"
+  },
+  "localeSwitcher": {
+    "label": "言語"
+  },
+  "legal": {
+    "fallbackNotice": "この文書は日本語と英語でのみ提供しています。英語版を表示しています。"
+  },
+  "notePage": {
+    "title": "READMEからnote Draftを作る",
+    "description": "GitHubリポジトリやプロジェクト説明から、note.com にコピー＆ペーストできる紹介記事の Draft を生成します。"
+  }
+}
