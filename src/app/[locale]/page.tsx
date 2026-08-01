@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { headers } from "next/headers";
 import type { Metadata } from "next";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import UnifiedGenerateForm from "@/components/UnifiedGenerateForm";
 import type { GenerateTabKey } from "@/components/GenerateTabs";
@@ -9,17 +10,28 @@ import { hashIp } from "@/lib/rateLimit";
 import { getGuestUsage, getUserUsage } from "@/lib/usage";
 import type { UsageInfo } from "@/types/usage";
 
-export const metadata: Metadata = {
-  title: "READMEをポスト / note Draftに変換",
-  description: "GitHubリポジトリやプロジェクト説明から、Xのポストとnote.comの紹介記事Draftを1ページで生成できます。",
-};
+type LocaleParams = Promise<{ locale: string }>;
+
+export async function generateMetadata({ params }: { params: LocaleParams }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "homePage" });
+  return { title: t("title"), description: t("description") };
+}
 
 type SearchParams = Promise<{ onboarding?: string | string[]; tab?: string | string[] }>;
 
-export default async function Home({ searchParams }: { searchParams: SearchParams }) {
-  const params = await searchParams;
-  const onboardingParam = Array.isArray(params.onboarding) ? params.onboarding[0] : params.onboarding;
-  const tabParam = Array.isArray(params.tab) ? params.tab[0] : params.tab;
+export default async function Home({
+  params,
+  searchParams,
+}: {
+  params: LocaleParams;
+  searchParams: SearchParams;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const search = await searchParams;
+  const onboardingParam = Array.isArray(search.onboarding) ? search.onboarding[0] : search.onboarding;
+  const tabParam = Array.isArray(search.tab) ? search.tab[0] : search.tab;
   const initialTab: GenerateTabKey =
     tabParam === "note" ? "note" : tabParam === "appss" ? "appss" : "tweet";
 

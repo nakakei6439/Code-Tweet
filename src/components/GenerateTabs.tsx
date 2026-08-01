@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 export type GenerateTabKey = "tweet" | "note" | "appss";
 
 type Props = {
@@ -14,11 +16,12 @@ function pillClass(active: boolean) {
 }
 
 export default function GenerateTabs({ activeTab, onChange }: Props) {
+  const t = useTranslations("tabs");
   return (
     <div className="mb-8 flex justify-center">
       <div
         role="tablist"
-        aria-label="生成モード"
+        aria-label={t("ariaLabel")}
         className="inline-flex rounded-full border border-gray-700 bg-gray-900/60 p-1 shadow-inner shadow-black/20"
       >
         <button

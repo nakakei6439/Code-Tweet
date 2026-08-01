@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, type ReactNode } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   MAX_HASHTAGS_LENGTH,
   MAX_TONE_MEMO_LENGTH,
@@ -25,9 +26,7 @@ const STATIC_FIELD_LIMITS_BY_FIELD = {
 const inputBase =
   "w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
-function formatCount(value: number) {
-  return value.toLocaleString("ja-JP");
-}
+
 
 type Props = {
   // values + setters
@@ -101,6 +100,10 @@ export default function GenerateInputs({
   showHashtags = true,
   extraFields,
 }: Props) {
+  const t = useTranslations("generateInputs");
+  const tf = useTranslations("generateForm");
+  const locale = useLocale();
+  const formatCount = (value: number) => value.toLocaleString(locale);
   const detectedUrls = useMemo(() => detectReadmeUrls(projectText), [projectText]);
 
   function getFieldError(field: GenerateErrorField) {
@@ -164,7 +167,7 @@ export default function GenerateInputs({
                 bg-gray-800 px-5 text-sm font-medium text-gray-100 transition-colors
                 hover:border-gray-600 hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isFetchingReadme ? quickFetchingLabel : isLoading ? "生成中..." : quickGenerateLabel}
+              {isFetchingReadme ? quickFetchingLabel : isLoading ? tf("generating") : quickGenerateLabel}
             </button>
           </div>
           <div className="mt-4 flex justify-center">
@@ -174,7 +177,7 @@ export default function GenerateInputs({
               rel="noreferrer"
               className="text-xs font-medium text-gray-400 transition-colors hover:text-gray-200"
             >
-              GitHubを開いてリポジトリURLをコピーする
+              {tf("openGithub")}
             </a>
           </div>
         </section>
@@ -186,16 +189,14 @@ export default function GenerateInputs({
           <div className="p-8 space-y-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold text-white">詳細設定</p>
-                <p className="mt-1 text-xs text-gray-400">
-                  口調、投稿URL、ハッシュタグ、説明文を調整できます。
-                </p>
+                <p className="text-sm font-semibold text-white">{t("advancedTitle")}</p>
+                <p className="mt-1 text-xs text-gray-400">{t("advancedDesc")}</p>
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                READMEを読み込む
+                {t("loadReadme")}
               </label>
               <div className="rounded-2xl border border-cyan-400/25 bg-cyan-400/10 p-4">
                 <div className="flex flex-col gap-4">
@@ -204,9 +205,7 @@ export default function GenerateInputs({
                       <svg className="mt-0.5 h-4 w-4 shrink-0 text-cyan-200" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                         <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
                       </svg>
-                      <span>
-                        GitHubからリポジトリを選ぶか、モーダル下部にURLを入力してREADMEを読み込めます。
-                      </span>
+                      <span>{t("loadReadmeHelp")}</span>
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row">
@@ -224,31 +223,29 @@ export default function GenerateInputs({
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                           </svg>
-                          取得中...
+                          {t("fetching")}
                         </>
                       ) : (
-                        "GitHubからREADMEを選ぶ"
+                        tf("chooseRepo")
                       )}
                     </button>
                     <input
                       type="url"
                       value={githubUrl}
                       onChange={(e) => onGithubUrlChange(e.target.value)}
-                      placeholder="例：https://github.com/owner/repo"
+                      placeholder={tf("repoUrlPlaceholder")}
                       disabled={formDisabled}
                       className={`${inputBase} focus:ring-cyan-500 flex-1`}
                     />
                   </div>
-                  <p className="text-xs text-gray-400">
-                    公開リポジトリはURLだけで取得できます。非公開リポジトリはクレジット購入者向けの機能です。
-                  </p>
+                  <p className="text-xs text-gray-400">{t("publicRepoNote")}</p>
                 </div>
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                プロジェクト説明（README） <span className="text-red-400">*</span>
+                {tf("fieldProjectText")} <span className="text-red-400">*</span>
               </label>
               <textarea
                 rows={8}
@@ -257,16 +254,16 @@ export default function GenerateInputs({
                   onProjectTextChange(e.target.value);
                   onClearFieldError("projectText");
                 }}
-                placeholder="例：個人開発者向けのタスク管理アプリです。GitHub Issue と連携し、毎日の進捗を見える化できます。"
+                placeholder={t("projectTextPlaceholder")}
                 disabled={formDisabled}
                 className={inputClass("projectText", "focus:ring-cyan-500", "resize-none")}
               />
-              {fieldMeta("projectText", projectText.length, "README全文、リリースノート、機能説明のどれでも使えます。")}
+              {fieldMeta("projectText", projectText.length, tf("projectTextHint"))}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                追加プロンプト <span className="text-gray-500 font-normal">（任意）</span>
+                {tf("fieldToneMemo")} <span className="text-gray-500 font-normal">{tf("optional")}</span>
               </label>
               <input
                 type="text"
@@ -275,16 +272,16 @@ export default function GenerateInputs({
                   onToneMemoChange(e.target.value);
                   onClearFieldError("toneMemo");
                 }}
-                placeholder="例：個人開発者向けに、少しフランクで、絵文字は控えめ"
+                placeholder={t("toneMemoPlaceholder")}
                 disabled={formDisabled}
                 className={inputClass("toneMemo", "focus:ring-fuchsia-500")}
               />
-              {fieldMeta("toneMemo", toneMemo.length, "生成時の口調や避けたい表現を短く指定できます。")}
+              {fieldMeta("toneMemo", toneMemo.length, t("toneMemoHint"))}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                URL <span className="text-gray-500 font-normal">（任意）</span>
+                {tf("fieldUrl")} <span className="text-gray-500 font-normal">{tf("optional")}</span>
               </label>
               <textarea
                 value={url}
@@ -293,7 +290,7 @@ export default function GenerateInputs({
                   onClearFieldError("url");
                 }}
                 rows={2}
-                placeholder="例：https://example.com または https://github.com/owner/repo"
+                placeholder={t("urlPlaceholder")}
                 disabled={formDisabled}
                 className={inputClass("url", "focus:ring-fuchsia-500", "resize-none [overflow-wrap:anywhere]")}
               />
@@ -312,7 +309,7 @@ export default function GenerateInputs({
                         onUrlChange(hit);
                         onClearFieldError("url");
                       }}
-                      title={hit ?? "READMEに該当するURLが見つかりません"}
+                      title={hit ?? t("urlNotFound")}
                       className={
                         isSelected
                           ? "rounded-md border border-cyan-500 bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-300 cursor-pointer"
@@ -326,13 +323,13 @@ export default function GenerateInputs({
                   );
                 })}
               </div>
-              {fieldMeta("url", url.length, "READMEから検出したURLをボタンで選べます。種別に合ったリード文が自動で付きます。")}
+              {fieldMeta("url", url.length, t("urlHint"))}
             </div>
 
             {showHashtags && (
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  ハッシュタグ <span className="text-gray-500 font-normal">（任意）</span>
+                  {tf("fieldHashtags")} <span className="text-gray-500 font-normal">{tf("optional")}</span>
                 </label>
                 <input
                   type="text"
@@ -341,11 +338,11 @@ export default function GenerateInputs({
                     onHashtagsChange(e.target.value);
                     onClearFieldError("hashtags");
                   }}
-                  placeholder="例：#個人開発 #Webアプリ #SaaS"
+                  placeholder={t("hashtagsPlaceholder")}
                   disabled={formDisabled}
                   className={inputClass("hashtags", "focus:ring-fuchsia-500")}
                 />
-                {fieldMeta("hashtags", hashtags.length, "入力したハッシュタグに加え、関連タグが自動で付きます（Xポストは合計3つまで）。")}
+                {fieldMeta("hashtags", hashtags.length, t("hashtagsHint"))}
               </div>
             )}
 
@@ -368,16 +365,14 @@ export default function GenerateInputs({
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                   </svg>
-                  生成中...
+                  {tf("generating")}
                 </>
               ) : (
                 generateLabel
               )}
             </button>
 
-            <p className="text-xs leading-5 text-gray-400">
-              生成結果は投稿前に必ず確認してください。URL、価格、機能名などの事実関係はご自身でのチェックをお願いします。
-            </p>
+            <p className="text-xs leading-5 text-gray-400">{t("reviewNotice")}</p>
           </div>
         </div>
       )}
