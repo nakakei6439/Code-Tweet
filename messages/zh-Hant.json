@@ -180,5 +180,42 @@
     "sampleBody": "## 你是否也有這些困擾？\n\n「開發做完了，宣傳卻撐不下去」「README 寫好了，卻不知道在 X 上該怎麼介紹」——做個人開發時，宣傳花的時間往往比技術實作還多。",
     "sampleCharCount": "1842 字",
     "quotaBody": "note Draft 與 Code Tweet 共用使用額度。使用 GitHub 登入後每月可免費使用 3 次。不夠時可購買點數包補充（10 次 ¥100 起）。"
+  },
+  "pricingPage": {
+    "metaTitle": "價格方案",
+    "metaDescription": "Code Tweet 提供每月免費額度，外加按需購買的一次性點數包。無需訂閱，已購點數永不過期。",
+    "headlineLine1": "無需訂閱。",
+    "headlineLine2": "用多少，買多少。",
+    "lead": "每月可免費產生 {free} 次。只在不夠用的月份購買點數即可。已購點數沒有有效期限。",
+    "freePlan": "免費",
+    "freeQuota": "每月可產生 {free} 次",
+    "inUse": "使用中",
+    "loginToUse": "使用 GitHub 登入後開始使用",
+    "loginToBuy": "使用 GitHub 登入後購買",
+    "packName": "{credits} 次裝",
+    "buyPack": "購買 {credits} 次裝",
+    "bestValue": "最划算",
+    "oneTime": "/ 一次性",
+    "packQuota": "可產生 {credits} 次（每次約 ¥{perUse}）",
+    "comingSoon": "準備中",
+    "comingSoonTitle": "付款功能即將開放",
+    "perkReadmeLimit": "README 字數上限 {paid} 字（免費為 {free} 字）",
+    "perkHistory": "儲存與刪除產生紀錄（最新 {limit} 筆）",
+    "perkPrivateRepo": "支援私有儲存庫",
+    "perkNoExpiry": "點數永不過期（跨月也不會歸零）",
+    "freeFeature1": "每月免費產生 {free} 次",
+    "freeFeature2": "自動取得 README + 一次產生 5 則",
+    "freeFeature3": "建議發布時間及理由",
+    "freeFeature4": "自動檢查 280 權重字數",
+    "freeFeature5": "一鍵發布到 X（透過分享連結）",
+    "guestNote": "即使不登入，也可以在首頁產生 3 次。訪客的 README 字數上限為 {guest} 字。",
+    "creditNote": "※ 只有產生成功時才會扣除 1 次點數，並且是在用完當月免費額度之後才開始扣除。",
+    "subscriberNotePrefix": "如果你仍在使用舊版 Pro 方案，每月依然可用 30 次。訂閱管理請前往",
+    "subscriberNoteLink": "設定頁面",
+    "subscriberNoteSuffix": "。"
+  },
+  "githubLogin": {
+    "error": "無法開始登入。請稍後重試。",
+    "redirecting": "正在跳轉…"
   }
 }

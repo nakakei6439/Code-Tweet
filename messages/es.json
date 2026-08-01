@@ -180,5 +180,42 @@
     "sampleBody": "## ¿Te suena?\n\n«El código está listo, pero la difusión nunca continúa». «Escribí el README, pero no sé cómo presentarlo en X». Cuando desarrollas en solitario, la promoción suele llevar más tiempo que la propia implementación.",
     "sampleCharCount": "1842 caracteres",
     "quotaBody": "note Draft comparte cuota con Code Tweet. Tras iniciar sesión con GitHub, es gratis para 3 generaciones al mes. ¿Necesitas más? Recarga con un pack de créditos (desde 10 generaciones por ¥100)."
+  },
+  "pricingPage": {
+    "metaTitle": "Precios",
+    "metaDescription": "Code Tweet te da una cuota mensual gratuita más packs de créditos de pago único que recargas según los necesites. Sin suscripción, y los créditos comprados no caducan.",
+    "headlineLine1": "Sin suscripción.",
+    "headlineLine2": "Recarga solo lo que uses.",
+    "lead": "Gratis para {free} generaciones al mes. Recarga créditos solo los meses que necesites más. Los créditos comprados no caducan.",
+    "freePlan": "Gratis",
+    "freeQuota": "{free} generaciones al mes",
+    "inUse": "Plan actual",
+    "loginToUse": "Inicia sesión con GitHub para empezar",
+    "loginToBuy": "Inicia sesión con GitHub para comprar",
+    "packName": "Pack de {credits} generaciones",
+    "buyPack": "Comprar el pack de {credits} generaciones",
+    "bestValue": "Mejor precio",
+    "oneTime": "/ pago único",
+    "packQuota": "{credits} generaciones (unos ¥{perUse} cada una)",
+    "comingSoon": "Próximamente",
+    "comingSoonTitle": "Los pagos estarán disponibles próximamente",
+    "perkReadmeLimit": "Límite de README de {paid} caracteres (plan gratuito: {free})",
+    "perkHistory": "Guarda y elimina tu historial de generaciones (últimas {limit})",
+    "perkPrivateRepo": "Compatible con repositorios privados",
+    "perkNoExpiry": "Los créditos no caducan (se conservan de un mes a otro)",
+    "freeFeature1": "{free} generaciones gratis cada mes",
+    "freeFeature2": "Obtención automática del README + 5 publicaciones por generación",
+    "freeFeature3": "Horas de publicación sugeridas, con su motivo",
+    "freeFeature4": "Comprobación automática del límite de 280",
+    "freeFeature5": "Publicación en X con un clic (mediante enlace de compartir)",
+    "guestNote": "Puedes generar 3 veces desde la página de inicio sin iniciar sesión. El límite de README para invitados es de {guest} caracteres.",
+    "creditNote": "Los créditos solo se consumen cuando una generación tiene éxito, y únicamente después de agotar tu cuota mensual gratuita.",
+    "subscriberNotePrefix": "Si tienes el antiguo plan Pro, sigues disponiendo de 30 generaciones al mes. Gestiona tu suscripción desde la",
+    "subscriberNoteLink": "página de ajustes",
+    "subscriberNoteSuffix": "."
+  },
+  "githubLogin": {
+    "error": "No se pudo iniciar el acceso. Espera un momento e inténtalo de nuevo.",
+    "redirecting": "Redirigiendo..."
   }
 }

@@ -180,5 +180,42 @@
     "sampleBody": "## 이런 고민 없으신가요?\n\n'개발은 끝났는데 홍보가 이어지지 않는다', 'README는 썼는데 X에서 어떻게 소개해야 할지 모르겠다' — 개인 개발을 하다 보면 기술적인 구현보다 홍보에 더 많은 시간이 들 때가 있습니다.",
     "sampleCharCount": "1842자",
     "quotaBody": "note Draft는 Code Tweet과 이용 한도를 공유합니다. GitHub 로그인 후 매월 3회까지 무료로 사용할 수 있습니다. 부족하면 크레딧 팩(10회 ¥100부터)을 추가로 구매해 사용할 수 있습니다."
+  },
+  "pricingPage": {
+    "metaTitle": "요금제",
+    "metaDescription": "Code Tweet은 매월 무료 한도에 더해, 필요한 만큼 크레딧을 추가 구매하는 단건 결제 방식입니다. 구독이 필요 없고, 구매한 크레딧은 무기한 사용할 수 있습니다.",
+    "headlineLine1": "구독 불필요.",
+    "headlineLine2": "쓰는 만큼만 추가 구매.",
+    "lead": "매월 {free}회까지 무료. 부족한 달에만 크레딧을 추가로 구매하면 됩니다. 구매한 크레딧에는 유효기간이 없습니다.",
+    "freePlan": "무료",
+    "freeQuota": "월 {free}회까지 생성",
+    "inUse": "이용 중",
+    "loginToUse": "GitHub으로 로그인하고 사용하기",
+    "loginToBuy": "GitHub으로 로그인하고 구매",
+    "packName": "{credits}회 팩",
+    "buyPack": "{credits}회 팩 구매",
+    "bestValue": "가장 저렴",
+    "oneTime": "/ 1회 결제",
+    "packQuota": "생성 {credits}회분(1회당 약 ¥{perUse})",
+    "comingSoon": "준비 중",
+    "comingSoonTitle": "결제 기능은 곧 공개됩니다",
+    "perkReadmeLimit": "README 글자 수 상한 {paid}자(무료는 {free}자)",
+    "perkHistory": "생성 기록 저장·삭제(최신 {limit}건)",
+    "perkPrivateRepo": "비공개 저장소 지원",
+    "perkNoExpiry": "크레딧은 무기한(달이 바뀌어도 사라지지 않음)",
+    "freeFeature1": "매월 {free}회까지 무료 생성",
+    "freeFeature2": "README 자동 가져오기 + 5건 생성",
+    "freeFeature3": "추천 게시 일시 + 이유",
+    "freeFeature4": "280 가중치 자동 확인",
+    "freeFeature5": "원클릭 X 게시(공유 링크 방식)",
+    "guestNote": "로그인 없이도 홈에서 3회까지 생성할 수 있습니다. 게스트의 README 글자 수 상한은 {guest}자입니다.",
+    "creditNote": "※ 크레딧은 생성에 성공했을 때만 1회분이 차감되며, 매월 무료 한도를 모두 쓴 뒤부터 소비됩니다.",
+    "subscriberNotePrefix": "기존 Pro 플랜을 이용 중이라면 지금까지처럼 월 30회까지 사용할 수 있습니다. 구독 관리는",
+    "subscriberNoteLink": "설정 페이지",
+    "subscriberNoteSuffix": "에서 할 수 있습니다."
+  },
+  "githubLogin": {
+    "error": "로그인을 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+    "redirecting": "리디렉션 중..."
   }
 }

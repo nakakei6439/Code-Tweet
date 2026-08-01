@@ -180,5 +180,42 @@
     "sampleBody": "## こんな課題はありませんか?\n\n「開発は終わったけど、告知が続かない」「READMEは書いたけど、Xでどう紹介すればいいか分からない」——個人開発をやっていると、技術的な実装よりも告知のほうに時間がかかることがあります。",
     "sampleCharCount": "1842字",
     "quotaBody": "note Draft は Code Tweet と利用枠を共有しています。GitHub ログイン後、月 3 回まで無料で使えます。足りない分はクレジットパック（10回 ¥100〜）を買い足して使えます。"
+  },
+  "pricingPage": {
+    "metaTitle": "料金プラン",
+    "metaDescription": "Code Tweetは毎月の無料枠に加えて、使う分だけクレジットを買い足せる単発課金制です。サブスク不要で、買ったクレジットは無期限で使えます。",
+    "headlineLine1": "サブスク不要。",
+    "headlineLine2": "使う分だけ買い足せる。",
+    "lead": "毎月{free}回まで無料。足りない月だけクレジットを買い足せます。買ったクレジットに有効期限はありません。",
+    "freePlan": "無料",
+    "freeQuota": "月{free}回まで生成",
+    "inUse": "利用中",
+    "loginToUse": "GitHubでログインして使う",
+    "loginToBuy": "GitHubでログインして購入",
+    "packName": "{credits}回パック",
+    "buyPack": "{credits}回パックを購入",
+    "bestValue": "おトク",
+    "oneTime": "/ 買い切り",
+    "packQuota": "生成{credits}回分（1回あたり約¥{perUse}）",
+    "comingSoon": "準備中",
+    "comingSoonTitle": "決済機能は近日公開予定です",
+    "perkReadmeLimit": "README文字数上限 {paid}文字（無料は{free}文字）",
+    "perkHistory": "生成履歴の保存・削除（最新{limit}件）",
+    "perkPrivateRepo": "プライベートリポジトリ対応",
+    "perkNoExpiry": "クレジットは無期限（月をまたいでも消えない）",
+    "freeFeature1": "毎月{free}回まで無料で生成",
+    "freeFeature2": "READMEの自動取得 + 5件生成",
+    "freeFeature3": "推奨投稿日時 + 理由",
+    "freeFeature4": "280ウェイトの自動チェック",
+    "freeFeature5": "ワンクリックでXに投稿（共有リンク）",
+    "guestNote": "ログインなしでも、ホームから3回まで生成できます。ゲストのREADME文字数上限は {guest}文字です。",
+    "creditNote": "※ クレジットは生成成功時にのみ1回分を消費します。毎月の無料枠を使い切ったあとに消費されます。",
+    "subscriberNotePrefix": "Pro プラン契約中の方は、これまで通り月30回まで利用できます。契約の管理は",
+    "subscriberNoteLink": "設定ページ",
+    "subscriberNoteSuffix": "から行えます。"
+  },
+  "githubLogin": {
+    "error": "ログインを開始できませんでした。少し時間をおいて再試行してください。",
+    "redirecting": "リダイレクト中..."
   }
 }

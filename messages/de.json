@@ -180,5 +180,42 @@
     "sampleBody": "## Kommt dir das bekannt vor?\n\n„Der Code ist fertig, aber die Ankündigungen bleiben liegen.“ „Die README steht, aber wie stelle ich das Ding auf X vor?“ Wer allein entwickelt, verbringt mit dem Bewerben oft mehr Zeit als mit der Umsetzung.",
     "sampleCharCount": "1.842 Zeichen",
     "quotaBody": "note Draft teilt sich das Kontingent mit Code Tweet. Nach der GitHub-Anmeldung sind 3 Generierungen pro Monat kostenlos. Mehr nötig? Lade ein Credit-Paket auf (ab 10 Generierungen für 100 ¥)."
+  },
+  "pricingPage": {
+    "metaTitle": "Preise",
+    "metaDescription": "Code Tweet bietet ein kostenloses Monatskontingent plus einmalig kaufbare Credit-Pakete nach Bedarf. Kein Abo, und gekaufte Credits verfallen nie.",
+    "headlineLine1": "Kein Abo.",
+    "headlineLine2": "Nur nachkaufen, was du brauchst.",
+    "lead": "Jeden Monat {free} Generierungen kostenlos. Credits nur in den Monaten nachkaufen, in denen du mehr brauchst. Gekaufte Credits verfallen nie.",
+    "freePlan": "Kostenlos",
+    "freeQuota": "{free} Generierungen pro Monat",
+    "inUse": "Aktueller Tarif",
+    "loginToUse": "Mit GitHub anmelden und loslegen",
+    "loginToBuy": "Zum Kauf mit GitHub anmelden",
+    "packName": "{credits}er-Paket",
+    "buyPack": "{credits}er-Paket kaufen",
+    "bestValue": "Bestes Angebot",
+    "oneTime": "/ einmalig",
+    "packQuota": "{credits} Generierungen (ca. {perUse} ¥ pro Stück)",
+    "comingSoon": "In Vorbereitung",
+    "comingSoonTitle": "Zahlungen folgen in Kürze",
+    "perkReadmeLimit": "README-Limit von {paid} Zeichen (kostenlos: {free})",
+    "perkHistory": "Generierungsverlauf speichern und löschen (neueste {limit})",
+    "perkPrivateRepo": "Unterstützung privater Repositories",
+    "perkNoExpiry": "Credits verfallen nie (sie werden in den nächsten Monat übernommen)",
+    "freeFeature1": "{free} kostenlose Generierungen pro Monat",
+    "freeFeature2": "Automatisches README-Laden + 5 Posts pro Durchlauf",
+    "freeFeature3": "Empfohlene Posting-Zeiten mit Begründung",
+    "freeFeature4": "Automatische 280-Zeichen-Prüfung",
+    "freeFeature5": "Mit einem Klick auf X posten (per Share-Link)",
+    "guestNote": "Ohne Anmeldung kannst du 3-mal über die Startseite generieren. Das Gäste-README-Limit liegt bei {guest} Zeichen.",
+    "creditNote": "Credits werden nur bei einer erfolgreichen Generierung abgezogen – und erst, wenn dein kostenloses Monatskontingent aufgebraucht ist.",
+    "subscriberNotePrefix": "Wenn du den früheren Pro-Tarif nutzt, hast du weiterhin 30 Generierungen pro Monat. Dein Abo verwaltest du auf der",
+    "subscriberNoteLink": "Einstellungsseite",
+    "subscriberNoteSuffix": "."
+  },
+  "githubLogin": {
+    "error": "Anmeldung konnte nicht gestartet werden. Bitte warte kurz und versuche es erneut.",
+    "redirecting": "Weiterleitung..."
   }
 }

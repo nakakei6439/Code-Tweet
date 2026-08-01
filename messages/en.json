@@ -180,5 +180,42 @@
     "sampleBody": "## Sound familiar?\n\n\"The code is done, but the announcements never keep up.\" \"I wrote the README, but I have no idea how to introduce it on X.\" When you build things solo, promotion often eats more time than the implementation ever did.",
     "sampleCharCount": "1,842 chars",
     "quotaBody": "note Draft shares its quota with Code Tweet. After signing in with GitHub, it's free for 3 generations a month. Need more? Top up with a credit pack (from 10 generations for ¥100)."
+  },
+  "pricingPage": {
+    "metaTitle": "Pricing",
+    "metaDescription": "Code Tweet gives you a free monthly allowance plus one-off credit packs you top up as needed. No subscription, and purchased credits never expire.",
+    "headlineLine1": "No subscription.",
+    "headlineLine2": "Top up only what you use.",
+    "lead": "Free for {free} generations every month. Top up with credits only in the months you need more. Purchased credits never expire.",
+    "freePlan": "Free",
+    "freeQuota": "{free} generations per month",
+    "inUse": "Current plan",
+    "loginToUse": "Sign in with GitHub to start",
+    "loginToBuy": "Sign in with GitHub to buy",
+    "packName": "{credits}-generation pack",
+    "buyPack": "Buy the {credits}-generation pack",
+    "bestValue": "Best value",
+    "oneTime": "/ one-time",
+    "packQuota": "{credits} generations (about ¥{perUse} each)",
+    "comingSoon": "Coming soon",
+    "comingSoonTitle": "Payments are coming soon",
+    "perkReadmeLimit": "README limit of {paid} characters (free tier: {free})",
+    "perkHistory": "Save and delete your generation history (latest {limit})",
+    "perkPrivateRepo": "Private repository support",
+    "perkNoExpiry": "Credits never expire (they carry over between months)",
+    "freeFeature1": "{free} free generations every month",
+    "freeFeature2": "Automatic README fetching + 5 posts per run",
+    "freeFeature3": "Suggested posting times, with reasons",
+    "freeFeature4": "Automatic 280-weight check",
+    "freeFeature5": "One-click posting to X (via share link)",
+    "guestNote": "You can generate 3 times from the home page without signing in. The guest README limit is {guest} characters.",
+    "creditNote": "Credits are only spent on a successful generation, and only after your monthly free allowance is used up.",
+    "subscriberNotePrefix": "If you're on the legacy Pro plan, you still get 30 generations a month. Manage your subscription from the",
+    "subscriberNoteLink": "settings page",
+    "subscriberNoteSuffix": "."
+  },
+  "githubLogin": {
+    "error": "Couldn't start the sign-in. Please wait a moment and try again.",
+    "redirecting": "Redirecting..."
   }
 }
