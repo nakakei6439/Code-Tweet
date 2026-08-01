@@ -1,64 +1,36 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 
-export const metadata: Metadata = {
-  title: "App SS とは",
-  description:
-    "GitHub の README から、App Store 提出用スクリーンショット（＝ダウンロードを左右する“広告”）を AI と一緒に作成。日本語コピー生成・テーマ/背景のAIおまかせ・強調ワード・全サイズ一括書き出しまで、ブラウザだけで完結します。",
-};
+type Props = { params: Promise<{ locale: string }> };
 
-const steps = [
-  {
-    no: "1",
-    title: "GitHubリポジトリのURLを貼る",
-    body: "https://github.com/owner/repo を入力、またはログイン後にリポジトリを選択。READMEはツール側で自動取得します。",
-  },
-  {
-    no: "2",
-    title: "雰囲気とテーマを選ぶ（任意）",
-    body: "「追加プロンプト」で文体（やわらかい/上質 など）を、テーマは配色を指定。どちらも「AIにおまかせ」にすればアプリ内容から自動で選びます。",
-  },
-  {
-    no: "3",
-    title: "生成 → 画像を入れて書き出し",
-    body: "AIが見出しコピーとレイアウトを一気に作成。エディタで自分のアプリのスクショを入れ、App Store 必須サイズ（6.9〜6.1インチ）を一括で PNG 書き出し。",
-  },
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "aboutAppssPage" });
+  return { title: t("metaTitle"), description: t("metaDescription") };
+}
+
+const STEP_KEYS = ["step1", "step2", "step3"] as const;
+const FEATURE_KEYS = [
+  "feature1",
+  "feature2",
+  "feature3",
+  "feature4",
+  "feature5",
+  "feature6",
+] as const;
+const DEMOS = [
+  { src: "/appss/demo/01.jpg", altKey: "demoAlt1" },
+  { src: "/appss/demo/02.jpg", altKey: "demoAlt2" },
+  { src: "/appss/demo/03.jpg", altKey: "demoAlt3" },
 ] as const;
 
-const features = [
-  {
-    title: "READMEから日本語コピーをAI生成",
-    body: "「機能の羅列」ではなく、ユーザーが得る変化（ベネフィット）で書く見出しを、日本の App Store 上位アプリの流儀でAIが作成します。",
-  },
-  {
-    title: "配色・背景をAIが自動生成",
-    body: "既製テーマから選ぶだけでなく、アプリの雰囲気に合わせた専用の配色パレットをAIがそのつど新規生成。背景装飾（5種）も提案し、もちろん手動でも変更できます。",
-  },
-  {
-    title: "見出しの“強調ワード”を自動ハイライト",
-    body: "各見出しで一番刺さる語をAIが選び、アクセント色で強調。プロのスクショ広告に欠かせない“一語の強調”を自動で。",
-  },
-  {
-    title: "画像は端末内だけ（サーバー送信なし）",
-    body: "取り込んだスクショはブラウザ内（IndexedDB）にのみ保存。未公開アプリのスクショも安心して扱えます。",
-  },
-  {
-    title: "日本語フォントで美しく",
-    body: "ゴシック・丸ゴ・明朝を用意し、書き出し画像にもフォントを埋め込み。日本語が“映える”仕上がりに。",
-  },
-  {
-    title: "App Store 全サイズを一括書き出し",
-    body: "6.9 / 6.5 / 6.3 / 6.1 インチを一度に PNG で書き出し、そのまま App Store Connect にアップロードできます。",
-  },
-] as const;
+export default async function AppSSAboutPage({ params }: Props) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations("aboutAppssPage");
+  const tAbout = await getTranslations("aboutPage");
 
-const demos = [
-  { src: "/appss/demo/01.jpg", alt: "App SS 出力サンプル：ヒーロー（続ける力が手に入る）" },
-  { src: "/appss/demo/02.jpg", alt: "App SS 出力サンプル：機能（ワンタップで今日も完了）" },
-  { src: "/appss/demo/03.jpg", alt: "App SS 出力サンプル：成長（積み重ねがひと目でわかる）" },
-] as const;
-
-export default function AppSSAboutPage() {
   return (
     <main className="min-h-screen bg-gray-950 px-4 py-20 text-gray-200">
       <article className="mx-auto max-w-2xl">
@@ -69,66 +41,62 @@ export default function AppSSAboutPage() {
           </span>
         </p>
         <h1 className="mt-4 text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
-          App Storeのスクショを、
+          {t("headlineLine1")}
           <br />
           <span className="bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-yellow-200 bg-clip-text text-transparent">
-            AIと“広告”として作る。
+            {t("headlineLine2")}
           </span>
         </h1>
-        <p className="mt-6 text-base leading-7 text-gray-400">
-          GitHub の README を渡すだけで、App Store 提出用スクリーンショットの見出しコピー・レイアウト・配色までAIが提案。あとは自分のアプリ画面を入れて書き出すだけ。すべてブラウザで完結します。
-        </p>
+        <p className="mt-6 text-base leading-7 text-gray-400">{t("lead")}</p>
 
         <div className="mt-10 flex flex-wrap gap-3">
           <Link
             href="/?tab=appss"
             className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-gray-950 transition-colors hover:bg-gray-100"
           >
-            スクショを作る
+            {t("ctaCreate")}
           </Link>
           <Link
             href="/appss"
             className="rounded-lg border border-gray-700 px-5 py-2.5 text-sm font-semibold text-gray-200 transition-colors hover:border-gray-500 hover:bg-gray-900"
           >
-            エディタを開く
+            {t("ctaEditor")}
           </Link>
         </div>
 
         <hr className="my-16 border-gray-800" />
 
-        {/* ── “広告”の価値訴求（今回の肝） ── */}
+        {/* ── “広告”の価値訴求（このページの肝） ── */}
         <section className="rounded-2xl border border-fuchsia-500/25 bg-gradient-to-b from-fuchsia-500/10 to-transparent p-6 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-wider text-fuchsia-300">
-            なぜスクショが重要なのか
+            {t("whyLabel")}
           </p>
           <h2 className="mt-3 text-2xl font-bold leading-snug text-white">
-            App Storeのスクショは、
+            {t("whyHeadingLine1")}
             <br />
-            ただの画面写真ではなく<span className="text-fuchsia-300">“広告”</span>です。
+            {t("whyHeadingLine2Before")}
+            <span className="text-fuchsia-300">{t("whyHeadingEmphasis")}</span>
+            {t("whyHeadingLine2After")}
           </h2>
-          <p className="mt-4 text-sm leading-7 text-gray-300">
-            App Store Connect にアップロードするスクリーンショットは、単なるアプリの画面写真ではありません。ストアを訪れた見込みユーザーが「ダウンロードするかどうか」を数秒で判断する、最重要のマーケティング素材＝<span className="font-semibold text-white">広告</span>です。
-          </p>
-          <p className="mt-3 text-sm leading-7 text-gray-300">
-            だからこそ、機能を並べるのではなく「ユーザーが得られる価値」を、伝わる言葉と映えるデザインでアピールする必要があります。<span className="font-semibold text-white">App SS は、その“広告”をAIと一緒に作り込むためのツール</span>です。個人開発者でも、上位アプリのような訴求力あるスクショを短時間で用意できます。
-          </p>
+          <p className="mt-4 text-sm leading-7 text-gray-300">{t("whyBody1")}</p>
+          <p className="mt-3 text-sm leading-7 text-gray-300">{t("whyBody2")}</p>
         </section>
 
         <hr className="my-16 border-gray-800" />
 
         <section id="steps">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
-            使い方
+            {tAbout("sectionHowTo")}
           </h2>
           <ol className="mt-6 space-y-10">
-            {steps.map((step) => (
-              <li key={step.no} className="grid grid-cols-[44px_1fr] gap-5">
+            {STEP_KEYS.map((key, index) => (
+              <li key={key} className="grid grid-cols-[44px_1fr] gap-5">
                 <span className="text-4xl font-light leading-none text-gray-700">
-                  {step.no}
+                  {index + 1}
                 </span>
                 <div className="pt-1">
-                  <h3 className="text-lg font-semibold text-white">{step.title}</h3>
-                  <p className="mt-2 text-sm leading-7 text-gray-400">{step.body}</p>
+                  <h3 className="text-lg font-semibold text-white">{t(`${key}Title`)}</h3>
+                  <p className="mt-2 text-sm leading-7 text-gray-400">{t(`${key}Body`)}</p>
                 </div>
               </li>
             ))}
@@ -140,18 +108,16 @@ export default function AppSSAboutPage() {
         {/* ── 出力サンプル（デモ） ── */}
         <section>
           <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
-            出力サンプル
+            {tAbout("sectionSample")}
           </h2>
-          <p className="mt-3 text-xs leading-6 text-gray-500">
-            架空アプリ「コツトレ」で作成した例。見出しコピー・強調ワード・配色・背景・デバイスフレームまで、この状態で書き出せます（自分のアプリ画面を入れるだけ）。
-          </p>
+          <p className="mt-3 text-xs leading-6 text-gray-500">{t("sampleLead")}</p>
           <div className="mt-6 grid grid-cols-3 gap-3 sm:gap-4">
-            {demos.map((d) => (
+            {DEMOS.map((d) => (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 key={d.src}
                 src={d.src}
-                alt={d.alt}
+                alt={t(d.altKey)}
                 className="w-full rounded-xl border border-gray-800 bg-gray-900"
                 loading="lazy"
               />
@@ -163,16 +129,13 @@ export default function AppSSAboutPage() {
 
         <section id="features">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
-            特徴
+            {t("sectionFeatures")}
           </h2>
           <ul className="mt-6 space-y-4">
-            {features.map((f) => (
-              <li
-                key={f.title}
-                className="rounded-xl border border-gray-800 bg-gray-900/60 p-4"
-              >
-                <p className="text-sm font-semibold text-white">{f.title}</p>
-                <p className="mt-2 text-sm leading-6 text-gray-400">{f.body}</p>
+            {FEATURE_KEYS.map((key) => (
+              <li key={key} className="rounded-xl border border-gray-800 bg-gray-900/60 p-4">
+                <p className="text-sm font-semibold text-white">{t(`${key}Title`)}</p>
+                <p className="mt-2 text-sm leading-6 text-gray-400">{t(`${key}Body`)}</p>
               </li>
             ))}
           </ul>
@@ -183,10 +146,10 @@ export default function AppSSAboutPage() {
         {/* ── 参考元・クレジット ── */}
         <section>
           <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
-            参考元・クレジット
+            {t("sectionCredits")}
           </h2>
           <p className="mt-3 text-sm leading-7 text-gray-400">
-            App SS のエディタ設計・書き出しの仕組みは、MIT ライセンスで公開されている{" "}
+            {t("creditsBody1Before")}{" "}
             <a
               href="https://github.com/ParthJadhav/app-store-screenshots"
               target="_blank"
@@ -195,10 +158,10 @@ export default function AppSSAboutPage() {
             >
               ParthJadhav/app-store-screenshots
             </a>{" "}
-            を参考に、日本語・AIコピー生成向けに再構築したものです。素晴らしい元プロジェクトに感謝します。
+            {t("creditsBody1After")}
           </p>
           <p className="mt-3 text-sm leading-7 text-gray-400">
-            デバイスフレーム（iPhone ベゼル）は{" "}
+            {t("creditsBody2Before")}{" "}
             <a
               href="https://developer.apple.com/design/resources/"
               target="_blank"
@@ -207,7 +170,7 @@ export default function AppSSAboutPage() {
             >
               Apple Design Resources
             </a>{" "}
-            の公式 Product Bezels を、Apple のマーケティング利用ガイドラインに従って使用しています。日本語フォントは Noto Sans JP / Zen Maru Gothic / Noto Serif JP（SIL Open Font License）です。
+            {t("creditsBody2After")}
           </p>
         </section>
 
@@ -215,16 +178,14 @@ export default function AppSSAboutPage() {
 
         <section>
           <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
-            利用枠
+            {tAbout("sectionQuota")}
           </h2>
-          <p className="mt-3 text-sm leading-7 text-gray-400">
-            AI コピー生成は Code Tweet / note Draft と利用枠を共有しています。GitHub ログイン後、月 3 回まで無料で使えます。足りない分はクレジットパック（10回 ¥100〜）を買い足して使えます。エディタでの編集・書き出し自体は無料・無制限です。透かしを外した書き出しのみ1回分を消費します。
-          </p>
+          <p className="mt-3 text-sm leading-7 text-gray-400">{t("quotaBody")}</p>
           <Link
             href="/pricing"
             className="mt-5 inline-flex items-center gap-1 rounded-lg border border-gray-700 px-4 py-2 text-sm font-medium text-gray-200 transition-colors hover:border-gray-500 hover:bg-gray-900"
           >
-            プラン詳細を見る →
+            {tAbout("quotaCta")}
           </Link>
         </section>
       </article>
