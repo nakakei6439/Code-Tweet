@@ -1,3 +1,4 @@
+import { apiError } from "@/lib/apiErrors";
 import { NextResponse } from "next/server";
 import { logError } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -9,7 +10,7 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return Response.json({ error: "ログインが必要です。" }, { status: 401 });
+    return apiError("login_required", 401);
   }
 
   let confirmation: unknown;
@@ -17,11 +18,11 @@ export async function POST(request: Request) {
     const body = await request.json();
     confirmation = body?.confirmation;
   } catch {
-    return Response.json({ error: "確認文字列を入力してください。" }, { status: 400 });
+    return apiError("confirm_required", 400);
   }
 
   if (confirmation !== "DELETE") {
-    return Response.json({ error: "確認文字列が一致しません。" }, { status: 400 });
+    return apiError("confirm_mismatch", 400);
   }
 
   const tier = await getSubscriptionTier(user.id);
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
     return Response.json(
       {
         error:
-          "サブスクリプション契約中はアカウントを削除できません。先に Stripe カスタマーポータルから解約してください（解約直後は反映まで少し時間がかかる場合があります）。",
+          "subscription_active",
         needsCancel: true,
       },
       { status: 409 },
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
   if (error) {
     logError("account/delete", "failed to delete user", error, { userId: user.id });
     return Response.json(
-      { error: "アカウントの削除に失敗しました。時間をおいて再度お試しください。" },
+      "delete_failed",
       { status: 500 },
     );
   }

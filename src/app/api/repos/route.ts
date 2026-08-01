@@ -1,3 +1,4 @@
+import { apiError } from "@/lib/apiErrors";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hasProAccess } from "@/lib/entitlements";
@@ -17,7 +18,7 @@ export async function GET(): Promise<Response> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return Response.json({ error: "ログインが必要です。" }, { status: 401 });
+    return apiError("login_required", 401);
   }
 
   // プライベートリポジトリの表示は perk 判定（サブスク / 管理者 / クレジット残高あり）。
@@ -32,7 +33,7 @@ export async function GET(): Promise<Response> {
 
   if (!installRow) {
     return Response.json(
-      { error: "GitHub App が未接続です。設定画面から「GitHub を接続」してください。" },
+      "github_app_not_connected",
       { status: 403 },
     );
   }
@@ -40,7 +41,7 @@ export async function GET(): Promise<Response> {
   const token = await getInstallationToken(Number(installRow.installation_id));
   if (!token) {
     return Response.json(
-      { error: "GitHub App の接続が無効です。設定画面から接続し直してください。" },
+      "github_app_invalid",
       { status: 403 },
     );
   }
@@ -55,11 +56,11 @@ export async function GET(): Promise<Response> {
       },
     });
   } catch {
-    return Response.json({ error: "GitHub への接続に失敗しました。" }, { status: 502 });
+    return apiError("github_connect_failed", 502);
   }
 
   if (!res.ok) {
-    return Response.json({ error: "リポジトリ一覧の取得に失敗しました。" }, { status: 502 });
+    return apiError("repos_fetch_failed", 502);
   }
 
   type GitHubRepo = {

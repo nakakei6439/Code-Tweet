@@ -1,3 +1,4 @@
+import { apiError } from "@/lib/apiErrors";
 import { logError } from "@/lib/logger";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -10,14 +11,14 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return Response.json({ error: "ログインが必要です。" }, { status: 401 });
+    return apiError("login_required", 401);
   }
 
   const missingEnv = getMissingStripePortalEnv();
   if (missingEnv.length > 0) {
     logError("stripe/portal", "missing env", undefined, { missingEnv });
     return Response.json(
-      { error: "Stripe の環境変数が未設定です。STRIPE_SECRET_KEY を設定してください。" },
+      "stripe_not_configured",
       { status: 503 },
     );
   }
@@ -31,11 +32,11 @@ export async function POST(request: Request) {
 
   if (error) {
     logError("stripe/portal", "subscription fetch error", error, { userId: user.id });
-    return Response.json({ error: "プラン情報の取得に失敗しました。" }, { status: 500 });
+    return apiError("plan_fetch_failed", 500);
   }
 
   if (!data?.stripe_customer_id) {
-    return Response.json({ error: "支払い情報が見つかりません。" }, { status: 404 });
+    return apiError("billing_not_found", 404);
   }
 
   try {
@@ -47,6 +48,6 @@ export async function POST(request: Request) {
     return Response.json({ url: session.url });
   } catch (err) {
     logError("stripe/portal", "session create error", err, { userId: user.id });
-    return Response.json({ error: "支払い管理ページの作成に失敗しました。" }, { status: 500 });
+    return apiError("portal_failed", 500);
   }
 }

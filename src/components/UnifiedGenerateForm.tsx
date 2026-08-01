@@ -1,5 +1,6 @@
 "use client";
 
+import { useApiErrorMessage } from "@/lib/useApiErrorMessage";
 import { useCallback, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
@@ -74,6 +75,13 @@ type ErrorState = {
 };
 
 const EMPTY_ERROR: ErrorState = { error: null, errorCode: null, errorField: null };
+
+const KNOWN_FIELDS: GenerateErrorField[] = ["projectText", "toneMemo", "url", "hashtags"];
+
+/** サーバーの field はこのフォームに無い項目（appName 等）のこともあるので絞り込む。 */
+function isKnownField(field: string | undefined): field is GenerateErrorField {
+  return !!field && (KNOWN_FIELDS as string[]).includes(field);
+}
 
 function useFormatCount() {
   const locale = useLocale();
@@ -312,6 +320,7 @@ function Hero({ activeTab }: { activeTab: GenerateTabKey }) {
 export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props) {
   const t = useTranslations("generateForm");
   const tTheme = useTranslations("appssThemes");
+  const resolveApiError = useApiErrorMessage();
   const formatCount = useFormatCount();
   const router = useRouter();
   const pathname = usePathname();
@@ -416,7 +425,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
       const res = await fetch("/api/repos");
       const data = await res.json();
       if (!res.ok) {
-        setReposError(data.error ?? t("errorFetchFailed"));
+        setReposError(resolveApiError(data));
         setRepos([]);
       } else {
         setRepos(data.repos);
@@ -455,11 +464,12 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
     setCurrentErrorState({ error: message, errorCode: null, errorField: field });
   }
 
+  // サーバーはコードだけを返すので、ここで現在のロケールの文言に解決する。
   function setApiError(err: GenerateErrorResponse) {
     setCurrentErrorState({
-      error: err.error ?? t("errorGeneric"),
+      error: resolveApiError(err),
       errorCode: err.code ?? null,
-      errorField: err.field ?? null,
+      errorField: isKnownField(err.field) ? err.field : null,
     });
   }
 
@@ -467,9 +477,9 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
     const result = await postJson<{ content: string }>("/api/github", { url: targetUrl });
     if (!result.ok) {
       setCurrentErrorState({
-        error: result.error.error ?? t("errorReadmeFetchFailed"),
+        error: resolveApiError(result.error),
         errorCode: null,
-        errorField: result.error.field ?? null,
+        errorField: isKnownField(result.error.field) ? result.error.field : null,
       });
       return null;
     }

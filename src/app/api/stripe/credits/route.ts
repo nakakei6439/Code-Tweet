@@ -1,3 +1,4 @@
+import { apiError } from "@/lib/apiErrors";
 import { logError } from "@/lib/logger";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -12,14 +13,14 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return Response.json({ error: "ログインが必要です。" }, { status: 401 });
+    return apiError("login_required", 401);
   }
 
   const missingEnv = getMissingStripeCreditsEnv();
   if (missingEnv.length > 0) {
     logError("stripe/credits", "missing env", undefined, { missingEnv });
     return Response.json(
-      { error: "Stripe の環境変数が未設定です。STRIPE_SECRET_KEY を設定してください。" },
+      "stripe_not_configured",
       { status: 503 },
     );
   }
@@ -29,12 +30,12 @@ export async function POST(request: Request) {
     const body = (await request.json()) as { packId?: string };
     packId = body.packId;
   } catch {
-    return Response.json({ error: "リクエストが不正です。" }, { status: 400 });
+    return apiError("invalid_request", 400);
   }
 
   const pack = packId ? getCreditPack(packId) : null;
   if (!pack) {
-    return Response.json({ error: "指定されたパックが見つかりません。" }, { status: 400 });
+    return apiError("pack_not_found", 400);
   }
 
   const appUrl = getAppUrl(request.url);
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
 
   if (error) {
     logError("stripe/credits", "subscription fetch error", error, { userId: user.id });
-    return Response.json({ error: "プラン情報の取得に失敗しました。" }, { status: 500 });
+    return apiError("plan_fetch_failed", 500);
   }
 
   try {
@@ -82,6 +83,6 @@ export async function POST(request: Request) {
     return Response.json({ url: session.url });
   } catch (err) {
     logError("stripe/credits", "session create error", err, { userId: user.id, packId: pack.id });
-    return Response.json({ error: "決済ページの作成に失敗しました。" }, { status: 500 });
+    return apiError("checkout_failed", 500);
   }
 }

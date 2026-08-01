@@ -12,12 +12,14 @@ export const USER_PAID_MONTHLY_LIMIT = 30;
 import type { GenerateErrorCode } from "@/types/tweet";
 
 // useCredit: 月次無料枠を使い切っており、この生成は購入クレジットを消費すべきという印。
+// 文言はサーバーで組み立てず、code + params をクライアントで訳す（apiErrors.ts 参照）。
 export type RateLimitResult =
   | { ok: true; useCredit: boolean }
-  | { ok: false; status: 429; message: string; code: GenerateErrorCode };
+  | { ok: false; status: 429; code: GenerateErrorCode; params: Record<string, string | number> };
 
 const SMALLEST_PACK = CREDIT_PACKS[0];
-const CREDIT_PACK_HINT = `クレジットパック（${SMALLEST_PACK.credits}回 ¥${SMALLEST_PACK.amountJpy}〜）を購入すると続けて生成できます。`;
+/** 上限メッセージに載せるクレジットパックの案内値（最小パック）。 */
+const CREDIT_PACK_PARAMS = { credits: SMALLEST_PACK.credits, amount: SMALLEST_PACK.amountJpy };
 
 export function getMonthWindowStart(): string {
   const now = new Date();
@@ -67,19 +69,9 @@ export async function checkUserLimit(
       return { ok: true, useCredit: true };
     }
     if (entitlements.quotaTier === "paid") {
-      return {
-        ok: false,
-        status: 429,
-        message: `今月の生成上限（${limit}回）に達しました。${CREDIT_PACK_HINT}`,
-        code: "paid_limit",
-      };
+      return { ok: false, status: 429, code: "paid_limit", params: { limit, ...CREDIT_PACK_PARAMS } };
     }
-    return {
-      ok: false,
-      status: 429,
-      message: `今月の無料枠（${limit}回）を使い切りました。${CREDIT_PACK_HINT}`,
-      code: "free_limit",
-    };
+    return { ok: false, status: 429, code: "free_limit", params: { limit, ...CREDIT_PACK_PARAMS } };
   }
   return { ok: true, useCredit: false };
 }
@@ -108,8 +100,8 @@ export async function checkGuestLimit(ipHash: string): Promise<RateLimitResult> 
     return {
       ok: false,
       status: 429,
-      message: `ログインなしで使える生成上限（${GUEST_TOTAL_LIMIT}回）に達しました。GitHub ログインで月 ${USER_FREE_MONTHLY_LIMIT} 回まで使えます。`,
       code: "guest_limit",
+      params: { limit: GUEST_TOTAL_LIMIT, free: USER_FREE_MONTHLY_LIMIT },
     };
   }
   return { ok: true, useCredit: false };

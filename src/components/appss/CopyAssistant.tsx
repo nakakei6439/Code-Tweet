@@ -2,6 +2,7 @@
 // AppSS — AIコピー＆デザイン生成パネル。アプリ情報から Gemini がスライド構成案と
 // このアプリ専用の配色パレット（customTheme）を都度生成する（テンプレ選択ではなく生成）。
 // 生成は既存の無料枠 / 購入クレジットを 1 回分消費する（/api/appss/copy）。
+import { useApiErrorMessage } from "@/lib/useApiErrorMessage";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 import { postJson } from "@/lib/apiClient";
@@ -43,6 +44,7 @@ export function CopyAssistant({
   onClose,
 }: Props) {
   const tc = useTranslations("appssCopyAssistant");
+  const resolveApiError = useApiErrorMessage();
   const tLayout = useTranslations("appssLayoutLabel");
   const [appName, setAppName] = React.useState(initialAppName ?? "");
   const [appDescription, setAppDescription] = React.useState(initialAppDescription ?? "");
@@ -90,7 +92,7 @@ export function CopyAssistant({
       }
       const outcome = await postJson<AppSSCopyResponse>("/api/appss/copy", body);
       if (!outcome.ok) {
-        setError(outcome.error.error);
+        setError(resolveApiError(outcome.error));
         return;
       }
       setResult(outcome.data);

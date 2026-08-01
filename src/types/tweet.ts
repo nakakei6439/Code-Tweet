@@ -1,3 +1,5 @@
+import type { ApiErrorCode } from "@/lib/apiErrors";
+
 export interface RecommendedTime {
   label: string;
   reason: string;
@@ -22,11 +24,12 @@ export interface GenerateResponse {
   tweets: Tweet[];
 }
 
-export type GenerateErrorCode = "guest_limit" | "free_limit" | "paid_limit";
+// エラー文言はサーバーでは組み立てず、code をクライアントで訳す（src/lib/apiErrors.ts 参照）。
+export type GenerateErrorCode = ApiErrorCode;
 export type GenerateErrorField = "projectText" | "toneMemo" | "url" | "hashtags";
 
 export interface GenerateErrorResponse {
-  error: string;
-  code?: GenerateErrorCode;
-  field?: GenerateErrorField;
+  code: ApiErrorCode;
+  field?: string;
+  params?: Record<string, string | number>;
 }

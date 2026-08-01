@@ -4,6 +4,7 @@
 // /api/appss/copy（スライド生成・1回消費）とは完全に別で、利用回数制限・クレジット消費は無い
 // （README取得の /api/github と同じ「無制限・無料」の扱いに合わせている）。
 // 補助機能のため、失敗しても例外を投げず null/空配列で返し、フォームを止めない。
+import { apiError } from "@/lib/apiErrors";
 import { extractAppSSInfo } from "@/lib/geminiAppSS";
 import { MAX_README_BYTES } from "@/lib/githubReadme";
 import { logError } from "@/lib/logger";
@@ -19,7 +20,7 @@ function emptyResponse(): Response {
 
 export async function POST(request: Request): Promise<Response> {
   if (!isSameOriginRequest(request)) {
-    return Response.json({ error: "許可されていないリクエスト元です。" }, { status: 403 });
+    return apiError("forbidden_origin", 403);
   }
 
   if (!process.env.GEMINI_API_KEY) {
@@ -30,7 +31,7 @@ export async function POST(request: Request): Promise<Response> {
   // IP 単位の粗いスロットルだけかける（ゲストの生成枠は消費しない）。
   const ip = getClientIp(request);
   if (!allowFreeEndpointHit(ip ? hashIp(ip) : null)) {
-    return Response.json({ error: "リクエストが多すぎます。" }, { status: 429 });
+    return apiError("too_many_requests", 429);
   }
 
   const contentLength = request.headers.get("content-length");

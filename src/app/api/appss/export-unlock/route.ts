@@ -2,6 +2,7 @@
 // 画像データは一切やり取りしない（実際のPNG合成・zip化は引き続きクライアント側で行う）。
 // gating ロジックは /api/appss/copy/route.ts と同じパターンを踏襲し、tweet生成・
 // AppSSコピー生成と同じ月次無料枠＋クレジット残高の共有プールを消費する。
+import { apiError } from "@/lib/apiErrors";
 import { isSameOriginRequest } from "@/lib/origin";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -14,17 +15,14 @@ import {
 } from "@/lib/rateLimit";
 import { consumeCredit } from "@/lib/credits";
 import { getEntitlements } from "@/lib/entitlements";
-import type { AppSSExportUnlockErrorResponse, AppSSExportUnlockResponse } from "@/types/appss";
+import type { AppSSExportUnlockResponse } from "@/types/appss";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
 export async function POST(request: Request): Promise<Response> {
   if (!isSameOriginRequest(request)) {
-    return Response.json(
-      { error: "許可されていないリクエスト元です。" } satisfies AppSSExportUnlockErrorResponse,
-      { status: 403 },
-    );
+    return apiError("forbidden_origin", 403);
   }
 
   const supabase = await createClient();
@@ -34,10 +32,7 @@ export async function POST(request: Request): Promise<Response> {
     const entitlements = await getEntitlements(user.id, user.email);
     const limit = await checkUserLimit(supabase, user.id, entitlements);
     if (!limit.ok) {
-      return Response.json(
-        { error: limit.message, code: limit.code } satisfies AppSSExportUnlockErrorResponse,
-        { status: limit.status },
-      );
+      return apiError(limit.code, limit.status, { params: limit.params });
     }
     // 生成AI呼び出しが無いため成功は確定。無料枠超過分のみ購入クレジットを消費する。
     await recordUserUsage(supabase, user.id);
@@ -49,18 +44,12 @@ export async function POST(request: Request): Promise<Response> {
 
   const ip = getClientIp(request);
   if (!ip) {
-    return Response.json(
-      { error: "IP アドレスを特定できませんでした。" } satisfies AppSSExportUnlockErrorResponse,
-      { status: 400 },
-    );
+    return apiError("ip_unavailable", 400);
   }
   const ipHash = hashIp(ip);
   const limit = await checkGuestLimit(ipHash);
   if (!limit.ok) {
-    return Response.json(
-      { error: limit.message, code: limit.code } satisfies AppSSExportUnlockErrorResponse,
-      { status: limit.status },
-    );
+    return apiError(limit.code, limit.status, { params: limit.params });
   }
   await recordGuestUsage(ipHash);
   return Response.json({ ok: true } satisfies AppSSExportUnlockResponse, { status: 200 });

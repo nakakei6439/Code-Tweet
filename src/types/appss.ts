@@ -39,9 +39,9 @@ export interface AppSSCopyResponse {
 export type AppSSCopyErrorField = "appName" | "appDescription" | "features" | "tone";
 
 export interface AppSSCopyErrorResponse {
-  error: string;
-  code?: GenerateErrorCode;
-  field?: AppSSCopyErrorField;
+  code: GenerateErrorCode;
+  field?: string;
+  params?: Record<string, string | number>;
 }
 
 // 透かし解除書き出し（/api/appss/export-unlock）。画像データはやり取りしない、
@@ -51,6 +51,6 @@ export interface AppSSExportUnlockResponse {
 }
 
 export interface AppSSExportUnlockErrorResponse {
-  error: string;
-  code?: GenerateErrorCode;
+  code: GenerateErrorCode;
+  params?: Record<string, string | number>;
 }

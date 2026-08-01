@@ -1,5 +1,6 @@
 "use client";
 
+import { useApiErrorMessage } from "@/lib/useApiErrorMessage";
 import { type FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import HomeLinkButton from "@/components/HomeLinkButton";
@@ -14,6 +15,7 @@ type Props = {
 };
 
 function AccountDeletionSection({ hasActiveSubscription }: { hasActiveSubscription: boolean }) {
+  const resolveApiError = useApiErrorMessage();
   const [confirmation, setConfirmation] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -32,7 +34,7 @@ function AccountDeletionSection({ hasActiveSubscription }: { hasActiveSubscripti
       const res = await fetch("/api/stripe/portal", { method: "POST" });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.url) {
-        setPortalError(data?.error ?? "解約ページの作成に失敗しました。");
+        setPortalError(resolveApiError(data));
         return;
       }
       window.location.href = data.url;
@@ -80,7 +82,7 @@ function AccountDeletionSection({ hasActiveSubscription }: { hasActiveSubscripti
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        setError(data?.error ?? "アカウントの削除に失敗しました。時間をおいて再度お試しください。");
+        setError(resolveApiError(data));
         if (data?.needsCancel) setNeedsCancel(true);
         setIsDeleting(false);
         setIsConfirmOpen(false);

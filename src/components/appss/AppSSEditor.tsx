@@ -1,6 +1,7 @@
 "use client";
 // AppSS — エディタ本体。状態管理・キーボードショートカット・書き出しオーケストレーション。
 // Based on MIT-licensed https://github.com/ParthJadhav/app-store-screenshots
+import { useApiErrorMessage } from "@/lib/useApiErrorMessage";
 import * as React from "react";
 import type {
   AppSSSlide,
@@ -53,6 +54,7 @@ type Props = {
 };
 
 export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
+  const resolveApiError = useApiErrorMessage();
   const { state, setState, hydrated, savedAt, saveError, reset, undo, redo, copyAssistantSeed } =
     useAppSSProject();
   const [activeSlideId, setActiveSlideId] = React.useState<string | null>(null);
@@ -436,7 +438,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
     const outcome = await postJson<AppSSExportUnlockResponse>("/api/appss/export-unlock", {});
     if (!outcome.ok) {
       setExporting(null);
-      setExportError(outcome.error.error);
+      setExportError(resolveApiError(outcome.error));
       return;
     }
     void refreshUsage();

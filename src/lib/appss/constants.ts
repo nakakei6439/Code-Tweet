@@ -1,7 +1,7 @@
 // AppSS — キャンバス寸法・書き出しサイズ・ベゼル座標・テーマ定義。
 // Based on MIT-licensed https://github.com/ParthJadhav/app-store-screenshots
 
-import type { BackgroundStyle, FontId, SlideLayout, Theme } from "./types";
+import type { BackgroundStyle, FontId, Theme } from "./types";
 
 // 設計キャンバス = App Store 最大要求解像度（iPhone 6.9インチ）
 export const CANVAS = { w: 1320, h: 2868 };
