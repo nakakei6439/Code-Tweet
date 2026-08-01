@@ -461,5 +461,51 @@
     "appDescription": "アプリの説明",
     "features": "機能・特徴",
     "tone": "トーン指示"
+  },
+  "tweetCard": {
+    "overLimitTooltip": "X の上限 280 ウェイトを超過しています",
+    "postOverLimitTooltip": "上限超過。X の画面で編集してから投稿してください",
+    "postTooltip": "X の投稿画面を開きます",
+    "postOnX": "Xで投稿",
+    "copy": "コピー",
+    "copied": "コピーしました ✓"
+  },
+  "noteCard": {
+    "recommendedTime": "おすすめ投稿時間",
+    "scheduleHint": "note の「予約投稿」で上の日時を指定すると、ねらった時間に自動公開できます。",
+    "preview": "プレビュー",
+    "bodyLength": "本文 {count}字",
+    "stepsLabel": "投稿の手順",
+    "stepsSummary": "①noteエディタを開く → ②コピー → ③貼り付け",
+    "openEditor": "noteエディタを開く",
+    "copyTitle": "タイトルをコピー",
+    "copyBody": "本文をコピー",
+    "download": ".md ダウンロード",
+    "pasteHint": "③ noteエディタに貼り付けると、見出し・リスト・引用などのMarkdown記法は自動でリッチテキストに変換されます。タイトル欄には、②の「タイトルをコピー」からコピーした見出しを別途貼り付けてください。"
+  },
+  "authOverlay": {
+    "guestLine": "そのまま3回まで、README上限 {limit} 文字まで使えます。",
+    "loginLine": "GitHub ログインで月3回・README上限 {limit} 文字まで使え、公開リポジトリ一覧から選択できます。"
+  },
+  "repoSelector": {
+    "title": "READMEを読み込むリポジトリを選ぶ",
+    "close": "閉じる",
+    "searchPlaceholder": "リポジトリ名・説明で検索",
+    "loading": "読み込み中...",
+    "noMatch": "該当するリポジトリがありません",
+    "empty": "リポジトリが見つかりません",
+    "enterUrl": "リポジトリURLを入力",
+    "loadReadme": "READMEを読み込む"
+  },
+  "stripeButtons": {
+    "networkError": "通信に失敗しました。時間をおいて再度お試しください。",
+    "redirecting": "移動中...",
+    "cancelRedirecting": "解約ページへ移動中...",
+    "cancelSubscription": "サブスクリプションを解約する",
+    "portalNote": "Stripe カスタマーポータルへ移動し、サブスクリプションの解約・支払い方法の変更・領収書の確認ができます。ログイン状態のサブスクリプション契約者のみご利用いただけます。"
+  },
+  "appssPage": {
+    "metaTitle": "App SS — App Store スクショ作成",
+    "metaDescription": "アプリのスクリーンショットから App Store 提出用のマーケティング画像をブラウザだけで作成。AIキャッチコピー生成付き。画像はサーバーに送信されません。"
   }
 }

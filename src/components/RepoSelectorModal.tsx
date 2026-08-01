@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import type { RepoItem } from "@/app/api/repos/route";
 
@@ -14,6 +15,8 @@ type Props = {
 };
 
 function ManualRepoUrlInput({ onClose, onRepoUrlSubmit }: Pick<Props, "onClose" | "onRepoUrlSubmit">) {
+  const t = useTranslations("repoSelector");
+  const tf = useTranslations("generateForm");
   const [manualRepoUrl, setManualRepoUrl] = useState("");
   const trimmedManualRepoUrl = manualRepoUrl.trim();
 
@@ -30,7 +33,7 @@ function ManualRepoUrlInput({ onClose, onRepoUrlSubmit }: Pick<Props, "onClose" 
             onClose();
           }
         }}
-        placeholder="例：https://github.com/owner/repo"
+        placeholder={tf("repoUrlPlaceholder")}
         className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500
           focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
       />
@@ -44,7 +47,7 @@ function ManualRepoUrlInput({ onClose, onRepoUrlSubmit }: Pick<Props, "onClose" 
           bg-gray-800 text-gray-100 transition-colors hover:border-gray-600 hover:bg-gray-700
           disabled:cursor-not-allowed disabled:opacity-50 sm:whitespace-nowrap"
       >
-        READMEを読み込む
+        {t("loadReadme")}
       </button>
     </div>
   );
@@ -59,6 +62,8 @@ export default function RepoSelectorModal({
   onSelect,
   onRepoUrlSubmit,
 }: Props) {
+  const t = useTranslations("repoSelector");
+  const tf = useTranslations("generateForm");
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -93,10 +98,10 @@ export default function RepoSelectorModal({
       >
         <div className="h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-          <h3 className="text-white font-semibold">READMEを読み込むリポジトリを選ぶ</h3>
+          <h3 className="text-white font-semibold">{t("title")}</h3>
           <button
             onClick={onClose}
-            aria-label="閉じる"
+            aria-label={t("close")}
             className="p-1 text-gray-400 hover:text-white transition-colors cursor-pointer"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -110,7 +115,7 @@ export default function RepoSelectorModal({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="リポジトリ名・説明で検索"
+            placeholder={t("searchPlaceholder")}
             className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500
               focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
           />
@@ -118,14 +123,14 @@ export default function RepoSelectorModal({
 
         <div className="flex-1 overflow-y-auto">
           {isLoading && (
-            <p className="text-gray-400 text-sm text-center py-12">読み込み中...</p>
+            <p className="text-gray-400 text-sm text-center py-12">{t("loading")}</p>
           )}
           {error && (
             <p className="text-red-400 text-sm text-center py-12">{error}</p>
           )}
           {!isLoading && !error && filtered.length === 0 && (
             <p className="text-gray-400 text-sm text-center py-12">
-              {query ? "該当するリポジトリがありません" : "リポジトリが見つかりません"}
+              {query ? t("noMatch") : t("empty")}
             </p>
           )}
           {!isLoading && !error && filtered.length > 0 && (
@@ -159,7 +164,7 @@ export default function RepoSelectorModal({
 
         <div className="border-t border-gray-800 bg-gray-900 px-6 py-4">
           <label className="block text-xs font-medium text-gray-300 mb-2">
-            リポジトリURLを入力
+            {t("enterUrl")}
           </label>
           <ManualRepoUrlInput onClose={onClose} onRepoUrlSubmit={onRepoUrlSubmit} />
         </div>

@@ -461,5 +461,51 @@
     "appDescription": "应用说明",
     "features": "功能特点",
     "tone": "语气指示"
+  },
+  "tweetCard": {
+    "overLimitTooltip": "已超过 X 的 280 权重上限",
+    "postOverLimitTooltip": "已超出上限，请在 X 页面编辑后再发布",
+    "postTooltip": "打开 X 的发布界面",
+    "postOnX": "在 X 发布",
+    "copy": "复制",
+    "copied": "已复制 ✓"
+  },
+  "noteCard": {
+    "recommendedTime": "推荐发布时间",
+    "scheduleHint": "在 note 的「预约发布」中指定上述时间，即可在目标时间自动公开。",
+    "preview": "预览",
+    "bodyLength": "正文 {count} 字",
+    "stepsLabel": "发布步骤",
+    "stepsSummary": "①打开 note 编辑器 → ②复制 → ③粘贴",
+    "openEditor": "打开 note 编辑器",
+    "copyTitle": "复制标题",
+    "copyBody": "复制正文",
+    "download": "下载 .md",
+    "pasteHint": "③ 粘贴到 note 编辑器后，标题、列表、引用等 Markdown 语法会自动转换为富文本。标题栏请另外粘贴步骤②中通过「复制标题」复制的内容。"
+  },
+  "authOverlay": {
+    "guestLine": "无需登录即可使用 3 次，README 上限 {limit} 字。",
+    "loginLine": "使用 GitHub 登录后每月 3 次、README 上限 {limit} 字，并可从公开仓库列表中选择。"
+  },
+  "repoSelector": {
+    "title": "选择要读取 README 的仓库",
+    "close": "关闭",
+    "searchPlaceholder": "按仓库名称或说明搜索",
+    "loading": "加载中…",
+    "noMatch": "没有符合条件的仓库",
+    "empty": "未找到仓库",
+    "enterUrl": "输入仓库 URL",
+    "loadReadme": "读取 README"
+  },
+  "stripeButtons": {
+    "networkError": "通信失败，请稍后重试。",
+    "redirecting": "正在跳转…",
+    "cancelRedirecting": "正在前往取消订阅页面…",
+    "cancelSubscription": "取消订阅",
+    "portalNote": "将跳转至 Stripe 客户门户，可在此取消订阅、更改支付方式、查看收据。仅限已登录的订阅用户使用。"
+  },
+  "appssPage": {
+    "metaTitle": "App SS — App Store 截图制作",
+    "metaDescription": "在浏览器内即可从应用截图制作 App Store 提交用的营销图片，附带 AI 文案生成。图片不会发送到服务器。"
   }
 }

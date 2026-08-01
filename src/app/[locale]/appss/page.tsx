@@ -1,3 +1,4 @@
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { headers } from "next/headers";
 import type { Metadata } from "next";
 import {
@@ -73,13 +74,17 @@ const kaku = Zen_Kaku_Gothic_New({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "App SS — App Store スクショ作成",
-  description:
-    "アプリのスクリーンショットから App Store 提出用のマーケティング画像をブラウザだけで作成。AIキャッチコピー生成付き。画像はサーバーに送信されません。",
-};
+type Props = { params: Promise<{ locale: string }> };
 
-export default async function AppSSPage() {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "appssPage" });
+  return { title: t("metaTitle"), description: t("metaDescription") };
+}
+
+export default async function AppSSPage({ params }: Props) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 

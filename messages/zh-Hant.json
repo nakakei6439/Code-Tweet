@@ -461,5 +461,51 @@
     "appDescription": "應用程式說明",
     "features": "功能特點",
     "tone": "語氣指示"
+  },
+  "tweetCard": {
+    "overLimitTooltip": "已超過 X 的 280 權重上限",
+    "postOverLimitTooltip": "已超出上限，請在 X 頁面編輯後再發布",
+    "postTooltip": "開啟 X 的發布介面",
+    "postOnX": "在 X 發布",
+    "copy": "複製",
+    "copied": "已複製 ✓"
+  },
+  "noteCard": {
+    "recommendedTime": "建議發布時間",
+    "scheduleHint": "在 note 的「預約發布」中指定上述時間，即可在目標時間自動公開。",
+    "preview": "預覽",
+    "bodyLength": "內文 {count} 字",
+    "stepsLabel": "發布步驟",
+    "stepsSummary": "①開啟 note 編輯器 → ②複製 → ③貼上",
+    "openEditor": "開啟 note 編輯器",
+    "copyTitle": "複製標題",
+    "copyBody": "複製內文",
+    "download": "下載 .md",
+    "pasteHint": "③ 貼上 note 編輯器後，標題、清單、引用等 Markdown 語法會自動轉換為格式化文字。標題欄請另外貼上步驟②中透過「複製標題」複製的內容。"
+  },
+  "authOverlay": {
+    "guestLine": "無需登入即可使用 3 次，README 上限 {limit} 字。",
+    "loginLine": "使用 GitHub 登入後每月 3 次、README 上限 {limit} 字，並可從公開儲存庫清單中選擇。"
+  },
+  "repoSelector": {
+    "title": "選擇要讀取 README 的儲存庫",
+    "close": "關閉",
+    "searchPlaceholder": "依儲存庫名稱或說明搜尋",
+    "loading": "載入中…",
+    "noMatch": "沒有符合條件的儲存庫",
+    "empty": "未找到儲存庫",
+    "enterUrl": "輸入儲存庫 URL",
+    "loadReadme": "讀取 README"
+  },
+  "stripeButtons": {
+    "networkError": "通訊失敗，請稍後重試。",
+    "redirecting": "正在跳轉…",
+    "cancelRedirecting": "正在前往取消訂閱頁面…",
+    "cancelSubscription": "取消訂閱",
+    "portalNote": "將跳轉至 Stripe 客戶入口，可在此取消訂閱、變更付款方式、查看收據。僅限已登入的訂閱使用者使用。"
+  },
+  "appssPage": {
+    "metaTitle": "App SS — App Store 截圖製作",
+    "metaDescription": "在瀏覽器內即可從應用截圖製作 App Store 提交用的行銷圖片，附帶 AI 文案產生。圖片不會傳送到伺服器。"
   }
 }

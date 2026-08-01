@@ -461,5 +461,51 @@
     "appDescription": "the app description",
     "features": "the feature list",
     "tone": "the tone instruction"
+  },
+  "tweetCard": {
+    "overLimitTooltip": "Over X's 280-weight limit",
+    "postOverLimitTooltip": "Over the limit — edit it on X before posting",
+    "postTooltip": "Opens X's composer",
+    "postOnX": "Post on X",
+    "copy": "Copy",
+    "copied": "Copied ✓"
+  },
+  "noteCard": {
+    "recommendedTime": "Suggested posting time",
+    "scheduleHint": "Set the time above in note's scheduled publishing to go live exactly when you want.",
+    "preview": "Preview",
+    "bodyLength": "Body: {count} chars",
+    "stepsLabel": "How to post",
+    "stepsSummary": "1. Open the note editor → 2. Copy → 3. Paste",
+    "openEditor": "Open the note editor",
+    "copyTitle": "Copy the title",
+    "copyBody": "Copy the body",
+    "download": "Download .md",
+    "pasteHint": "3. When you paste into the note editor, Markdown such as headings, lists, and quotes is converted to rich text automatically. Paste the title separately into the title field, using \"Copy the title\" from step 2."
+  },
+  "authOverlay": {
+    "guestLine": "Use it 3 times as-is, with a README limit of {limit} characters.",
+    "loginLine": "Sign in with GitHub for 3 generations a month, a README limit of {limit} characters, and repository picking from your public repos."
+  },
+  "repoSelector": {
+    "title": "Choose a repository to load the README from",
+    "close": "Close",
+    "searchPlaceholder": "Search by repository name or description",
+    "loading": "Loading...",
+    "noMatch": "No matching repositories",
+    "empty": "No repositories found",
+    "enterUrl": "Enter a repository URL",
+    "loadReadme": "Load the README"
+  },
+  "stripeButtons": {
+    "networkError": "The request failed. Please try again in a little while.",
+    "redirecting": "Redirecting...",
+    "cancelRedirecting": "Opening the cancellation page...",
+    "cancelSubscription": "Cancel your subscription",
+    "portalNote": "Opens the Stripe customer portal, where you can cancel your subscription, change your payment method, and view receipts. Available to signed-in subscribers only."
+  },
+  "appssPage": {
+    "metaTitle": "App SS — App Store screenshot builder",
+    "metaDescription": "Build App Store marketing images from your app's screenshots, entirely in the browser. Includes AI-generated copy. Your images are never sent to a server."
   }
 }

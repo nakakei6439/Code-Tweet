@@ -461,5 +461,51 @@
     "appDescription": "la descripción de la app",
     "features": "la lista de funciones",
     "tone": "la indicación de tono"
+  },
+  "tweetCard": {
+    "overLimitTooltip": "Supera el límite de 280 de X",
+    "postOverLimitTooltip": "Supera el límite: edítalo en X antes de publicar",
+    "postTooltip": "Abre el editor de X",
+    "postOnX": "Publicar en X",
+    "copy": "Copiar",
+    "copied": "Copiado ✓"
+  },
+  "noteCard": {
+    "recommendedTime": "Hora de publicación sugerida",
+    "scheduleHint": "Indica la hora de arriba en la publicación programada de note para que se publique justo cuando quieras.",
+    "preview": "Vista previa",
+    "bodyLength": "Cuerpo: {count} caracteres",
+    "stepsLabel": "Cómo publicar",
+    "stepsSummary": "1. Abre el editor de note → 2. Copia → 3. Pega",
+    "openEditor": "Abrir el editor de note",
+    "copyTitle": "Copiar el título",
+    "copyBody": "Copiar el cuerpo",
+    "download": "Descargar .md",
+    "pasteHint": "3. Al pegar en el editor de note, el Markdown (encabezados, listas, citas…) se convierte automáticamente en texto enriquecido. Pega el título aparte en el campo de título, usando «Copiar el título» del paso 2."
+  },
+  "authOverlay": {
+    "guestLine": "Úsalo 3 veces tal cual, con un límite de README de {limit} caracteres.",
+    "loginLine": "Inicia sesión con GitHub para 3 generaciones al mes, un límite de README de {limit} caracteres y poder elegir entre tus repositorios públicos."
+  },
+  "repoSelector": {
+    "title": "Elige un repositorio del que cargar el README",
+    "close": "Cerrar",
+    "searchPlaceholder": "Buscar por nombre o descripción del repositorio",
+    "loading": "Cargando...",
+    "noMatch": "No hay repositorios que coincidan",
+    "empty": "No se encontraron repositorios",
+    "enterUrl": "Introduce la URL de un repositorio",
+    "loadReadme": "Cargar el README"
+  },
+  "stripeButtons": {
+    "networkError": "La solicitud falló. Inténtalo de nuevo dentro de un rato.",
+    "redirecting": "Redirigiendo...",
+    "cancelRedirecting": "Abriendo la página de cancelación...",
+    "cancelSubscription": "Cancelar tu suscripción",
+    "portalNote": "Abre el portal de cliente de Stripe, donde puedes cancelar la suscripción, cambiar el método de pago y ver los recibos. Solo para suscriptores con la sesión iniciada."
+  },
+  "appssPage": {
+    "metaTitle": "App SS — Creador de capturas para la App Store",
+    "metaDescription": "Crea imágenes de marketing para la App Store a partir de las capturas de tu app, todo en el navegador. Incluye textos generados por IA. Tus imágenes nunca se envían a un servidor."
   }
 }

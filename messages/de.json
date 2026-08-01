@@ -461,5 +461,51 @@
     "appDescription": "die App-Beschreibung",
     "features": "die Funktionsliste",
     "tone": "die Tonvorgabe"
+  },
+  "tweetCard": {
+    "overLimitTooltip": "Über dem 280-Zeichen-Limit von X",
+    "postOverLimitTooltip": "Limit überschritten – bearbeite es auf X vor dem Posten",
+    "postTooltip": "Öffnet den X-Editor",
+    "postOnX": "Auf X posten",
+    "copy": "Kopieren",
+    "copied": "Kopiert ✓"
+  },
+  "noteCard": {
+    "recommendedTime": "Empfohlene Posting-Zeit",
+    "scheduleHint": "Trage die obige Zeit in notes geplanter Veröffentlichung ein, damit der Beitrag genau dann erscheint.",
+    "preview": "Vorschau",
+    "bodyLength": "Text: {count} Zeichen",
+    "stepsLabel": "So postest du",
+    "stepsSummary": "1. note-Editor öffnen → 2. Kopieren → 3. Einfügen",
+    "openEditor": "note-Editor öffnen",
+    "copyTitle": "Titel kopieren",
+    "copyBody": "Text kopieren",
+    "download": ".md herunterladen",
+    "pasteHint": "3. Beim Einfügen in den note-Editor wird Markdown wie Überschriften, Listen und Zitate automatisch in Rich Text umgewandelt. Den Titel fügst du separat ins Titelfeld ein – über „Titel kopieren“ aus Schritt 2."
+  },
+  "authOverlay": {
+    "guestLine": "Nutze es 3-mal direkt, mit einem README-Limit von {limit} Zeichen.",
+    "loginLine": "Mit GitHub-Anmeldung: 3 Generierungen pro Monat, README-Limit von {limit} Zeichen und Auswahl aus deinen öffentlichen Repositories."
+  },
+  "repoSelector": {
+    "title": "Repository wählen, aus dem die README geladen wird",
+    "close": "Schließen",
+    "searchPlaceholder": "Nach Repository-Name oder Beschreibung suchen",
+    "loading": "Wird geladen...",
+    "noMatch": "Keine passenden Repositories",
+    "empty": "Keine Repositories gefunden",
+    "enterUrl": "Repository-URL eingeben",
+    "loadReadme": "README laden"
+  },
+  "stripeButtons": {
+    "networkError": "Die Anfrage ist fehlgeschlagen. Bitte versuche es später erneut.",
+    "redirecting": "Weiterleitung...",
+    "cancelRedirecting": "Kündigungsseite wird geöffnet...",
+    "cancelSubscription": "Abo kündigen",
+    "portalNote": "Öffnet das Stripe-Kundenportal, wo du dein Abo kündigen, die Zahlungsmethode ändern und Belege einsehen kannst. Nur für angemeldete Abonnenten."
+  },
+  "appssPage": {
+    "metaTitle": "App SS — App-Store-Screenshot-Builder",
+    "metaDescription": "Erstelle App-Store-Marketingbilder aus den Screenshots deiner App – komplett im Browser. Inklusive KI-generierter Texte. Deine Bilder werden nie an einen Server gesendet."
   }
 }
