@@ -26,9 +26,6 @@
   "localeSwitcher": {
     "label": "語言"
   },
-  "legal": {
-    "fallbackNotice": "本文件僅提供日文與英文版本。目前顯示英文版。"
-  },
   "notePage": {
     "title": "從 README 產生 note 草稿",
     "description": "根據 GitHub 儲存庫或專案說明，產生可直接複製貼上到 note.com 的介紹文章草稿。"
@@ -262,5 +259,61 @@
     "creditsBody2Before": "裝置外框（iPhone 外框）取自",
     "creditsBody2After": "的官方 Product Bezels，並遵循 Apple 的行銷使用指南。日文字體包括 Noto Sans JP / Zen Maru Gothic / Noto Serif JP 等（SIL Open Font License）。",
     "quotaBody": "AI 文案產生與 Code Tweet / note Draft 共用使用額度。使用 GitHub 登入後每月可免費使用 3 次，不夠時可購買點數包補充（10 次 ¥100 起）。在編輯器中編輯與匯出本身免費且無限制，只有去除浮水印的匯出會消耗 1 次。"
+  },
+  "termsPage": {
+    "metaTitle": "使用條款",
+    "metaDescription": "說明 Code Tweet 的使用條件、禁止事項與免責聲明。",
+    "heading": "使用條款",
+    "lead": "本頁是為了讓你安心使用 Code Tweet 而提供的初版使用條件。內容尚未經過正式法務審核，將視需要更新。",
+    "contactCta": "聯絡我們",
+    "s1Title": "1. 服務內容",
+    "s1Body": "Code Tweet 是一款草稿輔助工具，可根據 GitHub 儲存庫的 README 或使用者輸入的說明文字，產生面向 X 的投稿方案。同時提供可製作 App Store 提交用截圖的編輯器功能（App SS）。發布或提交前，請務必由使用者本人確認產生結果。",
+    "s2Title": "2. 帳號與認證",
+    "s2Body": "透過 GitHub 登入，可使用免費使用者額度與儲存庫選擇功能。帳號資訊的管理、登出、刪除帳號請由使用者自行負責。",
+    "s3Title": "3. 使用限制",
+    "s3Body": "根據訪客、免費、購買點數、訂閱等使用形態，產生次數設有上限。已購點數不可轉讓或兌換現金。禁止過度連續使用、非法存取，以及以規避限制為目的的使用。",
+    "s4Title": "4. 禁止事項",
+    "s4Body": "禁止以下行為：侵犯第三方權利的內容、違法或有害內容、垃圾訊息、冒充他人、妨礙服務營運的行為，以及營運者認為不當的其他行為。",
+    "s5Title": "5. 上傳素材的處理",
+    "s5Body": "在截圖製作功能中匯入的圖片僅保存在使用者裝置內（瀏覽器的本機儲存），不會傳送至營運者的伺服器。對於匯入的圖片及所製作的圖片素材，使用者保證自身擁有必要的權利，且不侵犯第三方權利。所製作圖片的使用（包括提交至 App Store）請由使用者自行負責。",
+    "s6Title": "6. 產生結果的處理",
+    "s6Body": "AI 產生的結果可能包含錯誤、不準確的表述或過時的資訊。投稿內容、URL、價格、功能名稱、法律表述等事實查核請由使用者自行進行。",
+    "s7Title": "7. 免責聲明",
+    "s7Body": "對於因使用或無法使用本服務而產生的損害，營運者在法律允許的範圍內不承擔責任。服務內容可能在不預先通知的情況下變更、暫停或終止。",
+    "s8Title": "8. 條款的變更",
+    "s8Body": "本條款可能會視需要變更。如有重要變更，將透過在服務內公告等適當方式告知。",
+    "s9Title": "9. 條款的語言",
+    "s9Body": "本條款以日文版為正式文本。其他語言版本為方便使用者而提供的參考譯文，若解釋上存在差異，以日文版為準。"
+  },
+  "privacyPage": {
+    "metaTitle": "隱私權政策",
+    "metaDescription": "說明 Code Tweet 收集的資訊、使用目的以及所使用的外部服務。",
+    "heading": "隱私權政策",
+    "lead": "本頁說明 Code Tweet 處理的資訊、其使用目的、向外部服務傳送的內容以及刪除方法。",
+    "updated": "最後更新日期：2026年6月27日",
+    "contactCta": "聯絡我們",
+    "s1Title": "1. 收集的資訊",
+    "s1Body": "Code Tweet 處理以下資訊：GitHub 登入時的電子郵件地址、GitHub 帳號識別資訊、取得 GitHub README 與儲存庫清單所需的連結資訊、產生次數、方案判定、使用紀錄，以及訪客使用時經雜湊處理的 IP 位址。我們從 GitHub 僅取得 README 檔案與儲存庫清單資訊（名稱、說明、公開／私有、更新時間等），絕不取得、檢視或保存原始碼。此外還會處理產生貼文時輸入的專案說明、README、附加提示詞、URL、主題標籤等。對於點數購買者與訂閱使用者，作為產生紀錄保存的內容為產生的貼文、建議發布時間、URL、主題標籤與產生時間，不保存 README 內文與附加提示詞內文。產生紀錄每位使用者最多保留最新 50 筆，新增紀錄後超出部分會自動刪除。",
+    "s2Title": "2. 使用目的",
+    "s2Body": "我們將收集到的資訊用於：確認登入狀態、限制使用次數、判定方案、取得 GitHub README 與儲存庫清單、由 AI 產生貼文、防止濫用、回應諮詢以及改善服務。",
+    "s3Title": "3. GitHub 權杖的處理",
+    "s3Body": "取得私有儲存庫的 README 時使用 GitHub App。所授予的權限僅限於 Contents: Read-only，並由 GitHub 強制執行。本服務不保存各使用者的存取權杖。需要取得 README 時，伺服器端會簽發約 1 小時後自動失效的一次性存取權杖，使用後即丟棄。資料庫中保留的僅為安裝識別碼（數值），單憑它無法存取儲存庫。你可隨時在 GitHub 的 Settings → Applications → Installed GitHub Apps 中解除連結。",
+    "s4Title": "4. 傳送至 AI 產生的資訊",
+    "s4Body": "產生貼文時，使用者輸入的專案說明、README、附加提示詞、URL、主題標籤等會傳送至 Google Gemini API。請勿在 README 或提示詞中包含私鑰、存取權杖、密碼、第三方個人資訊或未公開的機密資訊。",
+    "s5Title": "5. 外部服務",
+    "s5Body": "本服務使用 Supabase 進行認證與資料庫儲存，使用 GitHub 進行登入與取得儲存庫資訊，使用 Google Gemini API 產生貼文，使用 Vercel 提供代管、執行環境與使用情況分析（Vercel Analytics / Vercel Speed Insights），使用 Google LLC 提供的 Google Analytics 進行存取分析，並使用 Microsoft Clarity 透過熱區圖與工作階段錄製改善使用者體驗。各外部服務對資訊的處理，遵循其各自的隱私權政策與使用條款。",
+    "s6Title": "6. 關於存取分析與工作階段錄製",
+    "s6Body": "為改善服務與偵測故障，我們使用以下存取分析工具。Vercel Analytics 不使用 Cookie，收集匿名的頁面瀏覽量、來源、地區與裝置資訊。Vercel Speed Insights 收集 LCP、CLS、INP 等效能指標。Google Analytics 使用 Cookie 測量頁面瀏覽量、來源、地區、裝置資訊等存取狀況（IP 位址由 Google 匿名化處理）。如希望停用 Google Analytics 的測量，可使用 Google 提供的「Google Analytics 停用瀏覽器外掛程式」（https://tools.google.com/dlpage/gaoptout）。Microsoft Clarity 為熱區圖與工作階段錄製使用 Cookie，並以匿名化方式記錄頁面上的操作（點擊、捲動、滑鼠移動）。輸入表單中的密碼、信用卡資訊及其他高敏感輸入欄位會自動遮蔽，不會以明文記錄。",
+    "s7Title": "7. 資訊的刪除",
+    "s7Body": "已登入使用者可在設定頁面刪除帳號。刪除會移除與使用者關聯的資訊，包括帳號、GitHub 連結資訊、使用紀錄、產生紀錄與方案資訊。但出於法律遵循、防止濫用、故障調查，或外部服務的保留機制，部分紀錄或資訊可能會保留一段時間。",
+    "s8Title": "8. 安全管理",
+    "s8Body": "API 金鑰、GitHub App 私鑰、Service Role Key 等機密資訊以伺服器端環境變數管理，不會向用戶端公開。訪客使用時的 IP 位址經雜湊處理後保存。私有儲存庫的存取透過 GitHub App 的短期權杖進行，不保存各使用者的存取權杖。存取權限依據認證狀態與使用者 ID 進行控制。",
+    "s9Title": "9. 諮詢",
+    "s9Body": "有關個人資訊的處理、刪除、更正、停止使用等諮詢，請透過諮詢頁面與我們聯絡。需要進行身分確認時，我們將在核對登入狀態與註冊資訊後予以處理。",
+    "s10Title": "10. 政策的變更",
+    "s10Body": "本政策可能會隨服務內容或所使用外部服務的變更而更新。如有重要變更，將在服務內予以告知。",
+    "s11Title": "11. 原始碼公開（供驗證）",
+    "s11Body": "本服務與 GitHub 通訊的程式碼（README 與儲存庫清單的取得處理）已公開，便於第三方查核。所呼叫的 GitHub API 僅為取得 README 與取得儲存庫清單，未使用任何取得原始碼的 API。",
+    "s11Link": "查看與 GitHub 通訊的程式碼（GitHub）"
   }
 }

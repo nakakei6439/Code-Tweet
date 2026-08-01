@@ -5,7 +5,6 @@ import {
   LOCALE_IDS,
   LOCALE_LIST,
   isLocaleId,
-  legalLocaleFor,
   toLocaleId,
 } from "@/lib/locales";
 
@@ -64,17 +63,5 @@ describe("toLocaleId", () => {
   it("falls back to the default locale for unknown values", () => {
     expect(toLocaleId("pt")).toBe("ja");
     expect(toLocaleId(null)).toBe("ja");
-  });
-});
-
-describe("legalLocaleFor", () => {
-  it("keeps locales that have translated legal pages", () => {
-    expect(legalLocaleFor("ja")).toBe("ja");
-    expect(legalLocaleFor("en")).toBe("en");
-  });
-
-  it("falls back to English for the rest", () => {
-    expect(legalLocaleFor("de")).toBe("en");
-    expect(legalLocaleFor("zh-Hans")).toBe("en");
   });
 });

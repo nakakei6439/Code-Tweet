@@ -32,12 +32,6 @@ export type LocaleDef = {
    * 投稿先が限られることを UI で注記する用途に使う。
    */
   xBlockedInPrimaryMarket: boolean;
-  /**
-   * /terms・/privacy をこのロケールで用意しているか。
-   * false のロケールは英語版を表示して注記を出す（法務文書の 8 言語維持は
-   * 保守コストと誤訳リスクに見合わないという判断）。
-   */
-  hasLegalTranslation: boolean;
 };
 
 export const LOCALES: Record<LocaleId, LocaleDef> = {
@@ -50,7 +44,6 @@ export const LOCALES: Record<LocaleId, LocaleDef> = {
     script: "jp",
     promptName: "Japanese",
     xBlockedInPrimaryMarket: false,
-    hasLegalTranslation: true,
   },
   en: {
     id: "en",
@@ -61,7 +54,6 @@ export const LOCALES: Record<LocaleId, LocaleDef> = {
     script: "latin",
     promptName: "English",
     xBlockedInPrimaryMarket: false,
-    hasLegalTranslation: true,
   },
   es: {
     id: "es",
@@ -72,7 +64,6 @@ export const LOCALES: Record<LocaleId, LocaleDef> = {
     script: "latin",
     promptName: "Spanish",
     xBlockedInPrimaryMarket: false,
-    hasLegalTranslation: false,
   },
   "zh-Hans": {
     id: "zh-Hans",
@@ -84,7 +75,6 @@ export const LOCALES: Record<LocaleId, LocaleDef> = {
     promptName: "Simplified Chinese",
     // 中国本土では X が遮断されている。App Store は利用可能なため App SS では主要言語。
     xBlockedInPrimaryMarket: true,
-    hasLegalTranslation: false,
   },
   "zh-Hant": {
     id: "zh-Hant",
@@ -95,7 +85,6 @@ export const LOCALES: Record<LocaleId, LocaleDef> = {
     script: "tc",
     promptName: "Traditional Chinese",
     xBlockedInPrimaryMarket: false,
-    hasLegalTranslation: false,
   },
   fr: {
     id: "fr",
@@ -106,7 +95,6 @@ export const LOCALES: Record<LocaleId, LocaleDef> = {
     script: "latin",
     promptName: "French",
     xBlockedInPrimaryMarket: false,
-    hasLegalTranslation: false,
   },
   de: {
     id: "de",
@@ -117,7 +105,6 @@ export const LOCALES: Record<LocaleId, LocaleDef> = {
     script: "latin",
     promptName: "German",
     xBlockedInPrimaryMarket: false,
-    hasLegalTranslation: false,
   },
   ko: {
     id: "ko",
@@ -128,7 +115,6 @@ export const LOCALES: Record<LocaleId, LocaleDef> = {
     script: "kr",
     promptName: "Korean",
     xBlockedInPrimaryMarket: false,
-    hasLegalTranslation: false,
   },
 };
 
@@ -141,11 +127,6 @@ export function isLocaleId(value: unknown): value is LocaleId {
 /** 未知の値を既定ロケールに丸める。ルーティングやハンドオフの入口で使う。 */
 export function toLocaleId(value: unknown): LocaleId {
   return isLocaleId(value) ? value : DEFAULT_LOCALE;
-}
-
-/** 法務ページを表示するロケール。翻訳が無ければ英語版にフォールバックする。 */
-export function legalLocaleFor(locale: LocaleId): LocaleId {
-  return LOCALES[locale].hasLegalTranslation ? locale : "en";
 }
 
 /**

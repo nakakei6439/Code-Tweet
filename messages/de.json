@@ -26,9 +26,6 @@
   "localeSwitcher": {
     "label": "Sprache"
   },
-  "legal": {
-    "fallbackNotice": "Dieses Dokument ist nur auf Japanisch und Englisch verfügbar. Es wird die englische Fassung angezeigt."
-  },
   "notePage": {
     "title": "note-Entwurf aus deiner README erstellen",
     "description": "Erzeuge aus einem GitHub-Repository oder einer Projektbeschreibung einen Artikelentwurf zum Kopieren in note.com."
@@ -262,5 +259,61 @@
     "creditsBody2Before": "Der Geräterahmen (iPhone-Bezel) stammt aus den",
     "creditsBody2After": " – den offiziellen Product Bezels, verwendet gemäß Apples Marketing-Richtlinien. Zu den japanischen Schriften zählen Noto Sans JP, Zen Maru Gothic und Noto Serif JP (SIL Open Font License).",
     "quotaBody": "Die KI-Texterzeugung teilt sich das Kontingent mit Code Tweet und note Draft. Nach der GitHub-Anmeldung sind 3 Generierungen pro Monat kostenlos; bei Bedarf lädst du ein Credit-Paket auf (ab 10 Generierungen für 100 ¥). Bearbeiten und Exportieren im Editor sind kostenlos und unbegrenzt – nur ein Export ohne Wasserzeichen kostet eine Generierung."
+  },
+  "termsPage": {
+    "metaTitle": "Nutzungsbedingungen",
+    "metaDescription": "Nutzungsbedingungen, verbotene Handlungen und Haftungsausschlüsse für Code Tweet.",
+    "heading": "Nutzungsbedingungen",
+    "lead": "Dies ist eine erste Fassung der Nutzungsbedingungen, damit du Code Tweet unbesorgt verwenden kannst. Sie wurde noch nicht formal juristisch geprüft und wird bei Bedarf aktualisiert.",
+    "contactCta": "Kontakt aufnehmen",
+    "s1Title": "1. Leistungsumfang",
+    "s1Body": "Code Tweet ist ein Entwurfshilfsmittel, das aus der README eines GitHub-Repositorys oder einer von dir eingegebenen Beschreibung Post-Vorschläge für X erzeugt. Zusätzlich bietet es einen Editor (App SS) zum Erstellen von Screenshot-Bildern für die App-Store-Einreichung. Prüfe die erzeugten Ergebnisse stets selbst, bevor du sie postest oder einreichst.",
+    "s2Title": "2. Konten und Authentifizierung",
+    "s2Body": "Mit der GitHub-Anmeldung erhältst du das kostenlose Kontingent und die Repository-Auswahl. Die Verwaltung deiner Kontodaten, das Abmelden und das Löschen des Kontos liegen in deiner Verantwortung.",
+    "s3Title": "3. Nutzungsbeschränkungen",
+    "s3Body": "Die Zahl der Generierungen ist je nach Nutzungsform begrenzt: als Gast, im kostenlosen Tarif, mit gekauften Credits oder im Abo. Gekaufte Credits sind weder übertragbar noch auszahlbar. Übermäßige Dauernutzung, unbefugter Zugriff und Nutzung zur Umgehung der Limits sind untersagt.",
+    "s4Title": "4. Verbotene Handlungen",
+    "s4Body": "Untersagt sind: Inhalte, die Rechte Dritter verletzen, rechtswidrige oder schädliche Inhalte, Spam, Identitätsvortäuschung, Handlungen, die den Betrieb des Dienstes beeinträchtigen, sowie sonstiges Verhalten, das der Betreiber als unangemessen erachtet.",
+    "s5Title": "5. Umgang mit hochgeladenem Material",
+    "s5Body": "Bilder, die du in die Screenshot-Funktion importierst, werden ausschließlich auf deinem Gerät (im lokalen Browser-Speicher) gespeichert und nicht an die Server des Betreibers übertragen. Du sicherst zu, dass du über die erforderlichen Rechte an den importierten Bildern und den erstellten Bildmaterialien verfügst und dass diese keine Rechte Dritter verletzen. Die Verwendung der erstellten Bilder – einschließlich der Einreichung im App Store – erfolgt in deiner eigenen Verantwortung.",
+    "s6Title": "6. Umgang mit generierten Ergebnissen",
+    "s6Body": "KI-generierte Ergebnisse können Fehler, ungenaue Formulierungen oder veraltete Informationen enthalten. Prüfe Fakten wie Post-Inhalte, URLs, Preise, Funktionsnamen und rechtliche Formulierungen selbst.",
+    "s7Title": "7. Haftungsausschluss",
+    "s7Body": "Soweit gesetzlich zulässig, haftet der Betreiber nicht für Schäden, die aus der Nutzung oder Nichtnutzbarkeit dieses Dienstes entstehen. Der Dienst kann ohne Vorankündigung geändert, ausgesetzt oder eingestellt werden.",
+    "s8Title": "8. Änderungen dieser Bedingungen",
+    "s8Body": "Diese Bedingungen können bei Bedarf geändert werden. Wesentliche Änderungen werden auf geeignete Weise bekannt gegeben, etwa durch einen Hinweis im Dienst.",
+    "s9Title": "9. Maßgebliche Sprache",
+    "s9Body": "Maßgeblich ist die japanische Fassung dieser Bedingungen. Fassungen in anderen Sprachen sind Referenzübersetzungen zu deiner Bequemlichkeit; bei Auslegungsunterschieden hat die japanische Fassung Vorrang."
+  },
+  "privacyPage": {
+    "metaTitle": "Datenschutzerklärung",
+    "metaDescription": "Welche Informationen Code Tweet erhebt, wozu sie verwendet werden und welche externen Dienste beteiligt sind.",
+    "heading": "Datenschutzerklärung",
+    "lead": "Diese Seite erläutert, welche Informationen Code Tweet verarbeitet, wozu sie dienen, was an externe Dienste übermittelt wird und wie du sie löschen kannst.",
+    "updated": "Zuletzt aktualisiert: 27. Juni 2026",
+    "contactCta": "Kontakt aufnehmen",
+    "s1Title": "1. Erhobene Informationen",
+    "s1Body": "Code Tweet verarbeitet: die E-Mail-Adresse aus deiner GitHub-Anmeldung, GitHub-Kontokennungen, die Verbindungsdaten, die zum Abrufen deiner README und Repository-Liste nötig sind, deine Generierungsanzahl, die Tarifbestimmung, Nutzungsprotokolle sowie eine gehashte Form deiner IP-Adresse bei Gastnutzung. Von GitHub rufen wir ausschließlich README-Dateien und Repository-Listendaten ab (Name, Beschreibung, öffentlich/privat, Aktualisierungszeit und Ähnliches) – Quellcode wird niemals abgerufen, eingesehen oder gespeichert. Außerdem verarbeiten wir die Projektbeschreibung, die README, den zusätzlichen Prompt, die URL und die Hashtags, die du bei der Generierung eingibst. Für Credit-Käufer und Abonnenten umfasst der gespeicherte Generierungsverlauf die erzeugten Posts, empfohlenen Posting-Zeiten, URLs, Hashtags und Generierungszeitpunkte; der README-Text und der Text des zusätzlichen Prompts werden nicht gespeichert. Der Verlauf ist auf die 50 neuesten Einträge pro Nutzer begrenzt; ältere werden beim Hinzufügen neuer automatisch gelöscht.",
+    "s2Title": "2. Verwendungszwecke",
+    "s2Body": "Wir verwenden die erhobenen Informationen, um deinen Anmeldestatus zu prüfen, Nutzungslimits durchzusetzen, deinen Tarif zu bestimmen, deine GitHub-README und Repository-Liste abzurufen, Posts per KI zu generieren, Missbrauch zu verhindern, Anfragen zu beantworten und den Dienst zu verbessern.",
+    "s3Title": "3. Umgang mit GitHub-Tokens",
+    "s3Body": "Für das Abrufen von READMEs aus privaten Repositories verwenden wir eine GitHub App. Die erteilte Berechtigung ist auf Contents: Read-only beschränkt, was GitHub durchsetzt. Dieser Dienst speichert keine nutzerbezogenen Access-Tokens. Wenn eine README abgerufen werden muss, stellt der Server ein Einweg-Token aus, das nach etwa einer Stunde automatisch abläuft, und verwirft es nach der Nutzung. In der Datenbank verbleibt lediglich die Installationskennung (eine Zahl), die für sich genommen keinen Zugriff auf Repositories erlaubt. Du kannst die Verknüpfung jederzeit bei GitHub unter Settings → Applications → Installed GitHub Apps aufheben.",
+    "s4Title": "4. An die KI-Generierung übermittelte Informationen",
+    "s4Body": "Bei der Generierung werden die von dir eingegebene Projektbeschreibung, README, der zusätzliche Prompt, die URL, Hashtags und Ähnliches an die Google-Gemini-API übermittelt. Nimm keine privaten Schlüssel, Access-Tokens, Passwörter, personenbezogenen Daten Dritter oder unveröffentlichte vertrauliche Informationen in deine README oder Prompts auf.",
+    "s5Title": "5. Externe Dienste",
+    "s5Body": "Dieser Dienst nutzt Supabase für Authentifizierung und Datenbank, GitHub für Anmeldung und Repository-Informationen, die Google-Gemini-API für die Post-Generierung, Vercel für Hosting, Laufzeit und Nutzungsanalyse (Vercel Analytics / Vercel Speed Insights), Google Analytics von Google LLC für die Zugriffsanalyse sowie Microsoft Clarity zur UX-Verbesserung mittels Heatmaps und Sitzungsaufzeichnungen. Wie die jeweiligen externen Dienste Informationen verarbeiten, richtet sich nach deren eigenen Datenschutzerklärungen und Nutzungsbedingungen.",
+    "s6Title": "6. Analyse und Sitzungsaufzeichnung",
+    "s6Body": "Zur Verbesserung des Dienstes und zur Fehlererkennung setzen wir die folgenden Analysewerkzeuge ein. Vercel Analytics verwendet keine Cookies und erfasst anonyme Seitenaufrufe, Referrer, Region und Geräteinformationen. Vercel Speed Insights erfasst Performance-Kennzahlen wie LCP, CLS und INP. Google Analytics nutzt Cookies, um Zugriffe zu messen – Seitenaufrufe, Referrer, Region und Geräteinformationen (IP-Adressen werden von Google anonymisiert). Wenn du der Messung durch Google Analytics widersprechen möchtest, kannst du das „Google Analytics Opt-out-Browser-Add-on“ (https://tools.google.com/dlpage/gaoptout) verwenden. Microsoft Clarity nutzt Cookies für Heatmaps und Sitzungsaufzeichnungen und erfasst Interaktionen auf der Seite (Klicks, Scrollen, Mausbewegungen) in anonymisierter Form. Passwortfelder, Kreditkartendaten und andere sensible Eingabefelder werden automatisch maskiert und niemals im Klartext aufgezeichnet.",
+    "s7Title": "7. Löschung von Informationen",
+    "s7Body": "Angemeldete Nutzer können ihr Konto auf der Einstellungsseite löschen. Die Löschung entfernt die dir zugeordneten Informationen, darunter Konto, GitHub-Verknüpfungsdaten, Nutzungsverlauf, Generierungsverlauf und Tarifinformationen. Einzelne Protokolle oder Informationen können dennoch für eine gewisse Zeit erhalten bleiben – aufgrund gesetzlicher Vorgaben, Missbrauchsprävention, Störungsanalyse oder der Aufbewahrungspraxis externer Dienste.",
+    "s8Title": "8. Sicherheitsmaßnahmen",
+    "s8Body": "Geheimnisse wie API-Schlüssel, der private Schlüssel der GitHub App und der Service Role Key werden als serverseitige Umgebungsvariablen verwaltet und niemals an den Client weitergegeben. IP-Adressen aus der Gastnutzung werden gehasht gespeichert. Der Zugriff auf private Repositories erfolgt über kurzlebige GitHub-App-Tokens; nutzerbezogene Access-Tokens werden nicht gespeichert. Zugriffsrechte werden anhand des Authentifizierungsstatus und der Nutzer-ID gesteuert.",
+    "s9Title": "9. Kontakt",
+    "s9Body": "Bei Anfragen zur Verarbeitung, Löschung, Berichtigung oder Nutzungsuntersagung personenbezogener Daten kontaktiere uns bitte über die Kontaktseite. Sofern eine Identitätsprüfung erforderlich ist, antworten wir nach Prüfung deines Anmeldestatus und deiner registrierten Angaben.",
+    "s10Title": "10. Änderungen dieser Erklärung",
+    "s10Body": "Diese Erklärung kann aktualisiert werden, wenn sich der Dienst oder die genutzten externen Dienste ändern. Wesentliche Änderungen werden im Dienst bekannt gegeben.",
+    "s11Title": "11. Veröffentlichter Quellcode (zur Überprüfung)",
+    "s11Body": "Der Code, mit dem dieser Dienst mit GitHub kommuniziert (Abruf von READMEs und Repository-Listen), ist veröffentlicht, damit Dritte ihn überprüfen können. Aufgerufen werden ausschließlich die GitHub-APIs zum Abrufen einer README und zum Auflisten von Repositories; eine API zum Abrufen von Quellcode wird nicht verwendet.",
+    "s11Link": "GitHub-Kommunikationscode ansehen (auf GitHub)"
   }
 }

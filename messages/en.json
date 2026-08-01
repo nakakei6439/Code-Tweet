@@ -26,9 +26,6 @@
   "localeSwitcher": {
     "label": "Language"
   },
-  "legal": {
-    "fallbackNotice": "This document is only available in Japanese and English. Showing the English version."
-  },
   "notePage": {
     "title": "Create a note Draft from your README",
     "description": "Generate an article draft you can copy and paste into note.com, from a GitHub repository or project description."
@@ -262,5 +259,61 @@
     "creditsBody2Before": "The device frame (iPhone bezel) comes from",
     "creditsBody2After": "' official Product Bezels, used in line with Apple's marketing guidelines. Japanese fonts include Noto Sans JP, Zen Maru Gothic, and Noto Serif JP (SIL Open Font License).",
     "quotaBody": "AI copy generation shares its quota with Code Tweet and note Draft. After signing in with GitHub, it's free for 3 generations a month; top up with a credit pack (from 10 generations for ¥100) if you need more. Editing and exporting in the editor are free and unlimited — only a watermark-free export costs one generation."
+  },
+  "termsPage": {
+    "metaTitle": "Terms of Service",
+    "metaDescription": "The conditions of use, prohibited conduct, and disclaimers for Code Tweet.",
+    "heading": "Terms of Service",
+    "lead": "This is an initial version of the conditions of use, provided so you can use Code Tweet with confidence. It has not yet undergone formal legal review and will be updated as needed.",
+    "contactCta": "Contact us",
+    "s1Title": "1. What the service does",
+    "s1Body": "Code Tweet is a drafting aid that generates suggested posts for X from a GitHub repository's README or a description you enter. It also provides an editor (App SS) for creating screenshot images for App Store submission. Always review the generated results yourself before posting or submitting them.",
+    "s2Title": "2. Accounts and authentication",
+    "s2Body": "Signing in with GitHub gives you the free-tier allowance and the repository selection feature. Managing your account information, signing out, and deleting your account are your own responsibility.",
+    "s3Title": "3. Usage limits",
+    "s3Body": "The number of generations is capped according to how you use the service: as a guest, on the free tier, with purchased credits, or on a subscription. Purchased credits cannot be transferred or exchanged for cash. Excessive continuous use, unauthorized access, and use intended to circumvent limits are prohibited.",
+    "s4Title": "4. Prohibited conduct",
+    "s4Body": "The following are prohibited: content that infringes the rights of third parties, illegal or harmful content, spam, impersonation, acts that interfere with the operation of the service, and any other conduct the operator deems inappropriate.",
+    "s5Title": "5. Handling of uploaded material",
+    "s5Body": "Images imported into the screenshot creation feature are stored only on your own device (in the browser's local storage) and are not transmitted to the operator's servers. You warrant that you hold the necessary rights to the images you import and to the image assets you create, and that they do not infringe the rights of third parties. Use of the images you create — including submission to the App Store — is at your own responsibility.",
+    "s6Title": "6. Handling of generated output",
+    "s6Body": "AI-generated output may contain errors, inaccurate wording, or outdated information. Verify facts such as post content, URLs, prices, feature names, and legal wording yourself.",
+    "s7Title": "7. Disclaimer",
+    "s7Body": "To the extent permitted by law, the operator is not liable for damages arising from your use of, or inability to use, this service. The service may be changed, suspended, or discontinued without prior notice.",
+    "s8Title": "8. Changes to these terms",
+    "s8Body": "These terms may be changed as needed. When a significant change is made, it will be announced by appropriate means, such as a notice within the service.",
+    "s9Title": "9. Governing language",
+    "s9Body": "The Japanese version of these terms is the authoritative text. Versions in other languages are reference translations provided for your convenience; in the event of any discrepancy in interpretation, the Japanese version prevails."
+  },
+  "privacyPage": {
+    "metaTitle": "Privacy Policy",
+    "metaDescription": "What information Code Tweet collects, why it is used, and which external services are involved.",
+    "heading": "Privacy Policy",
+    "lead": "This page explains what information Code Tweet handles, why it is used, what is sent to external services, and how to delete it.",
+    "updated": "Last updated: June 27, 2026",
+    "contactCta": "Contact us",
+    "s1Title": "1. Information we collect",
+    "s1Body": "Code Tweet handles: the email address from your GitHub sign-in, GitHub account identifiers, the connection details needed to fetch your GitHub README and repository list, your generation count, plan determination, usage logs, and a hashed form of your IP address when you use the service as a guest. From GitHub we retrieve only README files and repository listing information (name, description, public/private status, updated time, and the like) — we never retrieve, view, or store source code. We also handle the project description, README, extra prompt, URL, and hashtags you enter when generating posts. For credit purchasers and subscribers, the generation history we store consists of the generated posts, suggested posting times, URLs, hashtags, and generation timestamps; the README body and extra prompt body are not stored. Generation history is kept to the 50 most recent entries per user, and older entries beyond that are deleted automatically when new ones are added.",
+    "s2Title": "2. Purposes of use",
+    "s2Body": "We use the information we collect to verify your sign-in status, enforce usage limits, determine your plan, fetch your GitHub README and repository list, generate posts with AI, prevent abuse, respond to enquiries, and improve the service.",
+    "s3Title": "3. Handling of GitHub tokens",
+    "s3Body": "We use a GitHub App to fetch READMEs from private repositories. The granted permission is limited to Contents: Read-only, which GitHub enforces. This service does not store per-user access tokens. When a README needs to be fetched, the server issues a single-use access token that expires automatically after about an hour, and discards it after use. The only thing kept in the database is the installation identifier (a number), which on its own cannot access any repository. You can revoke the connection at any time from GitHub under Settings → Applications → Installed GitHub Apps.",
+    "s4Title": "4. Information sent for AI generation",
+    "s4Body": "When posts are generated, the project description, README, extra prompt, URL, hashtags, and similar input you provide are sent to the Google Gemini API. Do not include private keys, access tokens, passwords, third parties' personal information, or unpublished confidential information in your README or prompts.",
+    "s5Title": "5. External services",
+    "s5Body": "This service uses Supabase for authentication and its database, GitHub for sign-in and repository information, the Google Gemini API for post generation, Vercel for hosting, runtime, and usage analytics (Vercel Analytics / Vercel Speed Insights), Google Analytics provided by Google LLC for access analysis, and Microsoft Clarity for UX improvement via heatmaps and session recordings. How each external service handles information is governed by its own privacy policy and terms of service.",
+    "s6Title": "6. Analytics and session recording",
+    "s6Body": "We use the following analytics tools to improve the service and detect faults. Vercel Analytics uses no cookies and collects anonymous page views, referrers, region, and device information. Vercel Speed Insights collects performance metrics such as LCP, CLS, and INP. Google Analytics uses cookies to measure access patterns including page views, referrers, region, and device information (IP addresses are anonymized by Google). If you wish to opt out of measurement by Google Analytics, you can use Google's \"Google Analytics Opt-out Browser Add-on\" (https://tools.google.com/dlpage/gaoptout). Microsoft Clarity uses cookies for heatmaps and session recordings, capturing on-page interactions (clicks, scrolling, mouse movement) in anonymized form. Password fields, credit card details, and other sensitive input fields are masked automatically and are never recorded in plain text.",
+    "s7Title": "7. Deleting your information",
+    "s7Body": "Signed-in users can delete their account from the settings page. Deletion removes information tied to you, including your account, GitHub connection details, usage history, generation history, and plan information. Some logs or information may nonetheless remain for a period of time due to legal compliance, abuse prevention, incident investigation, or the retention behaviour of external services.",
+    "s8Title": "8. Security management",
+    "s8Body": "Secrets such as API keys, the GitHub App private key, and the Service Role Key are managed as server-side environment variables and are never exposed to the client. IP addresses from guest usage are stored in hashed form. Access to private repositories uses short-lived GitHub App tokens, and no per-user access tokens are stored. Access rights are controlled based on authentication state and user ID.",
+    "s9Title": "9. Contact",
+    "s9Body": "For enquiries about the handling, deletion, correction, or suspension of use of personal information, please contact us through the contact page. Where identity verification is required, we will respond after confirming your sign-in status and registered details.",
+    "s10Title": "10. Changes to this policy",
+    "s10Body": "This policy may be updated as the service or the external services it uses change. Significant changes will be announced within the service.",
+    "s11Title": "11. Published source code (for verification)",
+    "s11Body": "The code this service uses to communicate with GitHub (fetching READMEs and repository listings) is published so that third parties can verify it. The only GitHub APIs called are those for fetching a README and listing repositories; no API that retrieves source code is used.",
+    "s11Link": "Review the GitHub communication code (on GitHub)"
   }
 }

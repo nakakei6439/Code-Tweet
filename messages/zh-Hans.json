@@ -26,9 +26,6 @@
   "localeSwitcher": {
     "label": "语言"
   },
-  "legal": {
-    "fallbackNotice": "本文件仅提供日语和英语版本。当前显示英文版。"
-  },
   "notePage": {
     "title": "从 README 生成 note 草稿",
     "description": "根据 GitHub 仓库或项目说明，生成可直接复制粘贴到 note.com 的介绍文章草稿。"
@@ -262,5 +259,61 @@
     "creditsBody2Before": "设备边框（iPhone 外框）取自",
     "creditsBody2After": "的官方 Product Bezels，并遵循 Apple 的营销使用指南。日文字体包括 Noto Sans JP / Zen Maru Gothic / Noto Serif JP 等（SIL Open Font License）。",
     "quotaBody": "AI 文案生成与 Code Tweet / note Draft 共用使用额度。使用 GitHub 登录后每月可免费使用 3 次，不够时可购买积分包补充（10 次 ¥100 起）。在编辑器中编辑与导出本身免费且无限制，只有去除水印的导出会消耗 1 次。"
+  },
+  "termsPage": {
+    "metaTitle": "使用条款",
+    "metaDescription": "说明 Code Tweet 的使用条件、禁止事项与免责声明。",
+    "heading": "使用条款",
+    "lead": "本页是为了让你安心使用 Code Tweet 而提供的初版使用条件。内容尚未经过正式法务审核，将视需要更新。",
+    "contactCta": "联系我们",
+    "s1Title": "1. 服务内容",
+    "s1Body": "Code Tweet 是一款草稿辅助工具，可根据 GitHub 仓库的 README 或用户输入的说明文本，生成面向 X 的投稿方案。同时提供可制作 App Store 提交用截图的编辑器功能（App SS）。发布或提交前，请务必由用户本人确认生成结果。",
+    "s2Title": "2. 账号与认证",
+    "s2Body": "通过 GitHub 登录，可使用免费用户额度与仓库选择功能。账号信息的管理、退出登录、注销账号请由用户自行负责。",
+    "s3Title": "3. 使用限制",
+    "s3Body": "根据访客、免费、购买积分、订阅等使用形态，生成次数设有上限。已购积分不可转让或兑换现金。禁止过度连续使用、非法访问，以及以规避限制为目的的使用。",
+    "s4Title": "4. 禁止事项",
+    "s4Body": "禁止以下行为：侵犯第三方权利的内容、违法或有害内容、垃圾信息、冒充他人、妨碍服务运营的行为，以及运营者认为不当的其他行为。",
+    "s5Title": "5. 上传素材的处理",
+    "s5Body": "在截图制作功能中导入的图片仅保存在用户设备内（浏览器的本地存储），不会发送至运营者的服务器。对于导入的图片及所制作的图片素材，用户保证自身拥有必要的权利，且不侵犯第三方权利。所制作图片的使用（包括提交至 App Store）请由用户自行负责。",
+    "s6Title": "6. 生成结果的处理",
+    "s6Body": "AI 生成的结果可能包含错误、不准确的表述或过时的信息。投稿内容、URL、价格、功能名称、法律表述等事实核查请由用户自行进行。",
+    "s7Title": "7. 免责声明",
+    "s7Body": "对于因使用或无法使用本服务而产生的损害，运营者在法律允许的范围内不承担责任。服务内容可能在不预先通知的情况下变更、暂停或终止。",
+    "s8Title": "8. 条款的变更",
+    "s8Body": "本条款可能会视需要变更。如有重要变更，将通过在服务内公告等适当方式告知。",
+    "s9Title": "9. 条款的语言",
+    "s9Body": "本条款以日语版为正式文本。其他语言版本为方便用户而提供的参考译文，若解释上存在差异，以日语版为准。"
+  },
+  "privacyPage": {
+    "metaTitle": "隐私政策",
+    "metaDescription": "说明 Code Tweet 收集的信息、使用目的以及所使用的外部服务。",
+    "heading": "隐私政策",
+    "lead": "本页说明 Code Tweet 处理的信息、其使用目的、向外部服务发送的内容以及删除方法。",
+    "updated": "最后更新日期：2026年6月27日",
+    "contactCta": "联系我们",
+    "s1Title": "1. 收集的信息",
+    "s1Body": "Code Tweet 处理以下信息：GitHub 登录时的邮箱地址、GitHub 账号识别信息、获取 GitHub README 与仓库列表所需的关联信息、生成次数、方案判定、使用日志，以及访客使用时经哈希处理的 IP 地址。我们从 GitHub 仅获取 README 文件与仓库列表信息（名称、说明、公开／私有、更新时间等），绝不获取、查看或保存源代码。此外还会处理生成投稿时输入的项目说明、README、附加提示词、URL、话题标签等。对于积分购买者与订阅用户，作为生成历史保存的内容为生成的投稿、推荐发布时间、URL、话题标签与生成时间，不保存 README 正文与附加提示词正文。生成历史每位用户最多保留最新 50 条，新增记录后超出部分会自动删除。",
+    "s2Title": "2. 使用目的",
+    "s2Body": "我们将收集到的信息用于：确认登录状态、限制使用次数、判定方案、获取 GitHub README 与仓库列表、由 AI 生成投稿、防止滥用、回应咨询以及改进服务。",
+    "s3Title": "3. GitHub 令牌的处理",
+    "s3Body": "获取私有仓库的 README 时使用 GitHub App。所授予的权限仅限于 Contents: Read-only，并由 GitHub 强制执行。本服务不保存各用户的访问令牌。需要获取 README 时，服务器端会签发约 1 小时后自动失效的一次性访问令牌，使用后即丢弃。数据库中保留的仅为安装标识符（数值），单凭它无法访问仓库。你可随时在 GitHub 的 Settings → Applications → Installed GitHub Apps 中解除关联。",
+    "s4Title": "4. 发送至 AI 生成的信息",
+    "s4Body": "生成投稿时，用户输入的项目说明、README、附加提示词、URL、话题标签等会发送至 Google Gemini API。请勿在 README 或提示词中包含私钥、访问令牌、密码、第三方个人信息或未公开的机密信息。",
+    "s5Title": "5. 外部服务",
+    "s5Body": "本服务使用 Supabase 进行认证与数据库存储，使用 GitHub 进行登录与获取仓库信息，使用 Google Gemini API 生成投稿，使用 Vercel 提供托管、运行环境与使用情况分析（Vercel Analytics / Vercel Speed Insights），使用 Google LLC 提供的 Google Analytics 进行访问分析，并使用 Microsoft Clarity 通过热图与会话录制改进用户体验。各外部服务对信息的处理，遵循其各自的隐私政策与使用条款。",
+    "s6Title": "6. 关于访问分析与会话录制",
+    "s6Body": "为改进服务与检测故障，我们使用以下访问分析工具。Vercel Analytics 不使用 Cookie，收集匿名的页面浏览量、来源、地区与设备信息。Vercel Speed Insights 收集 LCP、CLS、INP 等性能指标。Google Analytics 使用 Cookie 测量页面浏览量、来源、地区、设备信息等访问情况（IP 地址由 Google 匿名化处理）。如希望停用 Google Analytics 的测量，可使用 Google 提供的「Google Analytics 停用浏览器插件」（https://tools.google.com/dlpage/gaoptout）。Microsoft Clarity 为热图与会话录制使用 Cookie，并以匿名化方式记录页面上的操作（点击、滚动、鼠标移动）。输入表单中的密码、信用卡信息及其他高敏感输入框会自动遮蔽，不会以明文记录。",
+    "s7Title": "7. 信息的删除",
+    "s7Body": "已登录用户可在设置页面注销账号。注销会删除与用户关联的信息，包括账号、GitHub 关联信息、使用记录、生成历史与方案信息。但出于法律合规、防止滥用、故障调查，或外部服务的保留机制，部分日志或信息可能会保留一段时间。",
+    "s8Title": "8. 安全管理",
+    "s8Body": "API 密钥、GitHub App 私钥、Service Role Key 等机密信息以服务器端环境变量管理，不会向客户端公开。访客使用时的 IP 地址经哈希处理后保存。私有仓库的访问通过 GitHub App 的短期令牌进行，不保存各用户的访问令牌。访问权限依据认证状态与用户 ID 进行控制。",
+    "s9Title": "9. 咨询",
+    "s9Body": "有关个人信息的处理、删除、更正、停止使用等咨询，请通过咨询页面与我们联系。需要进行身份确认时，我们将在核对登录状态与注册信息后予以处理。",
+    "s10Title": "10. 政策的变更",
+    "s10Body": "本政策可能会随服务内容或所使用外部服务的变更而更新。如有重要变更，将在服务内予以告知。",
+    "s11Title": "11. 源代码公开（供验证）",
+    "s11Body": "本服务与 GitHub 通信的代码（README 与仓库列表的获取处理）已公开，便于第三方核实。所调用的 GitHub API 仅为获取 README 与获取仓库列表，未使用任何获取源代码的 API。",
+    "s11Link": "查看与 GitHub 通信的代码（GitHub）"
   }
 }
