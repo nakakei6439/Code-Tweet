@@ -63,7 +63,6 @@ export default function RepoSelectorModal({
   onRepoUrlSubmit,
 }: Props) {
   const t = useTranslations("repoSelector");
-  const tf = useTranslations("generateForm");
   const [query, setQuery] = useState("");
 
   useEffect(() => {
