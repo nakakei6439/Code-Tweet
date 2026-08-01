@@ -71,7 +71,7 @@ export async function POST(request: Request): Promise<Response> {
   try {
     res = await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`, { headers });
   } catch {
-    return Response.json({ error: "README の取得に失敗しました。" }, { status: 502 });
+    return apiError("readme_fetch_failed", 502);
   }
 
   if (res.status === 401) {
@@ -111,7 +111,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   if (!res.ok) {
-    return Response.json({ error: "README の取得に失敗しました。" }, { status: 502 });
+    return apiError("readme_fetch_failed", 502);
   }
 
   const data = await res.json();

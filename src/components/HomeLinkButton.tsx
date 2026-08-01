@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 
 type Props = {
@@ -5,6 +6,7 @@ type Props = {
 };
 
 export default function HomeLinkButton({ className = "" }: Props) {
+  const t = useTranslations("nav");
   return (
     <Link
       href="/"
@@ -27,7 +29,7 @@ export default function HomeLinkButton({ className = "" }: Props) {
         <path d="M5 10v10h14V10" />
         <path d="M9 20v-6h6v6" />
       </svg>
-      ホーム
+      {t("home")}
     </Link>
   );
 }

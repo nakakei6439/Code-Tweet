@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -75,6 +76,9 @@ const markdownComponents: Components = {
 };
 
 export default function NoteCard({ note }: NoteCardProps) {
+  const t = useTranslations("noteCard");
+  const tc = useTranslations("tweetCard");
+  const locale = useLocale();
   const [copiedTitle, setCopiedTitle] = useState(false);
   const [copiedBody, setCopiedBody] = useState(false);
   const [mode, setMode] = useState<ViewMode>("preview");
@@ -134,7 +138,7 @@ export default function NoteCard({ note }: NoteCardProps) {
               <path strokeLinecap="round" d="M12 6v6l4 2" />
             </svg>
             <span className="text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold">
-              おすすめ投稿時間
+              {t("recommendedTime")}
             </span>
           </div>
           <ul className="space-y-2">
@@ -151,7 +155,7 @@ export default function NoteCard({ note }: NoteCardProps) {
             ))}
           </ul>
           <p className="mt-2.5 text-[11px] text-gray-500 leading-4">
-            note の「予約投稿」で上の日時を指定すると、ねらった時間に自動公開できます。
+            {t("scheduleHint")}
           </p>
         </div>
       )}
@@ -164,7 +168,7 @@ export default function NoteCard({ note }: NoteCardProps) {
             aria-pressed={mode === "preview"}
             className={`px-3 py-1.5 text-xs font-medium border-b-2 -mb-px transition-colors cursor-pointer ${tabClass(mode === "preview")}`}
           >
-            プレビュー
+            {t("preview")}
           </button>
           <button
             type="button"
@@ -176,7 +180,7 @@ export default function NoteCard({ note }: NoteCardProps) {
           </button>
         </div>
         <span className="shrink-0 text-gray-400 text-xs tabular-nums pr-1">
-          本文 {note.charCount.toLocaleString("ja-JP")}字
+          {t("bodyLength", { count: note.charCount.toLocaleString(locale) })}
         </span>
       </div>
 
@@ -194,8 +198,8 @@ export default function NoteCard({ note }: NoteCardProps) {
 
       <div className="mt-4 rounded-lg border border-gray-800 bg-gray-950/40 p-4">
         <div className="mb-3 flex items-center gap-2 text-[11px] text-gray-400">
-          <span className="font-semibold text-gray-300">投稿の手順</span>
-          <span className="text-gray-600">①noteエディタを開く → ②コピー → ③貼り付け</span>
+          <span className="font-semibold text-gray-300">{t("stepsLabel")}</span>
+          <span className="text-gray-600">{t("stepsSummary")}</span>
         </div>
 
         <div className="mb-3 flex items-center gap-2">
@@ -206,7 +210,7 @@ export default function NoteCard({ note }: NoteCardProps) {
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 bg-cyan-500 hover:bg-cyan-400 text-gray-950 font-semibold text-sm px-4 py-2 rounded-md transition-colors"
           >
-            noteエディタを開く
+            {t("openEditor")}
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M14 5h5v5M19 5l-9 9M19 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" />
             </svg>
@@ -224,7 +228,7 @@ export default function NoteCard({ note }: NoteCardProps) {
                 : "border border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
             }
           >
-            {copiedTitle ? "コピーしました ✓" : "タイトルをコピー"}
+            {copiedTitle ? tc("copied") : t("copyTitle")}
           </button>
           <button
             onClick={handleCopyBody}
@@ -235,18 +239,18 @@ export default function NoteCard({ note }: NoteCardProps) {
                 : "border border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
             }
           >
-            {copiedBody ? "コピーしました ✓" : "本文をコピー"}
+            {copiedBody ? tc("copied") : t("copyBody")}
           </button>
           <button
             onClick={handleDownload}
             className="border border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
           >
-            .md ダウンロード
+            {t("download")}
           </button>
         </div>
       </div>
       <p className="mt-3 text-xs text-gray-500 leading-5">
-        ③ noteエディタに貼り付けると、見出し・リスト・引用などのMarkdown記法は自動でリッチテキストに変換されます。タイトル欄には、②の「タイトルをコピー」からコピーした見出しを別途貼り付けてください。
+        {t("pasteHint")}
       </p>
     </div>
   );
