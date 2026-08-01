@@ -192,6 +192,7 @@ function LengthPresetSelector({
   disabled: boolean;
 }) {
   const t = useTranslations("generateForm");
+  const tp = useTranslations("notePresets");
   const formatCount = useFormatCount();
   const presetKeys = Object.keys(NOTE_LENGTH_PRESETS) as NoteLengthPreset[];
   return (
@@ -216,9 +217,9 @@ function LengthPresetSelector({
                   : "border-gray-700 bg-gray-800/40 text-gray-300 hover:border-gray-500 hover:bg-gray-800/60"
               }`}
             >
-              <span className="text-base font-semibold">{preset.label}</span>
+              <span className="text-base font-semibold">{tp(`${key}Label`)}</span>
               <span className={`text-xs ${isActive ? "text-cyan-200" : "text-gray-400"}`}>
-                {preset.minutesLabel}
+                {tp(`${key}Minutes`)}
               </span>
               <span className={`text-xs tabular-nums whitespace-nowrap ${isActive ? "text-cyan-200" : "text-gray-400"}`}>
                 {t("approxChars", { min: formatCount(preset.min), max: formatCount(preset.max) })}
@@ -310,6 +311,7 @@ function Hero({ activeTab }: { activeTab: GenerateTabKey }) {
 
 export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props) {
   const t = useTranslations("generateForm");
+  const tTheme = useTranslations("appssThemes");
   const formatCount = useFormatCount();
   const router = useRouter();
   const pathname = usePathname();
@@ -883,7 +885,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                   {Object.values(THEMES).map((theme) => (
                     <ThemeChip
                       key={theme.id}
-                      label={theme.name}
+                      label={tTheme(theme.nameKey)}
                       active={appssThemeId === theme.id}
                       disabled={formDisabled}
                       swatch={theme.accent}

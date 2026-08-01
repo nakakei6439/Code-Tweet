@@ -315,5 +315,93 @@
     "s11Title": "11. ソースコードの公開（検証用）",
     "s11Body": "本サービスが GitHub と通信するコード（README とリポジトリ一覧の取得処理）は、第三者が確認できるよう公開しています。呼び出している GitHub API は README 取得とリポジトリ一覧取得のみで、ソースコードを取得する API は使用していません。",
     "s11Link": "GitHub 通信コードを確認する（GitHub）"
+  },
+  "onboarding": {
+    "skip": "スキップ",
+    "dontShowAgain": "次回から表示しない",
+    "back": "戻る",
+    "next": "次へ →",
+    "start": "始める",
+    "goToSlide": "スライド {n} へ",
+    "previewNotice": "プレビュー中: チェックを入れても記録されません",
+    "slide1Badge": "Code Tweet とは",
+    "slide1Title": "GitHubのREADMEから、\nポストとnote下書きを一発生成",
+    "slide1Body": "個人開発した OSS や自作ツールの宣伝文を、AI がまとめて書いてくれます。",
+    "slide2Badge": "AIが自動生成",
+    "slide2Title": "READMEを渡すだけで、\n5本のポスト案と note 下書きが揃う",
+    "slide2Body": "紹介・使い方・ユースケース・共感・CTA の 5 パターンと、note 用の Markdown 下書きを同時に作成します。",
+    "slide3Badge": "あとは投稿するだけ",
+    "slide3Title": "気に入ったものを\nコピーして X / note に貼るだけ",
+    "slide3Body": "文字数チェック・推奨投稿時間まで自動で出してくれるので、迷いません。",
+    "slide4Badge": "App SS",
+    "slide4Title": "App Storeのスクショも\nAIで“広告”として作れる",
+    "slide4Body": "READMEから見出しコピー・配色・レイアウトをAIが提案。自分のアプリ画面を入れて、提出用スクショを一括書き出しできます。"
+  },
+  "notePresets": {
+    "shortLabel": "短め",
+    "standardLabel": "標準",
+    "longLabel": "長め",
+    "shortMinutes": "2-3分",
+    "standardMinutes": "4-6分",
+    "longMinutes": "7-10分"
+  },
+  "appssThemes": {
+    "simpleWhite": "シンプル白",
+    "pastel": "パステル",
+    "darkNeon": "ダークネオン",
+    "washi": "和紙",
+    "pop": "ポップ",
+    "ocean": "オーシャン",
+    "forest": "フォレスト",
+    "sunset": "サンセット",
+    "mono": "モノクロ",
+    "midnight": "ミッドナイト",
+    "mocha": "モカ",
+    "aiCustom": "AI生成"
+  },
+  "appssBackgrounds": {
+    "soft": "ソフト光彩",
+    "plain": "無地グラデ",
+    "grid": "ドットグリッド",
+    "spotlight": "スポットライト",
+    "stripes": "斜めストライプ"
+  },
+  "appssLayoutLabel": {
+    "hero": "ヒーロー",
+    "device-bottom": "デバイス下",
+    "device-top": "デバイス上",
+    "two-devices": "2台重ね",
+    "collage-duo": "2枚コラージュ",
+    "collage-trio": "3枚コラージュ",
+    "no-device": "見出しのみ"
+  },
+  "appssLayoutHint": {
+    "hero": "大見出し + 下部にデバイス",
+    "device-bottom": "小さめ見出し + 下部デバイス",
+    "device-top": "デバイスを上に（リズム変化用）",
+    "two-devices": "前後2画面を重ねて表示",
+    "collage-duo": "2画面を大胆に傾けて重ね、見出しをまたがせる",
+    "collage-trio": "3画面を扇状に配置（中央正立・左右は傾けて背面）",
+    "no-device": "デバイス無しの大見出し"
+  },
+  "appssEditor": {
+    "inchLabel": "{inches}インチ"
+  },
+  "appssStarter": {
+    "appName": "マイアプリ",
+    "label1": "あなたのアプリ",
+    "headline1": "毎日が、\nもっとラクに。",
+    "label2": "かんたん操作",
+    "headline2": "迷わず使える\nシンプル設計",
+    "label3": "機能いろいろ",
+    "headline3": "2つの画面で\n魅力を伝える",
+    "label4": "こだわり",
+    "headline4": "細部まで\n美しく",
+    "label5": "見比べてみて",
+    "headline5": "使う前と後で\nこんなに変わる",
+    "label6": "機能いろいろ",
+    "headline6": "うれしい機能が\n盛りだくさん",
+    "label7": "今すぐ",
+    "headline7": "無料で\nはじめよう"
   }
 }

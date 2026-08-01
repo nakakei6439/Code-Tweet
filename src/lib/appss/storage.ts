@@ -3,8 +3,9 @@
 // Based on MIT-licensed https://github.com/ParthJadhav/app-store-screenshots
 // 画像本体は IndexedDB(imageStore.ts) に置き、ここには "idb:<id>" 参照のみ保存する。
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useTranslations } from "next-intl";
 import { FONTS, PROJECT_SCHEMA_VERSION, STORAGE_KEY, THEMES, isBackgroundStyle, sanitizeTheme } from "./constants";
-import { makeDefaultProject, nid } from "./defaults";
+import { makeDefaultProject, nid, type StarterCopy } from "./defaults";
 import { consumeHandoff } from "./handoff";
 import type {
   AppSSProject,
@@ -114,8 +115,8 @@ export function migrateSlide(value: unknown): AppSSSlide | null {
   };
 }
 
-export function mergeWithDefaults(parsed: unknown): AppSSProject {
-  const defaults = makeDefaultProject();
+export function mergeWithDefaults(parsed: unknown, starter?: StarterCopy): AppSSProject {
+  const defaults = makeDefaultProject(starter);
   if (!parsed || typeof parsed !== "object") return defaults;
   const raw = parsed as Partial<AppSSProject>;
   const slides = Array.isArray(raw.slides)
@@ -135,12 +136,12 @@ export function mergeWithDefaults(parsed: unknown): AppSSProject {
   };
 }
 
-function loadFromLocalStorage(): AppSSProject | null {
+function loadFromLocalStorage(starter?: StarterCopy): AppSSProject | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    return mergeWithDefaults(JSON.parse(raw));
+    return mergeWithDefaults(JSON.parse(raw), starter);
   } catch {
     return null;
   }
@@ -162,6 +163,16 @@ type Updater = AppSSProject | ((prev: AppSSProject) => AppSSProject);
 const emptySubscribe = () => () => {};
 
 export function useAppSSProject() {
+  const ts = useTranslations("appssStarter");
+  // 初期スライドの見本テキストは UI ラベルではなくユーザーが編集するコンテンツなので、
+  // 翻訳をここで解決して defaults.ts へ渡す（defaults.ts は next-intl に依存させない）。
+  const [starter] = useState<StarterCopy>(() => ({
+    appName: ts("appName"),
+    slides: [1, 2, 3, 4, 5, 6, 7].map((n) => ({
+      label: ts(`label${n}`),
+      headline: ts(`headline${n}`),
+    })),
+  }));
   // ハンドオフは一度きりの受け渡しなので、lazy initializer で一度だけ読み取ってキャプチャする
   // （project は state の初期値に、appDescription/features は copyAssistantSeed として公開する）。
   const [handoffResult] = useState(() => consumeHandoff());
@@ -170,7 +181,7 @@ export function useAppSSProject() {
   // hydrated はサーバー描画時 false / クライアントで true になり、
   // ハイドレーション不一致を防ぐ（両者ともスピナーを描画してから編集UIへ）。
   const [state, _setState] = useState<AppSSProject>(
-    () => handoffResult?.project ?? loadFromLocalStorage() ?? makeDefaultProject(),
+    () => handoffResult?.project ?? loadFromLocalStorage(starter) ?? makeDefaultProject(starter),
   );
   // ハンドオフ経由で来た場合のみ、AIコピー＆デザイン生成パネルの初期値を持つ
   const copyAssistantSeed = handoffResult
@@ -243,8 +254,8 @@ export function useAppSSProject() {
   }, []);
 
   const reset = useCallback(() => {
-    setState(makeDefaultProject());
-  }, [setState]);
+    setState(makeDefaultProject(starter));
+  }, [setState, starter]);
 
   return { state, setState, hydrated, savedAt, saveError, reset, undo, redo, copyAssistantSeed };
 }

@@ -2,11 +2,21 @@ import { GoogleGenAI } from "@google/genai";
 import { GEMINI_MODEL, GEMINI_THINKING_OFF, generateContentWithRetry } from "./gemini";
 import { BACKGROUND_STYLES, THEMES, isBackgroundStyle, sanitizeHex } from "./appss/constants";
 import type { AppSSCopySlideIdea, GeneratedPalette } from "@/types/appss";
-import type { SlideLayout } from "./appss/types";
+import type { BackgroundStyle, SlideLayout } from "./appss/types";
 
 export const APPSS_MIN_SLIDES = 3;
 export const APPSS_MAX_SLIDES = 6;
 export const APPSS_DEFAULT_SLIDES = 5;
+
+// 背景スタイルの「雰囲気」説明。UI には出さず Gemini への指示にだけ使うため、
+// 表示名（constants.ts の nameKey）とは分けてプロンプト側に置いている。
+const BACKGROUND_VIBES: Record<BackgroundStyle, string> = {
+  soft: "やわらかい光のにじみ。万能・親しみ",
+  plain: "装飾なしの上品なグラデ。ミニマル/ビジネス",
+  grid: "細かなドット格子。テック/ツール/整然",
+  spotlight: "上部からの光。プロダクトを主役に演出",
+  stripes: "動きのある斜め帯。ポップ/エンタメ/元気",
+};
 
 const LAYOUT_HINTS: SlideLayout[] = [
   "hero",
@@ -86,7 +96,7 @@ ${THEME_GUIDE.map((t) => `- ${t.id}: ${t.vibe}`).join("\n")}
 
 【背景スタイルの選択】
 このアプリの雰囲気に最も合う背景装飾を次から1つ選ぶ：
-${BACKGROUND_STYLES.map((s) => `- ${s.id}: ${s.vibe}`).join("\n")}
+${BACKGROUND_STYLES.map((s) => `- ${s.id}: ${BACKGROUND_VIBES[s.id]}`).join("\n")}
 
 【強調ワード】
 各スライドで、HEADLINE の中で最も訴求したい語句を1つだけ EMPHASIS に書く。

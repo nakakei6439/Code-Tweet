@@ -315,5 +315,93 @@
     "s11Title": "11. Código fuente publicado (para verificación)",
     "s11Body": "El código que este servicio usa para comunicarse con GitHub (obtención de README y listados de repositorios) está publicado para que terceros puedan verificarlo. Las únicas APIs de GitHub que se invocan son las de obtener un README y listar repositorios; no se usa ninguna API que recupere código fuente.",
     "s11Link": "Revisar el código de comunicación con GitHub (en GitHub)"
+  },
+  "onboarding": {
+    "skip": "Omitir",
+    "dontShowAgain": "No volver a mostrar",
+    "back": "Atrás",
+    "next": "Siguiente →",
+    "start": "Empezar",
+    "goToSlide": "Ir a la diapositiva {n}",
+    "previewNotice": "Modo de vista previa: tu selección no se guardará",
+    "slide1Badge": "¿Qué es Code Tweet?",
+    "slide1Title": "Convierte un README de GitHub\nen publicaciones y un borrador",
+    "slide1Body": "La IA redacta de una vez los textos promocionales de tus proyectos de código abierto y tus herramientas.",
+    "slide2Badge": "Generado por IA",
+    "slide2Title": "Entrega un README y obtén\n5 publicaciones y un borrador",
+    "slide2Body": "Cinco enfoques (presentación, uso, caso práctico, empatía y CTA) más un borrador en Markdown para note.com, todo a la vez.",
+    "slide3Badge": "Solo queda publicar",
+    "slide3Title": "Copia la que te guste\ny pégala en X o note",
+    "slide3Body": "Incluye la comprobación de caracteres y las horas de publicación sugeridas, así que no tendrás dudas.",
+    "slide4Badge": "App SS",
+    "slide4Title": "Crea capturas de la App Store\ncomo anuncios, con IA",
+    "slide4Body": "La IA propone titulares, colores y composición a partir de tu README. Añade las pantallas de tu app y exporta de una vez todos los tamaños necesarios."
+  },
+  "notePresets": {
+    "shortLabel": "Corto",
+    "standardLabel": "Estándar",
+    "longLabel": "Largo",
+    "shortMinutes": "2–3 min",
+    "standardMinutes": "4–6 min",
+    "longMinutes": "7–10 min"
+  },
+  "appssThemes": {
+    "simpleWhite": "Blanco simple",
+    "pastel": "Pastel",
+    "darkNeon": "Neón oscuro",
+    "washi": "Papel washi",
+    "pop": "Pop",
+    "ocean": "Océano",
+    "forest": "Bosque",
+    "sunset": "Atardecer",
+    "mono": "Monocromo",
+    "midnight": "Medianoche",
+    "mocha": "Moca",
+    "aiCustom": "Generado por IA"
+  },
+  "appssBackgrounds": {
+    "soft": "Brillo suave",
+    "plain": "Degradado liso",
+    "grid": "Cuadrícula de puntos",
+    "spotlight": "Foco",
+    "stripes": "Rayas diagonales"
+  },
+  "appssLayoutLabel": {
+    "hero": "Hero",
+    "device-bottom": "Dispositivo abajo",
+    "device-top": "Dispositivo arriba",
+    "two-devices": "Dos dispositivos",
+    "collage-duo": "Collage de dos",
+    "collage-trio": "Collage de tres",
+    "no-device": "Solo titular"
+  },
+  "appssLayoutHint": {
+    "hero": "Titular grande con el dispositivo debajo",
+    "device-bottom": "Titular más pequeño con el dispositivo debajo",
+    "device-top": "Dispositivo arriba, para variar el ritmo",
+    "two-devices": "Dos pantallas superpuestas, delante y detrás",
+    "collage-duo": "Dos pantallas muy inclinadas y superpuestas, con el titular cruzándolas",
+    "collage-trio": "Tres pantallas en abanico: la central recta y las laterales inclinadas detrás",
+    "no-device": "Titular grande sin dispositivo"
+  },
+  "appssEditor": {
+    "inchLabel": "{inches} pulgadas"
+  },
+  "appssStarter": {
+    "appName": "Mi app",
+    "label1": "Tu app",
+    "headline1": "Haz cada día\nmás fácil.",
+    "label2": "Fácil de usar",
+    "headline2": "Diseñada para que\nnunca te pierdas",
+    "label3": "Mucho por descubrir",
+    "headline3": "Dos pantallas para\nlucirla",
+    "label4": "Cuidada al detalle",
+    "headline4": "Bella hasta\nen los detalles",
+    "label5": "Nota la diferencia",
+    "headline5": "Antes y después,\nlado a lado",
+    "label6": "Mucho por descubrir",
+    "headline6": "Repleta de funciones\nque te encantarán",
+    "label7": "Empieza ya",
+    "headline7": "Empieza gratis\nhoy mismo"
   }
 }

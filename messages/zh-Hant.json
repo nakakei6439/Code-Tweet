@@ -315,5 +315,93 @@
     "s11Title": "11. 原始碼公開（供驗證）",
     "s11Body": "本服務與 GitHub 通訊的程式碼（README 與儲存庫清單的取得處理）已公開，便於第三方查核。所呼叫的 GitHub API 僅為取得 README 與取得儲存庫清單，未使用任何取得原始碼的 API。",
     "s11Link": "查看與 GitHub 通訊的程式碼（GitHub）"
+  },
+  "onboarding": {
+    "skip": "略過",
+    "dontShowAgain": "下次不再顯示",
+    "back": "上一步",
+    "next": "下一步 →",
+    "start": "開始使用",
+    "goToSlide": "跳至第 {n} 張",
+    "previewNotice": "預覽模式：勾選不會被儲存",
+    "slide1Badge": "什麼是 Code Tweet",
+    "slide1Title": "從 GitHub 的 README，\n一次產生貼文與文章草稿",
+    "slide1Body": "AI 會一次性為你的開源專案與自製工具寫好宣傳文案。",
+    "slide2Badge": "由 AI 自動產生",
+    "slide2Title": "只要交出 README，\n5 則貼文方案與文章草稿就位",
+    "slide2Body": "同時產生介紹、用法、使用情境、共鳴、CTA 共 5 種模式，以及 note 用的 Markdown 草稿。",
+    "slide3Badge": "接下來只需發布",
+    "slide3Title": "挑出滿意的一則，\n複製貼上到 X / note 即可",
+    "slide3Body": "字數檢查與建議發布時間都會自動給出，不必再猶豫。",
+    "slide4Badge": "App SS",
+    "slide4Title": "App Store 截圖也能\n借助 AI 當作「廣告」來做",
+    "slide4Body": "AI 會根據 README 提出標題文案、配色與排版。放入自己的應用畫面，即可一次匯出提交用截圖。"
+  },
+  "notePresets": {
+    "shortLabel": "短",
+    "standardLabel": "標準",
+    "longLabel": "長",
+    "shortMinutes": "2–3 分鐘",
+    "standardMinutes": "4–6 分鐘",
+    "longMinutes": "7–10 分鐘"
+  },
+  "appssThemes": {
+    "simpleWhite": "簡約白",
+    "pastel": "馬卡龍",
+    "darkNeon": "暗夜霓虹",
+    "washi": "和紙",
+    "pop": "普普",
+    "ocean": "海洋",
+    "forest": "森林",
+    "sunset": "日落",
+    "mono": "黑白",
+    "midnight": "午夜",
+    "mocha": "摩卡",
+    "aiCustom": "AI 生成"
+  },
+  "appssBackgrounds": {
+    "soft": "柔光",
+    "plain": "純色漸層",
+    "grid": "點陣網格",
+    "spotlight": "聚光燈",
+    "stripes": "斜條紋"
+  },
+  "appssLayoutLabel": {
+    "hero": "主視覺",
+    "device-bottom": "裝置在下",
+    "device-top": "裝置在上",
+    "two-devices": "雙機疊放",
+    "collage-duo": "雙圖拼貼",
+    "collage-trio": "三圖拼貼",
+    "no-device": "僅標題"
+  },
+  "appssLayoutHint": {
+    "hero": "大標題 + 下方裝置",
+    "device-bottom": "較小標題 + 下方裝置",
+    "device-top": "裝置置於上方（用於變化節奏）",
+    "two-devices": "前後兩個畫面疊放顯示",
+    "collage-duo": "兩個畫面大幅傾斜疊放，標題橫跨其上",
+    "collage-trio": "三個畫面扇形排布（中間正立，左右傾斜置後）",
+    "no-device": "無裝置的大標題"
+  },
+  "appssEditor": {
+    "inchLabel": "{inches} 吋"
+  },
+  "appssStarter": {
+    "appName": "我的應用程式",
+    "label1": "你的應用程式",
+    "headline1": "讓每一天\n更輕鬆。",
+    "label2": "操作簡單",
+    "headline2": "簡潔設計\n上手不迷路",
+    "label3": "功能豐富",
+    "headline3": "兩個畫面\n展現魅力",
+    "label4": "精心打磨",
+    "headline4": "細節之處\n同樣精美",
+    "label5": "對比看看",
+    "headline5": "使用前後\n差別這麼大",
+    "label6": "功能豐富",
+    "headline6": "貼心功能\n應有盡有",
+    "label7": "立即開始",
+    "headline7": "免費\n開始使用"
   }
 }

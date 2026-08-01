@@ -1,4 +1,8 @@
-// AppSS — 日本語スターターデッキ。
+// AppSS — 初期スターターデッキ。
+//
+// スライドの見本テキストは「UI ラベル」ではなくユーザーが編集する初期コンテンツなので、
+// 呼び出し側（useAppSSProject）が翻訳済みの StarterCopy を渡す設計にしている。
+// 引数を省略した場合は英語にフォールバックする（テストやサーバー側の保険）。
 import {
   DEFAULT_BACKGROUND_STYLE,
   DEFAULT_FONT_ID,
@@ -14,51 +18,74 @@ import type { AppSSCopySlideIdea, GeneratedPalette } from "@/types/appss";
 let _id = 0;
 export const nid = () => `s_${Date.now().toString(36)}_${(_id++).toString(36)}`;
 
-export function makeStarterSlides(): AppSSSlide[] {
+/** 初期スライドの見本テキスト。slides は 7 枚ぶんを順に使う。 */
+export type StarterCopy = {
+  appName: string;
+  slides: { label: string; headline: string }[];
+};
+
+const FALLBACK_STARTER: StarterCopy = {
+  appName: "My App",
+  slides: [
+    { label: "Your app", headline: "Make every day\neasier." },
+    { label: "Simple to use", headline: "Designed so you\nnever get lost" },
+    { label: "Plenty to explore", headline: "Two screens to\nshow it off" },
+    { label: "Crafted with care", headline: "Beautiful down\nto the details" },
+    { label: "See the difference", headline: "Before and after,\nside by side" },
+    { label: "Plenty to explore", headline: "Packed with\nfeatures you'll love" },
+    { label: "Get started", headline: "Start free\ntoday" },
+  ],
+};
+
+function slideCopy(copy: StarterCopy | undefined, index: number) {
+  return (copy ?? FALLBACK_STARTER).slides[index] ?? FALLBACK_STARTER.slides[index];
+}
+
+export function makeStarterSlides(copy?: StarterCopy): AppSSSlide[] {
   return [
     {
       id: nid(),
       layout: "hero",
-      label: "あなたのアプリ",
-      headline: "毎日が、\nもっとラクに。",
+      label: slideCopy(copy, 0).label,
+      headline: slideCopy(copy, 0).headline,
       screenshotRef: "",
     },
     {
       id: nid(),
       layout: "device-bottom",
-      label: "かんたん操作",
-      headline: "迷わず使える\nシンプル設計",
+      label: slideCopy(copy, 1).label,
+      headline: slideCopy(copy, 1).headline,
       screenshotRef: "",
     },
     {
       id: nid(),
       layout: "two-devices",
-      label: "機能いろいろ",
-      headline: "2つの画面で\n魅力を伝える",
+      label: slideCopy(copy, 2).label,
+      headline: slideCopy(copy, 2).headline,
       screenshotRef: "",
       screenshotSecondaryRef: "",
     },
     {
       id: nid(),
       layout: "device-top",
-      label: "こだわり",
-      headline: "細部まで\n美しく",
+      label: slideCopy(copy, 3).label,
+      headline: slideCopy(copy, 3).headline,
       screenshotRef: "",
       inverted: true,
     },
     {
       id: nid(),
       layout: "collage-duo",
-      label: "見比べてみて",
-      headline: "使う前と後で\nこんなに変わる",
+      label: slideCopy(copy, 4).label,
+      headline: slideCopy(copy, 4).headline,
       screenshotRef: "",
       screenshotSecondaryRef: "",
     },
     {
       id: nid(),
       layout: "collage-trio",
-      label: "機能いろいろ",
-      headline: "うれしい機能が\n盛りだくさん",
+      label: slideCopy(copy, 5).label,
+      headline: slideCopy(copy, 5).headline,
       screenshotRef: "",
       screenshotSecondaryRef: "",
       screenshotTertiaryRef: "",
@@ -66,21 +93,21 @@ export function makeStarterSlides(): AppSSSlide[] {
     {
       id: nid(),
       layout: "no-device",
-      label: "今すぐ",
-      headline: "無料で\nはじめよう",
+      label: slideCopy(copy, 6).label,
+      headline: slideCopy(copy, 6).headline,
       screenshotRef: "",
     },
   ];
 }
 
-export function makeDefaultProject(): AppSSProject {
+export function makeDefaultProject(copy?: StarterCopy): AppSSProject {
   return {
     schemaVersion: PROJECT_SCHEMA_VERSION,
-    appName: "マイアプリ",
+    appName: (copy ?? FALLBACK_STARTER).appName,
     themeId: DEFAULT_THEME_ID,
     fontId: DEFAULT_FONT_ID,
     backgroundStyle: DEFAULT_BACKGROUND_STYLE,
-    slides: makeStarterSlides(),
+    slides: makeStarterSlides(copy),
   };
 }
 
@@ -131,7 +158,7 @@ export function projectFromCopy(
   const customTheme = generatedPalette ? buildCustomTheme(generatedPalette, theme?.fontId) : undefined;
   return {
     schemaVersion: PROJECT_SCHEMA_VERSION,
-    appName: appName.trim() || "マイアプリ",
+    appName: appName.trim() || FALLBACK_STARTER.appName,
     themeId: theme ? theme.id : DEFAULT_THEME_ID,
     ...(customTheme ? { customTheme } : {}),
     fontId: theme?.fontId ?? DEFAULT_FONT_ID,

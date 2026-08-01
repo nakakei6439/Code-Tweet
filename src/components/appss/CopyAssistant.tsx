@@ -2,6 +2,7 @@
 // AppSS — AIコピー＆デザイン生成パネル。アプリ情報から Gemini がスライド構成案と
 // このアプリ専用の配色パレット（customTheme）を都度生成する（テンプレ選択ではなく生成）。
 // 生成は既存の無料枠 / 購入クレジットを 1 回分消費する（/api/appss/copy）。
+import { useTranslations } from "next-intl";
 import * as React from "react";
 import { postJson } from "@/lib/apiClient";
 import type {
@@ -12,7 +13,6 @@ import type {
 } from "@/types/appss";
 import type { UsageInfo } from "@/types/usage";
 import type { BackgroundStyle } from "@/lib/appss/types";
-import { LAYOUT_LABEL } from "@/lib/appss/constants";
 
 type ApplyStyle = { themeId?: string; backgroundStyle?: BackgroundStyle; generatedPalette?: GeneratedPalette };
 
@@ -42,6 +42,8 @@ export function CopyAssistant({
   onApplyOne,
   onClose,
 }: Props) {
+  const tc = useTranslations("appssCopyAssistant");
+  const tLayout = useTranslations("appssLayoutLabel");
   const [appName, setAppName] = React.useState(initialAppName ?? "");
   const [appDescription, setAppDescription] = React.useState(initialAppDescription ?? "");
   const [featuresText, setFeaturesText] = React.useState((initialFeatures ?? []).join("\n"));
@@ -236,7 +238,7 @@ export function CopyAssistant({
               <li key={i} className="rounded-md border border-gray-800 bg-gray-900/50 p-3">
                 <div className="mb-1.5 flex items-center justify-between text-xs text-gray-500">
                   <span>
-                    {i + 1}枚目 · {LAYOUT_LABEL[idea.layoutHint]}
+                    {tc("slideNo", { n: i + 1 })} · {tLayout(idea.layoutHint)}
                   </span>
                   <button
                     type="button"

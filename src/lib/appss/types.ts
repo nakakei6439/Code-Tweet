@@ -59,7 +59,8 @@ export type AppSSSlide = {
 
 export type Theme = {
   id: string;
-  name: string;
+  /** 表示名の翻訳キー。messages の appssThemes 配下を引く（値そのものは持たない） */
+  nameKey: string;
   bg: string;     // 基本背景
   bgAlt: string;  // 反転背景
   fg: string;     // bg 上の文字色

@@ -1,5 +1,6 @@
 "use client";
 // AppSS — 中央プレビュー。実寸キャンバスを CSS scale で縮小し、デッキ全体を横スクロールで見せる。
+import { useTranslations } from "next-intl";
 import * as React from "react";
 import type {
   AppSSSlide,
@@ -9,7 +10,7 @@ import type {
   SelectedElement,
   Theme,
 } from "@/lib/appss/types";
-import { CANVAS, LAYOUT_LABEL } from "@/lib/appss/constants";
+import { CANVAS } from "@/lib/appss/constants";
 import { DeckStrip } from "./SlideCanvas";
 
 type Props = {
@@ -41,6 +42,7 @@ export function PreviewStage({
   onElementChange,
   onSelectElement,
 }: Props) {
+  const tLayout = useTranslations("appssLayoutLabel");
   const containerRef = React.useRef<HTMLDivElement>(null);
   const scrollerRef = React.useRef<HTMLDivElement>(null);
   const suppressNextPanRef = React.useRef(false);
@@ -142,7 +144,7 @@ export function PreviewStage({
             <span aria-hidden>·</span>
             <span>{activeIndex + 1}枚目</span>
             <span aria-hidden>·</span>
-            <span>{LAYOUT_LABEL[activeSlide.layout]}</span>
+            <span>{tLayout(activeSlide.layout)}</span>
           </>
         )}
       </div>

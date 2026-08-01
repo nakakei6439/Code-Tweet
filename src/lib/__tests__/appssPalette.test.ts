@@ -45,7 +45,7 @@ describe("sanitizeTheme", () => {
   it("正常な保存データをそのまま検証して返す", () => {
     const theme = sanitizeTheme({
       id: "ai-custom",
-      name: "AI生成",
+      nameKey: "aiCustom",
       bg: "#FFFFFF",
       bgAlt: "#000000",
       fg: "#000000",
@@ -55,7 +55,7 @@ describe("sanitizeTheme", () => {
     });
     expect(theme).toEqual({
       id: "ai-custom",
-      name: "AI生成",
+      nameKey: "aiCustom",
       bg: "#ffffff",
       bgAlt: "#000000",
       fg: "#000000",

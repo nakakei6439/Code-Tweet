@@ -1,5 +1,6 @@
 "use client";
 // AppSS — 右ペイン：アクティブスライドと選択要素の設定。
+import { useTranslations } from "next-intl";
 import * as React from "react";
 import type {
   AppSSSlide,
@@ -8,7 +9,6 @@ import type {
   SlideLayout,
   TextElement,
 } from "@/lib/appss/types";
-import { LAYOUT_HINT, LAYOUT_LABEL } from "@/lib/appss/constants";
 import { isTextElementId, textElementKey, toTextElementId } from "@/lib/appss/elements";
 import { getElementTransform } from "./SlideCanvas";
 import { ScreenshotPicker } from "./ScreenshotPicker";
@@ -53,6 +53,8 @@ export function Inspector({
   onUpdateTextElement,
   onSelectElement,
 }: Props) {
+  const tLayout = useTranslations("appssLayoutLabel");
+  const tHint = useTranslations("appssLayoutHint");
   const selectedTransform = selectedElementId
     ? getElementTransform(slide, selectedElementId)
     : undefined;
@@ -72,11 +74,11 @@ export function Inspector({
         >
           {LAYOUTS.map((layout) => (
             <option key={layout} value={layout}>
-              {LAYOUT_LABEL[layout]}
+              {tLayout(layout)}
             </option>
           ))}
         </select>
-        <p className="mt-1 text-[11px] text-gray-500">{LAYOUT_HINT[slide.layout]}</p>
+        <p className="mt-1 text-[11px] text-gray-500">{tHint(slide.layout)}</p>
         <label className="mt-2 flex items-center gap-2 text-xs text-gray-300">
           <input
             type="checkbox"

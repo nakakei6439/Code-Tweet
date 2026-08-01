@@ -1,5 +1,6 @@
 "use client";
 // AppSS — 上部ツールバー：アプリ名・テーマ・フォント・保存状態・書き出し。
+import { useTranslations } from "next-intl";
 import * as React from "react";
 import type { BackgroundStyle, FontId } from "@/lib/appss/types";
 import { BACKGROUND_STYLES, FONTS, THEMES } from "@/lib/appss/constants";
@@ -53,6 +54,8 @@ export function Toolbar({
   onToggleCopyAssistant,
   copyAssistantOpen,
 }: Props) {
+  const tTheme = useTranslations("appssThemes");
+  const tBg = useTranslations("appssBackgrounds");
   const importInputRef = React.useRef<HTMLInputElement>(null);
   return (
     <div className="flex flex-wrap items-center gap-3 border-b border-gray-800 bg-gray-950/80 px-4 py-2">
@@ -79,7 +82,7 @@ export function Toolbar({
           )}
           {Object.values(THEMES).map((theme) => (
             <option key={theme.id} value={theme.id}>
-              {theme.name}
+              {tTheme(theme.nameKey)}
             </option>
           ))}
         </select>
@@ -109,7 +112,7 @@ export function Toolbar({
         >
           {BACKGROUND_STYLES.map((s) => (
             <option key={s.id} value={s.id}>
-              {s.name}
+              {tBg(s.nameKey)}
             </option>
           ))}
         </select>

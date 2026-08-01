@@ -315,5 +315,93 @@
     "s11Title": "11. Code source publié (à des fins de vérification)",
     "s11Body": "Le code que ce service utilise pour communiquer avec GitHub (récupération des README et des listes de dépôts) est publié afin que des tiers puissent le vérifier. Les seules API GitHub appelées sont celles de récupération d'un README et de listage des dépôts ; aucune API récupérant du code source n'est utilisée.",
     "s11Link": "Consulter le code de communication GitHub (sur GitHub)"
+  },
+  "onboarding": {
+    "skip": "Passer",
+    "dontShowAgain": "Ne plus afficher",
+    "back": "Retour",
+    "next": "Suivant →",
+    "start": "Commencer",
+    "goToSlide": "Aller à la diapositive {n}",
+    "previewNotice": "Mode aperçu : votre choix ne sera pas enregistré",
+    "slide1Badge": "Qu'est-ce que Code Tweet ?",
+    "slide1Title": "Transformez un README GitHub\nen posts et brouillon d'article",
+    "slide1Body": "L'IA rédige d'un coup les textes de promotion de vos projets open source et de vos outils perso.",
+    "slide2Badge": "Généré par l'IA",
+    "slide2Title": "Fournissez un README et recevez\n5 posts et un brouillon d'article",
+    "slide2Body": "Cinq angles — présentation, mode d'emploi, cas d'usage, ressenti et appel à l'action — plus un brouillon Markdown pour note.com, créés ensemble.",
+    "slide3Badge": "Il ne reste qu'à publier",
+    "slide3Title": "Copiez celui qui vous plaît\net collez-le dans X ou note",
+    "slide3Body": "La vérification du nombre de caractères et les horaires de publication conseillés sont inclus : plus d'hésitation.",
+    "slide4Badge": "App SS",
+    "slide4Title": "Créez vos captures App Store\ncomme des publicités, avec l'IA",
+    "slide4Body": "L'IA propose accroches, couleurs et mise en page à partir de votre README. Insérez les écrans de votre appli et exportez toutes les tailles requises d'un coup."
+  },
+  "notePresets": {
+    "shortLabel": "Court",
+    "standardLabel": "Standard",
+    "longLabel": "Long",
+    "shortMinutes": "2–3 min",
+    "standardMinutes": "4–6 min",
+    "longMinutes": "7–10 min"
+  },
+  "appssThemes": {
+    "simpleWhite": "Blanc épuré",
+    "pastel": "Pastel",
+    "darkNeon": "Néon sombre",
+    "washi": "Papier washi",
+    "pop": "Pop",
+    "ocean": "Océan",
+    "forest": "Forêt",
+    "sunset": "Coucher de soleil",
+    "mono": "Monochrome",
+    "midnight": "Minuit",
+    "mocha": "Moka",
+    "aiCustom": "Généré par l'IA"
+  },
+  "appssBackgrounds": {
+    "soft": "Halo doux",
+    "plain": "Dégradé uni",
+    "grid": "Grille de points",
+    "spotlight": "Projecteur",
+    "stripes": "Rayures diagonales"
+  },
+  "appssLayoutLabel": {
+    "hero": "Hero",
+    "device-bottom": "Appareil en bas",
+    "device-top": "Appareil en haut",
+    "two-devices": "Deux appareils",
+    "collage-duo": "Collage à deux",
+    "collage-trio": "Collage à trois",
+    "no-device": "Accroche seule"
+  },
+  "appssLayoutHint": {
+    "hero": "Grande accroche avec l'appareil en dessous",
+    "device-bottom": "Accroche plus petite avec l'appareil en dessous",
+    "device-top": "Appareil en haut, pour varier le rythme",
+    "two-devices": "Deux écrans superposés, avant et arrière",
+    "collage-duo": "Deux écrans franchement inclinés et superposés, l'accroche les traversant",
+    "collage-trio": "Trois écrans en éventail — celui du centre droit, les côtés inclinés en arrière",
+    "no-device": "Grande accroche sans appareil"
+  },
+  "appssEditor": {
+    "inchLabel": "{inches} pouces"
+  },
+  "appssStarter": {
+    "appName": "Mon appli",
+    "label1": "Votre appli",
+    "headline1": "Simplifiez\nchaque journée.",
+    "label2": "Simple d'usage",
+    "headline2": "Conçue pour ne\njamais vous perdre",
+    "label3": "Beaucoup à découvrir",
+    "headline3": "Deux écrans pour\ntout montrer",
+    "label4": "Soignée dans le détail",
+    "headline4": "Belle jusque\ndans les détails",
+    "label5": "Voyez la différence",
+    "headline5": "Avant et après,\ncôte à côte",
+    "label6": "Beaucoup à découvrir",
+    "headline6": "Pleine de fonctions\nque vous allez adorer",
+    "label7": "Commencez",
+    "headline7": "Commencez\ngratuitement"
   }
 }

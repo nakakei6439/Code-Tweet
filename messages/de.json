@@ -315,5 +315,93 @@
     "s11Title": "11. Veröffentlichter Quellcode (zur Überprüfung)",
     "s11Body": "Der Code, mit dem dieser Dienst mit GitHub kommuniziert (Abruf von READMEs und Repository-Listen), ist veröffentlicht, damit Dritte ihn überprüfen können. Aufgerufen werden ausschließlich die GitHub-APIs zum Abrufen einer README und zum Auflisten von Repositories; eine API zum Abrufen von Quellcode wird nicht verwendet.",
     "s11Link": "GitHub-Kommunikationscode ansehen (auf GitHub)"
+  },
+  "onboarding": {
+    "skip": "Überspringen",
+    "dontShowAgain": "Nicht mehr anzeigen",
+    "back": "Zurück",
+    "next": "Weiter →",
+    "start": "Loslegen",
+    "goToSlide": "Zu Folie {n}",
+    "previewNotice": "Vorschaumodus: Deine Auswahl wird nicht gespeichert",
+    "slide1Badge": "Was ist Code Tweet?",
+    "slide1Title": "Aus einer GitHub-README\nPosts und einen Artikelentwurf",
+    "slide1Body": "Die KI schreibt die Werbetexte für deine Open-Source-Projekte und eigenen Tools auf einen Schlag.",
+    "slide2Badge": "Von der KI erzeugt",
+    "slide2Title": "README abgeben und\n5 Post-Ideen plus Artikelentwurf erhalten",
+    "slide2Body": "Fünf Blickwinkel – Vorstellung, Anleitung, Anwendungsfall, Identifikation und Call-to-Action – plus ein Markdown-Entwurf für note.com, gemeinsam erzeugt.",
+    "slide3Badge": "Dann nur noch posten",
+    "slide3Title": "Den passenden kopieren\nund in X oder note einfügen",
+    "slide3Body": "Zeichenzählung und empfohlene Posting-Zeiten kommen gleich mit – kein Grübeln mehr.",
+    "slide4Badge": "App SS",
+    "slide4Title": "App-Store-Screenshots\nals Anzeigen bauen, mit KI",
+    "slide4Body": "Die KI schlägt Überschriften, Farben und Layout aus deiner README vor. Setze deine App-Screens ein und exportiere alle Einreichungsgrößen auf einmal."
+  },
+  "notePresets": {
+    "shortLabel": "Kurz",
+    "standardLabel": "Standard",
+    "longLabel": "Lang",
+    "shortMinutes": "2–3 Min.",
+    "standardMinutes": "4–6 Min.",
+    "longMinutes": "7–10 Min."
+  },
+  "appssThemes": {
+    "simpleWhite": "Schlichtes Weiß",
+    "pastel": "Pastell",
+    "darkNeon": "Dunkles Neon",
+    "washi": "Washi-Papier",
+    "pop": "Pop",
+    "ocean": "Ozean",
+    "forest": "Wald",
+    "sunset": "Sonnenuntergang",
+    "mono": "Monochrom",
+    "midnight": "Mitternacht",
+    "mocha": "Mokka",
+    "aiCustom": "KI-generiert"
+  },
+  "appssBackgrounds": {
+    "soft": "Sanftes Leuchten",
+    "plain": "Schlichter Verlauf",
+    "grid": "Punktraster",
+    "spotlight": "Spotlight",
+    "stripes": "Diagonale Streifen"
+  },
+  "appssLayoutLabel": {
+    "hero": "Hero",
+    "device-bottom": "Gerät unten",
+    "device-top": "Gerät oben",
+    "two-devices": "Zwei Geräte",
+    "collage-duo": "Zweier-Collage",
+    "collage-trio": "Dreier-Collage",
+    "no-device": "Nur Überschrift"
+  },
+  "appssLayoutHint": {
+    "hero": "Große Überschrift mit Gerät darunter",
+    "device-bottom": "Kleinere Überschrift mit Gerät darunter",
+    "device-top": "Gerät oben, für Abwechslung im Rhythmus",
+    "two-devices": "Zwei Screens übereinander, vorn und hinten",
+    "collage-duo": "Zwei Screens stark geneigt und überlappt, die Überschrift läuft darüber",
+    "collage-trio": "Drei Screens fächerförmig – Mitte aufrecht, Seiten geneigt dahinter",
+    "no-device": "Große Überschrift ohne Gerät"
+  },
+  "appssEditor": {
+    "inchLabel": "{inches} Zoll"
+  },
+  "appssStarter": {
+    "appName": "Meine App",
+    "label1": "Deine App",
+    "headline1": "Jeden Tag\neinfacher machen.",
+    "label2": "Einfach zu bedienen",
+    "headline2": "So gestaltet, dass\ndu nie suchen musst",
+    "label3": "Viel zu entdecken",
+    "headline3": "Zwei Screens, die\nalles zeigen",
+    "label4": "Mit Sorgfalt gemacht",
+    "headline4": "Bis ins Detail\nschön",
+    "label5": "Sieh den Unterschied",
+    "headline5": "Vorher und nachher,\ndirekt daneben",
+    "label6": "Viel zu entdecken",
+    "headline6": "Voller Funktionen,\ndie du lieben wirst",
+    "label7": "Jetzt loslegen",
+    "headline7": "Kostenlos\nstarten"
   }
 }

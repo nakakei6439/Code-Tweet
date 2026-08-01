@@ -7,12 +7,13 @@ import type { BackgroundStyle, FontId, SlideLayout, Theme } from "./types";
 export const CANVAS = { w: 1320, h: 2868 };
 
 // App Store 提出に必要な iPhone スクリーンショットサイズ
-export type ExportSize = { label: string; w: number; h: number };
+// label は持たず inches だけ持つ。表示は messages の appssEditor.inchLabel で組み立てる。
+export type ExportSize = { inches: string; w: number; h: number };
 export const EXPORT_SIZES: ExportSize[] = [
-  { label: "6.9インチ", w: 1320, h: 2868 },
-  { label: "6.5インチ", w: 1284, h: 2778 },
-  { label: "6.3インチ", w: 1206, h: 2622 },
-  { label: "6.1インチ", w: 1125, h: 2436 },
+  { inches: "6.9", w: 1320, h: 2868 },
+  { inches: "6.5", w: 1284, h: 2778 },
+  { inches: "6.3", w: 1206, h: 2622 },
+  { inches: "6.1", w: 1125, h: 2436 },
 ];
 
 // Apple Design Resources 公式 Product Bezel (iPhone 16 Pro Max, Portrait)。
@@ -54,7 +55,7 @@ export const DEFAULT_THEME_ID = "simple-white";
 export const THEMES: Record<string, Theme> = {
   "simple-white": {
     id: "simple-white",
-    name: "シンプル白",
+    nameKey: "simpleWhite",
     bg: "#F8FAFC",
     bgAlt: "#0F172A",
     fg: "#0F172A",
@@ -65,7 +66,7 @@ export const THEMES: Record<string, Theme> = {
   },
   pastel: {
     id: "pastel",
-    name: "パステル",
+    nameKey: "pastel",
     bg: "#FDF2F8",
     bgAlt: "#4C1D4B",
     fg: "#50314C",
@@ -76,7 +77,7 @@ export const THEMES: Record<string, Theme> = {
   },
   "dark-neon": {
     id: "dark-neon",
-    name: "ダークネオン",
+    nameKey: "darkNeon",
     bg: "#030712",
     bgAlt: "#F9FAFB",
     fg: "#F9FAFB",
@@ -87,7 +88,7 @@ export const THEMES: Record<string, Theme> = {
   },
   washi: {
     id: "washi",
-    name: "和紙",
+    nameKey: "washi",
     bg: "#F5F0E6",
     bgAlt: "#2D2A24",
     fg: "#3B372F",
@@ -98,7 +99,7 @@ export const THEMES: Record<string, Theme> = {
   },
   pop: {
     id: "pop",
-    name: "ポップ",
+    nameKey: "pop",
     bg: "#FEF3C7",
     bgAlt: "#1E3A8A",
     fg: "#1F2937",
@@ -109,7 +110,7 @@ export const THEMES: Record<string, Theme> = {
   },
   ocean: {
     id: "ocean",
-    name: "オーシャン",
+    nameKey: "ocean",
     bg: "#F0F9FF",
     bgAlt: "#0C4A6E",
     fg: "#0C4A6E",
@@ -120,7 +121,7 @@ export const THEMES: Record<string, Theme> = {
   },
   forest: {
     id: "forest",
-    name: "フォレスト",
+    nameKey: "forest",
     bg: "#F0FDF4",
     bgAlt: "#14532D",
     fg: "#14532D",
@@ -131,7 +132,7 @@ export const THEMES: Record<string, Theme> = {
   },
   sunset: {
     id: "sunset",
-    name: "サンセット",
+    nameKey: "sunset",
     bg: "#FFF1F2",
     bgAlt: "#7C2D12",
     fg: "#7C2D12",
@@ -142,7 +143,7 @@ export const THEMES: Record<string, Theme> = {
   },
   mono: {
     id: "mono",
-    name: "モノクロ",
+    nameKey: "mono",
     bg: "#FAFAFA",
     bgAlt: "#171717",
     fg: "#171717",
@@ -153,7 +154,7 @@ export const THEMES: Record<string, Theme> = {
   },
   midnight: {
     id: "midnight",
-    name: "ミッドナイト",
+    nameKey: "midnight",
     bg: "#0B1120",
     bgAlt: "#E0E7FF",
     fg: "#E0E7FF",
@@ -164,7 +165,7 @@ export const THEMES: Record<string, Theme> = {
   },
   mocha: {
     id: "mocha",
-    name: "モカ",
+    nameKey: "mocha",
     bg: "#FAF3EB",
     bgAlt: "#3F2E22",
     fg: "#3F2E22",
@@ -229,7 +230,7 @@ export function buildCustomTheme(
   const muted = sanitizeHex(palette.muted) ?? mixHex(fg, bg, 0.5);
   return {
     id: AI_CUSTOM_THEME_ID,
-    name: "AI生成",
+    nameKey: "aiCustom",
     bg,
     bgAlt: fg,
     fg,
@@ -251,7 +252,7 @@ export function sanitizeTheme(value: unknown): Theme | undefined {
   if (!bg || !fg || !accent) return undefined;
   return {
     id: typeof raw.id === "string" && raw.id.trim() ? raw.id : AI_CUSTOM_THEME_ID,
-    name: typeof raw.name === "string" && raw.name.trim() ? raw.name : "AI生成",
+    nameKey: typeof raw.nameKey === "string" && raw.nameKey.trim() ? raw.nameKey : "aiCustom",
     bg,
     bgAlt: sanitizeHex(raw.bgAlt) ?? fg,
     fg,
@@ -273,34 +274,16 @@ export const MAX_SLIDES = 6;
 // ---------- 背景スタイル ----------
 export const DEFAULT_BACKGROUND_STYLE: BackgroundStyle = "soft";
 
-export const BACKGROUND_STYLES: { id: BackgroundStyle; name: string; vibe: string }[] = [
-  { id: "soft", name: "ソフト光彩", vibe: "やわらかい光のにじみ。万能・親しみ" },
-  { id: "plain", name: "無地グラデ", vibe: "装飾なしの上品なグラデ。ミニマル/ビジネス" },
-  { id: "grid", name: "ドットグリッド", vibe: "細かなドット格子。テック/ツール/整然" },
-  { id: "spotlight", name: "スポットライト", vibe: "上部からの光。プロダクトを主役に演出" },
-  { id: "stripes", name: "斜めストライプ", vibe: "動きのある斜め帯。ポップ/エンタメ/元気" },
+// vibe（Gemini に渡す雰囲気の説明）はプロンプト側の関心事なので geminiAppSS.ts に置いた。
+export const BACKGROUND_STYLES: { id: BackgroundStyle; nameKey: string }[] = [
+  { id: "soft", nameKey: "soft" },
+  { id: "plain", nameKey: "plain" },
+  { id: "grid", nameKey: "grid" },
+  { id: "spotlight", nameKey: "spotlight" },
+  { id: "stripes", nameKey: "stripes" },
 ];
 
 export function isBackgroundStyle(v: unknown): v is BackgroundStyle {
   return BACKGROUND_STYLES.some((s) => s.id === v);
 }
 
-export const LAYOUT_LABEL: Record<SlideLayout, string> = {
-  hero: "ヒーロー",
-  "device-bottom": "デバイス下",
-  "device-top": "デバイス上",
-  "two-devices": "2台重ね",
-  "collage-duo": "2枚コラージュ",
-  "collage-trio": "3枚コラージュ",
-  "no-device": "見出しのみ",
-};
-
-export const LAYOUT_HINT: Record<SlideLayout, string> = {
-  hero: "大見出し + 下部にデバイス",
-  "device-bottom": "小さめ見出し + 下部デバイス",
-  "device-top": "デバイスを上に（リズム変化用）",
-  "two-devices": "前後2画面を重ねて表示",
-  "collage-duo": "2画面を大胆に傾けて重ね、見出しをまたがせる",
-  "collage-trio": "3画面を扇状に配置（中央正立・左右は傾けて背面）",
-  "no-device": "デバイス無しの大見出し",
-};
