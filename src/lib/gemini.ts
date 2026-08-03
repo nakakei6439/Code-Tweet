@@ -1,7 +1,12 @@
 import { GoogleGenAI } from "@google/genai";
 import type { GenerateContentParameters, GenerateContentResponse } from "@google/genai";
 import twitterText from "twitter-text";
+import { DEFAULT_LOCALE, LOCALES, type LocaleId } from "@/lib/locales";
 import type { Tweet } from "@/types/tweet";
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 const TWEET_LIMIT = 280;
 export const GEMINI_MODEL = "gemini-2.5-flash";
@@ -34,18 +39,56 @@ export async function generateContentWithRetry(
   }
 }
 
-export function formatScheduleLabel(dateStr: string, timeStr: string): string {
+export function formatScheduleLabel(
+  dateStr: string,
+  timeStr: string,
+  locale: LocaleId = DEFAULT_LOCALE,
+): string {
   const [year, month, day] = dateStr.split("-").map(Number);
-  const dow = ["日", "月", "火", "水", "木", "金", "土"][new Date(year, month - 1, day).getDay()];
-  return `${month}月${day}日（${dow}）${timeStr}`;
+  const date = new Date(year, month - 1, day);
+  // 日本語は従来の「5月13日（水）20:30」を保つ（既存の生成履歴と見た目を揃える）。
+  if (locale === "ja") {
+    const dow = ["日", "月", "火", "水", "木", "金", "土"][date.getDay()];
+    return `${month}月${day}日（${dow}）${timeStr}`;
+  }
+  // 他言語は Intl に任せる。曜日名を手で持つと言語を足すたびに配列が増える。
+  const formatted = new Intl.DateTimeFormat(LOCALES[locale].bcp47, {
+    month: "short",
+    day: "numeric",
+    weekday: "short",
+  }).format(date);
+  return `${formatted} ${timeStr}`;
 }
 const MAX_REGENERATE_ATTEMPTS = 4;
 // 日本語タグは 1 文字 2 ウェイトあり、5 個並べると 280 の 3 割前後を食う。
 // 本文の余裕を確保するため合計 3 個までに絞る（ユーザー指定タグは個数超過でも残す）。
 const MAX_HASHTAGS = 3;
-const URL_LEAD_RE =
-  /(App Storeで無料公開中|今すぐインストール|iPhoneで無料で使える|ダウンロードはこちら|詳しくはこちら|今すぐ試す|無料で使えます|コードを見る|OSSとして公開中|GitHubで公開中)/i;
-const POST_MARKER_RE = /(?:^|\n)\s*(?:\d+[.)．:：]|[（(]\d+[）)]|ポスト\s*\d+[:：]?)\s*/;
+// AI が URL の直前に置きがちな CTA 文言。本文と URL ブロックを切り分けるのに使う。
+// 言語ごとに書き方が違うので全言語分をまとめて 1 つの正規表現にする
+// （どの言語の出力かに関わらず、CTA を本文に取り残さないため）。
+const URL_LEAD_PHRASES = [
+  // 日本語
+  "App Storeで無料公開中", "今すぐインストール", "iPhoneで無料で使える", "ダウンロードはこちら",
+  "詳しくはこちら", "今すぐ試す", "無料で使えます", "コードを見る", "OSSとして公開中", "GitHubで公開中",
+  // 英語
+  "Free on the App Store", "Get it now", "Download here", "Learn more", "Try it now",
+  "Free to use", "See the code", "Open source", "On GitHub",
+  // スペイン語
+  "Gratis en la App Store", "Descárgalo ahora", "Más información", "Pruébalo ya", "Ver el código",
+  // 中国語（簡体・繁体）
+  "App Store 免费下载", "立即安装", "立即下載", "了解更多", "查看代码", "查看程式碼", "免费使用",
+  // フランス語
+  "Gratuit sur l'App Store", "Télécharger", "En savoir plus", "Essayez-le", "Voir le code",
+  // ドイツ語
+  "Kostenlos im App Store", "Jetzt installieren", "Mehr erfahren", "Jetzt testen", "Code ansehen",
+  // 韓国語
+  "App Store에서 무료", "지금 설치", "자세히 보기", "지금 사용해 보기", "코드 보기",
+];
+const URL_LEAD_RE = new RegExp(`(${URL_LEAD_PHRASES.map(escapeRegExp).join("|")})`, "i");
+
+// 生成物の番号マーカー。"ポスト 1:" のほか英語の "Post 1:" も剥がす。
+const POST_MARKER_RE =
+  /(?:^|\n)\s*(?:\d+[.)．:：]|[（(]\d+[）)]|(?:ポスト|Post|POST)\s*\d+[:：]?)\s*/;
 
 export type ParsedGeneratedTweets = {
   drafts: string[];
@@ -125,14 +168,33 @@ export function dropTagsToFit(text: string, requiredHashtags = ""): string {
   return render(kept);
 }
 
-function getDefaultUrlLead(url: string): string {
-  if (/apps\.apple\.com/i.test(url)) return "App Storeで無料公開中 →";
-  if (/play\.google\.com/i.test(url)) return "今すぐインストール →";
-  if (/github\.com|github\.io/i.test(url)) return "GitHubで公開中 →";
-  return "詳しくはこちら →";
+// URL の種類ごとの既定リード文。AI がリード文を書かなかったときに補う。
+type UrlLeadSet = { appStore: string; googlePlay: string; github: string; web: string };
+const URL_LEADS: Record<LocaleId, UrlLeadSet> = {
+  ja: { appStore: "App Storeで無料公開中 →", googlePlay: "今すぐインストール →", github: "GitHubで公開中 →", web: "詳しくはこちら →" },
+  en: { appStore: "Free on the App Store →", googlePlay: "Get it on Google Play →", github: "On GitHub →", web: "Learn more →" },
+  es: { appStore: "Gratis en la App Store →", googlePlay: "Descárgalo en Google Play →", github: "En GitHub →", web: "Más información →" },
+  "zh-Hans": { appStore: "App Store 免费下载 →", googlePlay: "在 Google Play 安装 →", github: "在 GitHub 查看 →", web: "了解更多 →" },
+  "zh-Hant": { appStore: "App Store 免費下載 →", googlePlay: "在 Google Play 安裝 →", github: "在 GitHub 查看 →", web: "了解更多 →" },
+  fr: { appStore: "Gratuit sur l'App Store →", googlePlay: "Sur Google Play →", github: "Sur GitHub →", web: "En savoir plus →" },
+  de: { appStore: "Kostenlos im App Store →", googlePlay: "Bei Google Play →", github: "Auf GitHub →", web: "Mehr erfahren →" },
+  ko: { appStore: "App Store에서 무료 →", googlePlay: "Google Play에서 설치 →", github: "GitHub에서 보기 →", web: "자세히 보기 →" },
+};
+
+function getDefaultUrlLead(url: string, locale: LocaleId = DEFAULT_LOCALE): string {
+  const leads = URL_LEADS[locale];
+  if (/apps\.apple\.com/i.test(url)) return leads.appStore;
+  if (/play\.google\.com/i.test(url)) return leads.googlePlay;
+  if (/github\.com|github\.io/i.test(url)) return leads.github;
+  return leads.web;
 }
 
-export function reformatTweet(text: string, requiredHashtags = "", requiredUrl = ""): string {
+export function reformatTweet(
+  text: string,
+  requiredHashtags = "",
+  requiredUrl = "",
+  locale: LocaleId = DEFAULT_LOCALE,
+): string {
   let rest = text.trim();
 
   const requiredTags = extractHashtags(requiredHashtags);
@@ -220,7 +282,7 @@ export function reformatTweet(text: string, requiredHashtags = "", requiredUrl =
   }
 
   if (requiredUrl) {
-    const defaultLead = getDefaultUrlLead(requiredUrl);
+    const defaultLead = getDefaultUrlLead(requiredUrl, locale);
     if (!urlBlock) {
       urlBlock = `${defaultLead}\n${requiredUrl}`;
     } else if (!urlBlock.includes(requiredUrl)) {
@@ -251,7 +313,10 @@ function extractTrailingHashtagLine(tail: string): string {
   return lines.join("\n");
 }
 
-export function parseGeneratedTweets(text: string): ParsedGeneratedTweets {
+export function parseGeneratedTweets(
+  text: string,
+  locale: LocaleId = DEFAULT_LOCALE,
+): ParsedGeneratedTweets {
   const SCHEDULE_RE = /SCHEDULE:\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})\s*\/\s*([^\n]+)/g;
   const scheduleMatches = Array.from(text.matchAll(SCHEDULE_RE));
   if (scheduleMatches.length < 5) {
@@ -284,7 +349,7 @@ export function parseGeneratedTweets(text: string): ParsedGeneratedTweets {
 
     drafts.push(content);
     schedules.push({
-      label: formatScheduleLabel(sched[1], sched[2]),
+      label: formatScheduleLabel(sched[1], sched[2], locale),
       reason: sched[3].trim(),
     });
   }
@@ -301,14 +366,34 @@ export function detectUrlType(url: string): string {
   return "Webアプリ・ランディングページ";
 }
 
-function buildPrompt(projectText: string, toneMemo: string, url: string, hashtags: string, todayStr: string): string {
+// テストから言語指示の有無を確認できるよう export する。
+export function buildPrompt(
+  projectText: string,
+  toneMemo: string,
+  url: string,
+  hashtags: string,
+  todayStr: string,
+  locale: LocaleId = DEFAULT_LOCALE,
+): string {
+  const lang = LOCALES[locale].promptName;
+  const leads = URL_LEADS[locale];
+  // 文字幅が違うので目安字数を言語で変える（CJK は 1 文字 2 ウェイト）。
+  const lengthHint =
+    LOCALES[locale].script === "latin"
+      ? `${lang} は概ね 1 文字 1 ウェイトなので約 260 文字が目安`
+      : `${lang} は 1 文字 2 ウェイトなので約 130 文字が目安`;
   return `あなたは個人開発者向けのTwitter/Xマーケティングの専門家です。
 以下のプロジェクト説明を読み、そのプロダクトを宣伝するためのポストを5件生成してください。
+
+【出力言語（最重要）】
+ポスト本文・リード文・ハッシュタグはすべて **${lang}** で書く。
+プロジェクト説明が何語で書かれていても、出力は必ず ${lang} にする。
+製品名・サービス名・固有名詞は原語のままでよい。SCHEDULE の理由も ${lang} で書く。
 
 【プロジェクト説明】
 ${projectText}
 ${toneMemo ? `\n【口調・トーン指示】\n${toneMemo}` : ""}
-${url ? `\n【URL（必須）】\n全ポストに必ず以下のURLを含める。省略・変形は一切不可：${url}\nこのURLは「${detectUrlType(url)}」へのリンク。URLは単独行に置き、その直前の行にURLの種別に合ったリード文を記載する。\n- App Store/Google Play → 「App Storeで無料公開中 →」「今すぐインストール →」「iPhoneで無料で使える →」など\n- GitHub → 「コードを見る →」「OSSとして公開中 →」「GitHubで公開中 →」など\n- Webアプリ → 「詳しくはこちら →」「今すぐ試す →」「無料で使えます →」など\n5件それぞれ異なるリード文を使うこと。同じフレーズを繰り返さない。` : ""}
+${url ? `\n【URL（必須）】\n全ポストに必ず以下のURLを含める。省略・変形は一切不可：${url}\nこのURLは「${detectUrlType(url)}」へのリンク。URLは単独行に置き、その直前の行にURLの種別に合ったリード文を記載する。\n- App Store/Google Play → 「${leads.appStore}」のような ${lang} の CTA\n- GitHub → 「${leads.github}」のような ${lang} の CTA\n- Webアプリ → 「${leads.web}」のような ${lang} の CTA\n5件それぞれ異なるリード文を ${lang} で書くこと。同じフレーズを繰り返さない。` : ""}
 ${hashtags
   ? `\n【ハッシュタグ（必須）】\n以下のハッシュタグを必ず含め、さらにプロダクトに関連するハッシュタグを追加して合計2〜3つにする。指定タグの省略・変形は一切不可：${hashtags}`
   : `\n【ハッシュタグ（必須）】\nプロダクトの内容・ターゲット層に合ったハッシュタグを2〜3つ生成して各ポストの末尾に付ける`}
@@ -318,7 +403,7 @@ ${hashtags
 - 各ポストは X の weighted length で 280 ウェイト以内に収める
 - weighted length の計算ルール：半角英数記号=1、日本語・絵文字など全角文字=2、URL は実長を問わず 23 ウェイト固定
 - ハッシュタグ・URL・リード文・改行を含めた合計を 280 ウェイト以内とする
-- 余裕を持たせるため 260 ウェイトを目安に作成する（日本語のみなら約 130 文字、英語のみなら約 260 文字が目安）
+- 余裕を持たせるため 260 ウェイトを目安に作成する（${lengthHint}）
 - 本文には読みやすさのために1〜2箇所の改行を入れる
 - ハッシュタグは本文・URLと改行して末尾に記載する（例：「本文\n#tag1 #tag2 #tag3」）
 - 本文中にハッシュタグを入れた場合でも、最後の行にハッシュタグ行を必ず作る
@@ -423,9 +508,10 @@ async function shortenWithinLimit(
   url: string,
   hashtags: string,
   ai: GoogleGenAI,
+  locale: LocaleId,
 ): Promise<string> {
   // まずハッシュタグを削って収まるか試し、それでも超過する場合だけ Gemini に短縮を頼む。
-  let current = dropTagsToFit(reformatTweet(draft, hashtags, url), hashtags);
+  let current = dropTagsToFit(reformatTweet(draft, hashtags, url, locale), hashtags);
   let weight = countWeighted(current);
   let attempts = 0;
   while (weight > TWEET_LIMIT && attempts < MAX_REGENERATE_ATTEMPTS) {
@@ -436,6 +522,7 @@ async function shortenWithinLimit(
           await regenerateOne(current, weight, projectText, toneMemo, url, hashtags, ai),
           hashtags,
           url,
+          locale,
         ),
         hashtags,
       );
@@ -458,7 +545,8 @@ export async function generateTweets(
   projectText: string,
   toneMemo: string,
   url: string,
-  hashtags: string
+  hashtags: string,
+  locale: LocaleId = DEFAULT_LOCALE,
 ): Promise<Tweet[]> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY が設定されていません。");
@@ -469,7 +557,7 @@ export async function generateTweets(
 
   const result = await generateContentWithRetry(ai, {
     model: GEMINI_MODEL,
-    contents: buildPrompt(projectText, toneMemo, url, hashtags, todayStr),
+    contents: buildPrompt(projectText, toneMemo, url, hashtags, todayStr, locale),
     config: {
       thinkingConfig: GEMINI_THINKING_OFF,
       temperature: 0.9,
@@ -481,12 +569,12 @@ export async function generateTweets(
     throw new Error("Gemini API から本文が返りませんでした。もう一度お試しください。");
   }
 
-  const { drafts, schedules } = parseGeneratedTweets(text);
+  const { drafts, schedules } = parseGeneratedTweets(text, locale);
 
   // 5 件の短縮は相互に独立なので並列実行する（逐次だと Hobby の 60 秒上限を超えやすい）。
   // 1 ツイート内の短縮試行は前の結果に依存するため逐次のまま。
   const finalDrafts = await Promise.all(
-    drafts.map((draft) => shortenWithinLimit(draft, projectText, toneMemo, url, hashtags, ai)),
+    drafts.map((draft) => shortenWithinLimit(draft, projectText, toneMemo, url, hashtags, ai, locale)),
   );
 
   return finalDrafts.map((text, i) => {

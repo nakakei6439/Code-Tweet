@@ -97,7 +97,13 @@
     "appssGenerateHint": "AI가 README를 읽고 App Store 스크린샷 문구를 작성합니다. 업로드한 스크린샷은 처음부터 배치되며 에디터에서 교체·추가할 수 있습니다(생성 1회를 소비합니다).",
     "openGithub": "GitHub을 열어 저장소 URL 복사하기",
     "resultPosts": "생성된 포스트({count}건)",
-    "resultNote": "생성된 note 초안"
+    "resultNote": "생성된 note 초안",
+    "localizeTitle": "이 내용을 다른 언어로도 만들기",
+    "localizeHintText": "번역이 아니라 같은 README로부터 그 언어로 다시 씁니다. 표현과 글자 수가 해당 언어에 맞게 최적화됩니다.",
+    "localizeCost": "{count}개 언어 선택 중({cost}회분을 소비합니다)",
+    "localizeNotEnough": "남은 횟수가 부족합니다. 언어를 줄이거나 크레딧 팩을 구매해 주세요.",
+    "localizeGenerate": "선택한 언어로 생성하기",
+    "xBlockedNote": "※ 중국 본토에서는 X를 이용할 수 없습니다"
   },
   "generateInputs": {
     "advancedTitle": "고급 설정",

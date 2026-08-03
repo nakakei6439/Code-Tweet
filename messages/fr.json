@@ -97,7 +97,13 @@
     "appssGenerateHint": "L'IA lit votre README et rédige les accroches de vos captures App Store. Les captures que vous importez sont placées d'emblée, et vous pouvez les remplacer ou en ajouter dans l'éditeur (consomme une génération).",
     "openGithub": "Ouvrir GitHub et copier l'URL d'un dépôt",
     "resultPosts": "Posts générés ({count})",
-    "resultNote": "Brouillon note généré"
+    "resultNote": "Brouillon note généré",
+    "localizeTitle": "Créer ceci dans d'autres langues",
+    "localizeHintText": "Ce n'est pas une traduction : les posts sont réécrits dans cette langue à partir du même README, avec un ton et une longueur adaptés.",
+    "localizeCost": "{count} langues sélectionnées (consomme {cost} générations)",
+    "localizeNotEnough": "Il ne vous reste pas assez de générations. Choisissez moins de langues ou achetez un pack de crédits.",
+    "localizeGenerate": "Générer dans les langues choisies",
+    "xBlockedNote": "Remarque : X est bloqué en Chine continentale"
   },
   "generateInputs": {
     "advancedTitle": "Paramètres avancés",

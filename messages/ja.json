@@ -97,7 +97,13 @@
     "appssGenerateHint": "READMEを読んで、App Store用スクショの見出しをAIが作成します。登録したスクショは最初から配置され、エディタで差し替え・追加もできます（生成に1回分を消費します）。",
     "openGithub": "GitHubを開いてリポジトリURLをコピーする",
     "resultPosts": "生成されたポスト（{count}件）",
-    "resultNote": "生成されたnote Draft"
+    "resultNote": "生成されたnote Draft",
+    "localizeTitle": "この内容を他の言語でも作る",
+    "localizeHintText": "翻訳ではなく、同じ README からその言語で書き直します。言い回しと文字数がその言語向けに最適化されます。",
+    "localizeCost": "{count} 言語を選択中（{cost} 回分を消費します）",
+    "localizeNotEnough": "残り回数が足りません。言語を減らすか、クレジットパックを購入してください。",
+    "localizeGenerate": "選んだ言語で生成する",
+    "xBlockedNote": "※ 中国本土では X が利用できません"
   },
   "generateInputs": {
     "advancedTitle": "詳細設定",

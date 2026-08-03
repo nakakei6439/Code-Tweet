@@ -97,7 +97,13 @@
     "appssGenerateHint": "AI reads your README and writes the headlines for your App Store screenshots. Screenshots you upload are placed for you from the start, and you can swap or add more in the editor (uses one generation).",
     "openGithub": "Open GitHub and copy a repository URL",
     "resultPosts": "Generated posts ({count})",
-    "resultNote": "Generated note Draft"
+    "resultNote": "Generated note Draft",
+    "localizeTitle": "Create this in other languages",
+    "localizeHintText": "Not a translation — the posts are rewritten in that language from the same README, so the phrasing and length suit it.",
+    "localizeCost": "{count} languages selected (uses {cost} generations)",
+    "localizeNotEnough": "You don't have enough generations left. Pick fewer languages, or buy a credit pack.",
+    "localizeGenerate": "Generate in the selected languages",
+    "xBlockedNote": "Note: X is blocked in mainland China"
   },
   "generateInputs": {
     "advancedTitle": "Advanced settings",

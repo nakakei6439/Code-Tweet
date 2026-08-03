@@ -28,7 +28,7 @@ import {
 } from "@/lib/noteLengthPresets";
 import { postJson } from "@/lib/apiClient";
 import { parseGitHubRepoUrl } from "@/lib/githubReadme";
-import { localePath, type LocaleId } from "@/lib/locales";
+import { LOCALES, LOCALE_LIST, localePath, type LocaleId } from "@/lib/locales";
 import { writeHandoff } from "@/lib/appss/handoff";
 import { DEFAULT_THEME_ID, THEMES } from "@/lib/appss/constants";
 import { AppssUploadTray } from "@/components/appss/AppssUploadTray";
@@ -75,6 +75,10 @@ type ErrorState = {
 };
 
 const EMPTY_ERROR: ErrorState = { error: null, errorCode: null, errorField: null };
+
+// 追加言語の同時実行数。クレジットは 4 言語ごとに 1 消費（切り上げ）で、
+// この単位が「1 バッチ = 1 クレジット」に対応する。
+const LOCALE_BATCH_SIZE = 4;
 
 const KNOWN_FIELDS: GenerateErrorField[] = ["projectText", "toneMemo", "url", "hashtags"];
 
@@ -279,6 +283,79 @@ function ThemeChip({
   );
 }
 
+/** 生成結果の下に出す「この内容を他の言語でも作る」パネル。 */
+function LocalizePanel({
+  selected,
+  onToggle,
+  baseLocale,
+  done,
+  usage,
+  isLoading,
+  onGenerate,
+}: {
+  selected: LocaleId[];
+  onToggle: (id: LocaleId) => void;
+  baseLocale: LocaleId;
+  done: LocaleId[];
+  usage: UsageInfo | null;
+  isLoading: boolean;
+  onGenerate: () => void;
+}) {
+  const t = useTranslations("generateForm");
+  // クレジットは 4 言語ごとに 1 消費（切り上げ）。
+  const cost = Math.ceil(selected.length / LOCALE_BATCH_SIZE);
+  const available = usage ? usage.remaining + usage.credits : null;
+  // 送信前に残高を確認する。途中で切れると成功分だけ残って分かりにくいため。
+  const notEnough = available !== null && cost > available;
+
+  return (
+    <section className="mt-8 rounded-2xl border border-gray-800 bg-gray-900/60 p-5">
+      <p className="text-sm font-semibold text-white">{t("localizeTitle")}</p>
+      <p className="mt-1 text-xs text-gray-400">{t("localizeHintText")}</p>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        {LOCALE_LIST.filter((l) => l.id !== baseLocale).map((l) => {
+          const isDone = done.includes(l.id);
+          const isOn = selected.includes(l.id);
+          return (
+            <button
+              key={l.id}
+              type="button"
+              disabled={isDone || isLoading}
+              onClick={() => onToggle(l.id)}
+              aria-pressed={isOn}
+              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                isOn
+                  ? "border-cyan-500 bg-cyan-500/10 text-white"
+                  : "border-gray-700 bg-gray-800/40 text-gray-300 hover:border-gray-500"
+              }`}
+            >
+              {l.nativeName}
+              {isDone && " ✓"}
+            </button>
+          );
+        })}
+      </div>
+
+      {selected.length > 0 && (
+        <p className="mt-3 text-xs text-gray-400">{t("localizeCost", { count: selected.length, cost })}</p>
+      )}
+      {notEnough && <p className="mt-2 text-xs font-semibold text-red-300">{t("localizeNotEnough")}</p>}
+
+      <button
+        type="button"
+        onClick={onGenerate}
+        disabled={selected.length === 0 || isLoading || notEnough}
+        className="mt-4 w-full rounded-lg bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400
+          py-2.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-opacity
+          hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none sm:w-auto sm:px-6"
+      >
+        {isLoading ? t("generating") : t("localizeGenerate")}
+      </button>
+    </section>
+  );
+}
+
 function Hero({ activeTab }: { activeTab: GenerateTabKey }) {
   const t = useTranslations("generateForm");
   const gradient =
@@ -321,6 +398,8 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
   const t = useTranslations("generateForm");
   const tTheme = useTranslations("appssThemes");
   const resolveApiError = useApiErrorMessage();
+  // 生成言語の既定は現在の UI 言語。英語 UI の人は英語ポストが欲しいはず。
+  const locale = useLocale() as LocaleId;
   const formatCount = useFormatCount();
   const router = useRouter();
   const pathname = usePathname();
@@ -357,6 +436,13 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
 
   // タブ固有結果
   const [tweets, setTweets] = useState<Tweet[]>([]);
+  // 追加言語の生成結果。1 言語 1 ブロックで結果欄の下に積む。
+  const [localizedTweets, setLocalizedTweets] = useState<{ locale: LocaleId; tweets: Tweet[] }[]>([]);
+  // 「他の言語でも作る」で選択中の言語（既定ロケールは元の生成で作るので除く）。
+  const [extraLocales, setExtraLocales] = useState<LocaleId[]>([]);
+  const [isLocalizing, setIsLocalizing] = useState(false);
+  // 追加生成に使った入力。結果を見てから作るので、生成時の入力を覚えておく。
+  const lastGenerateInputRef = useRef<{ projectText: string; url: string } | null>(null);
   const [note, setNote] = useState<NoteDraft | null>(null);
 
   // タブ固有 ローディング/エラー
@@ -562,15 +648,18 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
     clearErrorState();
     setIsTweetLoading(true);
     setTweets([]);
+    setLocalizedTweets([]);
+    setExtraLocales([]);
     try {
       const result = await postJson<GenerateResponse>("/api/generate", {
-        projectText: textToGenerate, toneMemo, url: urlToGenerate, hashtags,
+        projectText: textToGenerate, toneMemo, url: urlToGenerate, hashtags, locale,
       } satisfies GenerateRequest);
       if (!result.ok) {
         setApiError(result.error);
         return;
       }
       setTweets(result.data.tweets);
+      lastGenerateInputRef.current = { projectText: textToGenerate, url: urlToGenerate };
       // ファネル: 生成成功のたびに core_action、初回のみ activation。
       trackCoreAction("tweet", result.data.tweets.length);
       trackActivationOnce();
@@ -578,6 +667,57 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
       refreshUsage();
     } finally {
       setIsTweetLoading(false);
+    }
+  }
+
+  // 追加言語のポストを生成する。
+  //
+  // 1 リクエスト = 1 言語に分割する。理由は 3 つ:
+  //  - サーバーの maxDuration は 60 秒で、1 リクエストに複数言語を詰めると超える
+  //  - recordUserUsage（1 行 insert）と consumeCredit（常に 1 減算）が無改造で動く
+  //  - Gemini のコストが言語数に比例するので粗利率が保てる
+  // クレジットは 4 言語ごとに 1 消費（切り上げ）＝ 4 言語ずつ並列で投げる。
+  async function generateExtraLocales() {
+    const input = lastGenerateInputRef.current;
+    if (!input || extraLocales.length === 0) return;
+
+    clearErrorState();
+    setIsLocalizing(true);
+    try {
+      const results: { locale: LocaleId; tweets: Tweet[] }[] = [];
+      // 同時実行数を絞る（Gemini 側の 503 を誘発しないため）。
+      for (let i = 0; i < extraLocales.length; i += LOCALE_BATCH_SIZE) {
+        const batch = extraLocales.slice(i, i + LOCALE_BATCH_SIZE);
+        const settled = await Promise.all(
+          batch.map(async (target) => {
+            const result = await postJson<GenerateResponse>("/api/generate", {
+              projectText: input.projectText,
+              toneMemo,
+              url: input.url,
+              hashtags,
+              locale: target,
+            } satisfies GenerateRequest);
+            return { target, result };
+          }),
+        );
+        for (const { target, result } of settled) {
+          if (!result.ok) {
+            // 1 言語でも失敗したら、成功分は残したうえで打ち切る
+            // （残高切れで残りを投げ続けても全部失敗するため）。
+            setApiError(result.error);
+            setLocalizedTweets((prev) => [...prev, ...results]);
+            refreshUsage();
+            return;
+          }
+          results.push({ locale: target, tweets: result.data.tweets });
+        }
+      }
+      setLocalizedTweets((prev) => [...prev, ...results]);
+      setExtraLocales([]);
+      trackCoreAction("tweet", results.reduce((sum, r) => sum + r.tweets.length, 0));
+      refreshUsage();
+    } finally {
+      setIsLocalizing(false);
     }
   }
 
@@ -1038,6 +1178,36 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
               <TweetCard key={tweet.id} tweet={tweet} />
             ))}
           </div>
+
+          <LocalizePanel
+            selected={extraLocales}
+            onToggle={(id) =>
+              setExtraLocales((prev) =>
+                prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+              )
+            }
+            baseLocale={locale}
+            done={localizedTweets.map((r) => r.locale)}
+            usage={usage}
+            isLoading={isLocalizing}
+            onGenerate={generateExtraLocales}
+          />
+
+          {localizedTweets.map((group) => (
+            <div key={group.locale} className="mt-10">
+              <p className="mb-4 text-sm text-gray-400">
+                {LOCALES[group.locale].nativeName}
+                {LOCALES[group.locale].xBlockedInPrimaryMarket && (
+                  <span className="ml-2 text-xs text-amber-400">{t("xBlockedNote")}</span>
+                )}
+              </p>
+              <div className="space-y-4">
+                {group.tweets.map((tweet) => (
+                  <TweetCard key={`${group.locale}-${tweet.id}`} tweet={tweet} />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

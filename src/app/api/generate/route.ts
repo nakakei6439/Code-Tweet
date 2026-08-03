@@ -1,5 +1,6 @@
 import { generateTweets } from "@/lib/gemini";
 import { apiError } from "@/lib/apiErrors";
+import { toLocaleId } from "@/lib/locales";
 import { mapGeminiError } from "@/lib/geminiErrors";
 import { isSameOriginRequest } from "@/lib/origin";
 import { createClient } from "@/lib/supabase/server";
@@ -117,10 +118,12 @@ export async function POST(request: Request): Promise<Response> {
   const validationError = validateGenerateRequest(body, usageTier);
   if (validationError) return validationError;
 
+  // クライアント申告の locale は信用せず既知のロケールに丸める。
+  const locale = toLocaleId(body.locale);
   const url = normalizeUrl(body.url ?? "");
 
   try {
-    const tweets = await generateTweets(body.projectText, body.toneMemo ?? "", url, body.hashtags ?? "");
+    const tweets = await generateTweets(body.projectText, body.toneMemo ?? "", url, body.hashtags ?? "", locale);
     if (user) {
       await recordUserUsage(supabase, user.id);
       // 無料枠超過分のみ購入クレジットを消費（生成成功時のみ）。
@@ -134,7 +137,7 @@ export async function POST(request: Request): Promise<Response> {
     } else if (ipHash) {
       await recordGuestUsage(ipHash);
     }
-    return Response.json({ tweets } satisfies GenerateResponse, { status: 200 });
+    return Response.json({ tweets, locale } satisfies GenerateResponse, { status: 200 });
   } catch (err) {
     const { code, status } = mapGeminiError("generate", err);
     return apiError(code, status);

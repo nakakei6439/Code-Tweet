@@ -97,7 +97,13 @@
     "appssGenerateHint": "AI 會讀取 README 並撰寫 App Store 截圖的標題文案。你上傳的截圖會自動排入，也可在編輯器中替換或追加（消耗 1 次產生）。",
     "openGithub": "開啟 GitHub 並複製儲存庫 URL",
     "resultPosts": "已產生的貼文（{count} 則）",
-    "resultNote": "已產生的 note 草稿"
+    "resultNote": "已產生的 note 草稿",
+    "localizeTitle": "用其他語言也產生一份",
+    "localizeHintText": "並非翻譯，而是基於同一份 README 用該語言重新撰寫，措辭與字數都會針對該語言最佳化。",
+    "localizeCost": "已選擇 {count} 種語言（將消耗 {cost} 次）",
+    "localizeNotEnough": "剩餘次數不足。請減少語言數量，或購買點數包。",
+    "localizeGenerate": "以所選語言產生",
+    "xBlockedNote": "※ 中國大陸無法使用 X"
   },
   "generateInputs": {
     "advancedTitle": "進階設定",

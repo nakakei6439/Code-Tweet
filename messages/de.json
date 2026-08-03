@@ -97,7 +97,13 @@
     "appssGenerateHint": "Die KI liest deine README und schreibt die Überschriften für deine App-Store-Screenshots. Hochgeladene Screenshots werden direkt platziert und lassen sich im Editor austauschen oder ergänzen (verbraucht eine Generierung).",
     "openGithub": "GitHub öffnen und Repository-URL kopieren",
     "resultPosts": "Generierte Posts ({count})",
-    "resultNote": "Generierter note-Entwurf"
+    "resultNote": "Generierter note-Entwurf",
+    "localizeTitle": "Das Ganze in weiteren Sprachen",
+    "localizeHintText": "Keine Übersetzung – die Posts werden aus derselben README in der Zielsprache neu geschrieben, mit passender Formulierung und Länge.",
+    "localizeCost": "{count} Sprachen ausgewählt (verbraucht {cost} Generierungen)",
+    "localizeNotEnough": "Dir bleiben nicht genug Generierungen. Wähle weniger Sprachen oder kaufe ein Credit-Paket.",
+    "localizeGenerate": "In den gewählten Sprachen generieren",
+    "xBlockedNote": "Hinweis: X ist in Festlandchina gesperrt"
   },
   "generateInputs": {
     "advancedTitle": "Erweiterte Einstellungen",

@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { countWeighted, dropTagsToFit, parseGeneratedTweets, reformatTweet } from "@/lib/gemini";
+import {
+  buildPrompt,
+  countWeighted,
+  dropTagsToFit,
+  formatScheduleLabel,
+  parseGeneratedTweets,
+  reformatTweet,
+} from "@/lib/gemini";
 
 describe("reformatTweet", () => {
   it("moves an inline URL to a trailing URL block and keeps required hashtags", () => {
@@ -172,5 +179,105 @@ describe("parseGeneratedTweets", () => {
 
     // 余計な本文・URL は混入させず、ハッシュタグ行だけ回収する
     expect(result.drafts[0]).toBe("最初の紹介文\n#個人開発");
+  });
+});
+
+// ---------- 多言語対応（Phase 3）----------
+// reformatTweet は URL_LEAD_RE / getDefaultUrlLead / POST_MARKER_RE を通じて
+// 日本語に依存していた。英語・韓国語・簡体字で本文が欠落しないことを固定する。
+
+describe("reformatTweet — 多言語", () => {
+  it("英語の本文で URL を末尾ブロックへ正規化する", () => {
+    const text = "Just shipped my side project.\nCheck it out → https://example.com\nIt drafts posts for you.";
+    const out = reformatTweet(text, "", "https://example.com", "en");
+
+    expect(out).toContain("Just shipped my side project.");
+    expect(out).toContain("It drafts posts for you.");
+    expect(out).toContain("https://example.com");
+    // URL は末尾ブロックへ移る
+    expect(out.indexOf("https://example.com")).toBeGreaterThan(out.indexOf("It drafts posts for you."));
+  });
+
+  it("英語で必須 URL が無いとき英語のリード文を付ける", () => {
+    const out = reformatTweet("A tiny tool for indie devs.", "", "https://apps.apple.com/app/id1", "en");
+
+    expect(out).toContain("https://apps.apple.com/app/id1");
+    // 日本語のリード文が混ざらない
+    expect(out).not.toMatch(/[ぁ-んァ-ヶ一-龠]/);
+  });
+
+  it("韓国語の本文を欠落させない", () => {
+    const text = "개인 개발로 만든 도구를 공개했습니다.\n지금 사용해 보기 → https://example.com";
+    const out = reformatTweet(text, "", "https://example.com", "ko");
+
+    expect(out).toContain("개인 개발로 만든 도구를 공개했습니다.");
+    expect(out).toContain("https://example.com");
+  });
+
+  it("簡体字の本文とハッシュタグを保持する", () => {
+    const text = "我做了一个小工具。\n#独立开发 #工具";
+    const out = reformatTweet(text, "", "", "zh-Hans");
+
+    expect(out).toContain("我做了一个小工具。");
+    expect(out).toContain("#独立开发");
+  });
+
+  it("日本語は従来どおりのリード文を使う（既定ロケール）", () => {
+    const out = reformatTweet("個人開発のツールを公開しました。", "", "https://apps.apple.com/app/id1");
+
+    expect(out).toContain("App Storeで無料公開中");
+  });
+});
+
+describe("formatScheduleLabel — 多言語", () => {
+  it("日本語は従来の表記を保つ", () => {
+    expect(formatScheduleLabel("2026-05-13", "20:30", "ja")).toBe("5月13日（水）20:30");
+  });
+
+  it("英語はロケールに沿った曜日表記になる", () => {
+    const label = formatScheduleLabel("2026-05-13", "20:30", "en");
+
+    expect(label).toContain("20:30");
+    expect(label).not.toMatch(/[ぁ-んァ-ヶ一-龠]/);
+  });
+
+  it("韓国語でも日本語の曜日配列を使わない", () => {
+    const label = formatScheduleLabel("2026-05-13", "20:30", "ko");
+
+    expect(label).toContain("20:30");
+    expect(label).not.toMatch(/[ぁ-んァ-ヶ]/);
+  });
+});
+
+describe("buildPrompt — 多言語", () => {
+  const base = ["A tiny CLI tool.", "", "", "", "2026年5月13日"] as const;
+
+  it("既定は日本語で書くよう指示する", () => {
+    const prompt = buildPrompt(...base);
+
+    expect(prompt).toContain("**Japanese**");
+    expect(prompt).toContain("1 文字 2 ウェイト");
+  });
+
+  it("英語では英語で書くよう指示し、ラテン文字の字数目安に変える", () => {
+    const prompt = buildPrompt(...base, "en");
+
+    expect(prompt).toContain("**English**");
+    // ラテン文字は 1 文字 1 ウェイトなので目安字数が倍になる
+    expect(prompt).toContain("1 文字 1 ウェイト");
+  });
+
+  it("韓国語では CJK の字数目安を使う", () => {
+    const prompt = buildPrompt(...base, "ko");
+
+    expect(prompt).toContain("**Korean**");
+    expect(prompt).toContain("1 文字 2 ウェイト");
+  });
+
+  it("URL のリード例が生成言語のものになる", () => {
+    const prompt = buildPrompt("A tool.", "", "https://apps.apple.com/app/id1", "", "2026年5月13日", "de");
+
+    expect(prompt).toContain("Kostenlos im App Store");
+    expect(prompt).not.toContain("App Storeで無料公開中");
   });
 });
