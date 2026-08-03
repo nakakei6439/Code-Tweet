@@ -570,7 +570,9 @@
     "slideNo": "Folie {n}",
     "applyAllNote": "„Alle übernehmen“ ersetzt Überschrift, Layout, Farben und Hintergrund jeder Folie – deine Screenshots und deren Platzierung bleiben erhalten",
     "copyLocale": "Sprache der Texte",
-    "copyLocaleHint": "Überschriften werden in dieser Sprache erzeugt, die Schrift wird passend umgestellt."
+    "copyLocaleHint": "Überschriften werden in dieser Sprache erzeugt, die Schrift wird passend umgestellt.",
+    "append": "Anhängen",
+    "appendTooltip": "Behält deine aktuellen Folien und hängt die generierten an (Farben und Hintergrund bleiben)"
   },
   "appssInspector": {
     "elementCaption": "Überschrift",

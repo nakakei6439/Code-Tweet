@@ -570,7 +570,9 @@
     "slideNo": "第 {n} 张",
     "applyAllNote": "「全部应用」会替换每张幻灯片的标题、排版、配色与背景（截图及其位置将保留）",
     "copyLocale": "文案语言",
-    "copyLocaleHint": "将以该语言生成标题文案，并自动切换为对应字体。"
+    "copyLocaleHint": "将以该语言生成标题文案，并自动切换为对应字体。",
+    "append": "追加到末尾",
+    "appendTooltip": "保留当前幻灯片，将生成方案追加到末尾（不改变配色与背景）"
   },
   "appssInspector": {
     "elementCaption": "标题",

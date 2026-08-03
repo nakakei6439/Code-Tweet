@@ -337,7 +337,13 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
   const applySingleIdea = React.useCallback(
     (idea: AppSSCopySlideIdea) => {
       if (!activeSlide) return;
-      updateSlide(activeSlide.id, { label: idea.label, headline: idea.headline });
+      // 「全て適用」と同じく emphasis / layout も反映する（以前は捨てていて挙動が非対称だった）。
+      updateSlide(activeSlide.id, {
+        label: idea.label,
+        headline: idea.headline,
+        layout: idea.layoutHint,
+        ...(idea.emphasis ? { emphasis: idea.emphasis } : { emphasis: undefined }),
+      });
     },
     [activeSlide, updateSlide],
   );
@@ -431,7 +437,8 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       }
 
       if (okCount > 0) {
-        await downloadZip(zip, `${slugify(state.appName)}-appstore-${stamp()}.zip`);
+        // 言語を名前に入れる。複数言語を書き出したとき、どの zip が何語か分かるようにする。
+        await downloadZip(zip, `${slugify(state.appName)}-${projectLocale}-appstore-${stamp()}.zip`);
       }
       if (errors.length > 0) {
         setExportError(

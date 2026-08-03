@@ -570,7 +570,9 @@
     "slideNo": "{n}枚目",
     "applyAllNote": "「全て適用」は各スライドの見出し・レイアウト・配色・背景を置き換えます（スクショ画像・配置は保持）",
     "copyLocale": "コピーの言語",
-    "copyLocaleHint": "この言語で見出しを生成し、対応するフォントに切り替えます。"
+    "copyLocaleHint": "この言語で見出しを生成し、対応するフォントに切り替えます。",
+    "append": "末尾に追加",
+    "appendTooltip": "現在のスライドは残したまま、生成案を末尾に追加する（配色・背景は変えない）"
   },
   "appssInspector": {
     "elementCaption": "見出し",

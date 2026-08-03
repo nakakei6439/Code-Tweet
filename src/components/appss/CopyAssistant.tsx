@@ -248,6 +248,14 @@ export function CopyAssistant({
               >
                 {tc("applyAll")}
               </button>
+              <button
+                type="button"
+                onClick={() => onApplyAll(ideas, "append")}
+                className="rounded border border-gray-700 px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-800"
+                title={tc("appendTooltip")}
+              >
+                {tc("append")}
+              </button>
             </div>
           </div>
           {result.generatedPalette && (

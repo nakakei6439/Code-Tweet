@@ -570,7 +570,9 @@
     "slideNo": "Slide {n}",
     "applyAllNote": "\"Apply all\" replaces each slide's headline, layout, colors, and background — your screenshots and their placement are kept",
     "copyLocale": "Copy language",
-    "copyLocaleHint": "Headlines are generated in this language, and the font switches to match."
+    "copyLocaleHint": "Headlines are generated in this language, and the font switches to match.",
+    "append": "Append",
+    "appendTooltip": "Keep your current slides and add the generated ones at the end (colors and background stay as they are)"
   },
   "appssInspector": {
     "elementCaption": "Headline",

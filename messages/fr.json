@@ -570,7 +570,9 @@
     "slideNo": "Diapositive {n}",
     "applyAllNote": "« Tout appliquer » remplace l'accroche, la mise en page, les couleurs et le fond de chaque diapositive — vos captures et leur placement sont conservés",
     "copyLocale": "Langue des accroches",
-    "copyLocaleHint": "Les accroches sont générées dans cette langue, et la police s'adapte."
+    "copyLocaleHint": "Les accroches sont générées dans cette langue, et la police s'adapte.",
+    "append": "Ajouter à la fin",
+    "appendTooltip": "Conserve vos diapositives actuelles et ajoute les générées à la fin (couleurs et fond inchangés)"
   },
   "appssInspector": {
     "elementCaption": "Accroche",

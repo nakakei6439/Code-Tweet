@@ -570,7 +570,9 @@
     "slideNo": "Diapositiva {n}",
     "applyAllNote": "«Aplicar todo» reemplaza el titular, la composición, los colores y el fondo de cada diapositiva; tus capturas y su colocación se conservan",
     "copyLocale": "Idioma de los textos",
-    "copyLocaleHint": "Los titulares se generan en este idioma y la tipografía cambia para adaptarse."
+    "copyLocaleHint": "Los titulares se generan en este idioma y la tipografía cambia para adaptarse.",
+    "append": "Añadir al final",
+    "appendTooltip": "Conserva tus diapositivas actuales y añade las generadas al final (los colores y el fondo no cambian)"
   },
   "appssInspector": {
     "elementCaption": "Titular",

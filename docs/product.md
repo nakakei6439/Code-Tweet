@@ -98,4 +98,4 @@ Code Tweet は、README やプロジェクト説明から次の3つを AI で生
 | Stripe 本番エラー | Webhook と Supabase `subscriptions` / `credit_grants` を突き合わせる |
 | 一人運営のキャパ超過 | 新機能より計測、告知、軽微な改善を優先 |
 | リポジトリ可視性の誤変更 | Code Tweet リポジトリは Private 維持 |
-| App SS の透かし解除課金の回避 | gating は `/api/appss/export-unlock` のサーバー側チェックに一本化し、クライアント側だけで判定しない |
+| App SS の透かし解除課金の回避 | クレジット消費は `/api/appss/export-unlock` のサーバー側チェックで行うが、PNG 生成自体が完全にクライアント側のため、DevTools から透かし無しの書き出しを直接呼ぶ迂回は技術的に防げない。サーバー描画への移行はコスト構造（限界費用ほぼゼロ）を壊すので採らず、軽度の迂回は許容する経営判断とする |

@@ -570,7 +570,9 @@
     "slideNo": "{n}번째",
     "applyAllNote": "'전체 적용'은 각 슬라이드의 헤드라인·레이아웃·배색·배경을 교체합니다(스크린샷 이미지·배치는 유지)",
     "copyLocale": "카피 언어",
-    "copyLocaleHint": "이 언어로 헤드라인을 생성하고, 대응하는 폰트로 전환합니다."
+    "copyLocaleHint": "이 언어로 헤드라인을 생성하고, 대응하는 폰트로 전환합니다.",
+    "append": "끝에 추가",
+    "appendTooltip": "현재 슬라이드를 남긴 채 생성안을 끝에 추가합니다(배색·배경은 변경하지 않음)"
   },
   "appssInspector": {
     "elementCaption": "헤드라인",
