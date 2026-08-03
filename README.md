@@ -13,6 +13,8 @@ README やプロジェクト説明を AI が分析し、X（旧 Twitter）向け
 
 本番稼働中。GitHub OAuth、README 取得、Code Tweet / note Draft / App SS のタブ式生成、利用制限、Stripe 課金、管理画面、Pro 向け生成履歴まで実装済みです。
 
+UI は 8 言語（日本語 / 英語 / スペイン語 / 簡体字中国語 / 繁体字中国語 / フランス語 / ドイツ語 / 韓国語）に対応しています。
+
 短期では新機能追加より、Pro 課金者数の増加、計測、軽微な導線改善を優先します。
 
 ## クイックスタート
@@ -45,6 +47,7 @@ npm run dev
 - App SS は README を読み込んだ時点で、アプリ名・説明・主な機能を AI が推定してフォームに自動入力します（無料・回数消費なし）。
 - App SS の書き出し（透かし入り）・エディタ編集は無料・無制限です。透かしを外した書き出しのみ生成回数を1回消費します。
 - 生成回数は Code Tweet・note Draft・App SS（コピー生成・透かし解除書き出し）で合算カウントされます。
+- 画面表示は 8 言語に対応しています。日本語は従来どおり接頭辞なし（`/pricing`）、他言語は `/en/pricing` のようにパスが付きます。生成される投稿・記事・スクショコピーの言語は現時点では日本語のみです。
 
 ### プランと制限
 
@@ -69,12 +72,14 @@ npm run dev
 | `npm run test` | Vitest 実行 |
 | `npx tsc --noEmit` | TypeScript 検証 |
 | `npm run build` | 本番ビルド |
+| `npm run check:i18n` | 未訳の日本語と翻訳キー欠落の検出 |
 | `npm run verify:logs` | JSON ログ形式の検証 |
 | `git diff --check` | 空白エラー確認 |
 
 ## 技術構成
 
 - Next.js App Router 16、React 19、TypeScript
+- next-intl（UI の 8 言語対応。`localePrefix: "as-needed"`）
 - Tailwind CSS v4
 - Supabase Auth / Database / RLS
 - Gemini API `gemini-2.5-flash`
