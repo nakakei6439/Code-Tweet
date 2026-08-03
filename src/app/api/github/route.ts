@@ -75,39 +75,21 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   if (res.status === 401) {
-    return Response.json(
-      "github_app_invalid",
-      { status: 401 },
-    );
+    return apiError("github_app_invalid", 401);
   }
 
   if (res.status === 403 || res.status === 404) {
     // 公開リポジトリなら未認証でも見えるはず。見えない＝非公開（または存在しない）
     if (await publicRepoExists(owner, repo)) {
-      return Response.json(
-        "readme_not_found",
-        { status: 404 },
-      );
+      return apiError("readme_not_found", 404);
     }
     if (!isPaid) {
-      return Response.json(
-        "private_repo_paid_only",
-        { status: 403 },
-      );
+      return apiError("private_repo_paid_only", 403);
     }
     if (!hasInstallation) {
-      return Response.json(
-        "github_app_not_connected",
-        { status: 403 },
-      );
+      return apiError("github_app_not_connected", 403);
     }
-    return Response.json(
-      {
-        error:
-          "repo_not_accessible",
-      },
-      { status: 404 },
-    );
+    return apiError("repo_not_accessible", 404);
   }
 
   if (!res.ok) {

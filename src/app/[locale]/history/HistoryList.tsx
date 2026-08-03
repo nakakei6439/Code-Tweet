@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import TweetCard from "@/components/TweetCard";
@@ -16,10 +17,10 @@ type PendingDelete = {
   tweet: Tweet;
 } | null;
 
-function formatCreatedAt(value: string) {
+function formatCreatedAt(value: string, locale: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("ja-JP", {
+  return new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -30,9 +31,9 @@ function formatCreatedAt(value: string) {
 
 const PREVIEW_LENGTH = 60;
 
-function buildPreview(tweets: Tweet[]): string {
+function buildPreview(tweets: Tweet[], emptyLabel: string): string {
   const first = tweets[0];
-  if (!first) return "（このセッションには表示できる投稿案がありません）";
+  if (!first) return emptyLabel;
   const flattened = first.text.replace(/\s+/g, " ").trim();
   if (flattened.length <= PREVIEW_LENGTH) return flattened;
   return `${flattened.slice(0, PREVIEW_LENGTH)}…`;
@@ -52,14 +53,6 @@ function extractGithubRepo(sourceUrl: string | null): string | null {
 }
 
 type DateGroupKey = "today" | "yesterday" | "thisWeek" | "thisMonth" | "older";
-
-const GROUP_LABEL: Record<DateGroupKey, string> = {
-  today: "今日",
-  yesterday: "昨日",
-  thisWeek: "今週",
-  thisMonth: "今月",
-  older: "それ以前",
-};
 
 const GROUP_ORDER: DateGroupKey[] = ["today", "yesterday", "thisWeek", "thisMonth", "older"];
 
@@ -95,14 +88,16 @@ function groupByDate(histories: TweetGenerationRecord[]) {
     list.push(history);
     buckets.set(key, list);
   }
+  // ラベルはコンポーネント側で翻訳するので、ここではキーだけ返す。
   return GROUP_ORDER.filter((key) => buckets.has(key)).map((key) => ({
     key,
-    label: GROUP_LABEL[key],
     items: buckets.get(key)!,
   }));
 }
 
 export default function HistoryList({ histories }: Props) {
+  const t = useTranslations("historyPage");
+  const locale = useLocale();
   const [pendingDelete, setPendingDelete] = useState<PendingDelete>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -144,7 +139,7 @@ export default function HistoryList({ histories }: Props) {
     startTransition(async () => {
       const result = await deleteHistoryTweet(pendingDelete.generationId, pendingDelete.tweet.id);
       if (!result.ok) {
-        setError(result.error);
+        setError(t(result.code));
         return;
       }
       setPendingDelete(null);
@@ -154,15 +149,15 @@ export default function HistoryList({ histories }: Props) {
   if (histories.length === 0) {
     return (
       <section className="rounded-2xl border border-gray-800 bg-gray-900/80 p-8 text-center">
-        <p className="text-base font-semibold text-white">まだ履歴はありません</p>
+        <p className="text-base font-semibold text-white">{t("empty")}</p>
         <p className="mt-2 text-sm leading-6 text-gray-400">
-          ログインした状態でポストを生成すると、ここに生成結果が残ります。
+          {t("emptyBody")}
         </p>
         <Link
           href="/"
           className="mt-6 inline-flex rounded-lg border border-cyan-500 px-4 py-2 text-sm font-semibold text-cyan-300 transition-colors hover:bg-cyan-500/10"
         >
-          ポストを生成する
+          {t("generatePosts")}
         </Link>
       </section>
     );
@@ -176,7 +171,7 @@ export default function HistoryList({ histories }: Props) {
         {groups.map((group) => (
           <section key={group.key}>
             <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
-              {group.label}
+              {t(group.key)}
               <span className="ml-2 text-gray-600">({group.items.length})</span>
             </h2>
             <div className="space-y-3">
@@ -213,17 +208,17 @@ export default function HistoryList({ histories }: Props) {
                             </span>
                           ) : null}
                           <p className="text-xs text-gray-400">
-                            {formatCreatedAt(history.createdAt)}
+                            {formatCreatedAt(history.createdAt, locale)}
                           </p>
                         </div>
                         {!isOpen && (
                           <p className="mt-1 truncate text-xs text-gray-400">
-                            {buildPreview(history.tweets)}
+                            {buildPreview(history.tweets, t("noTweets"))}
                           </p>
                         )}
                       </div>
                       <span className="shrink-0 rounded-full border border-gray-700 px-2.5 py-1 text-xs text-gray-400">
-                        {history.tweets.length}件
+                        {t("tweetCount", { n: history.tweets.length })}
                       </span>
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -252,7 +247,7 @@ export default function HistoryList({ histories }: Props) {
                             )}
                             {history.hashtags && (
                               <p>
-                                ハッシュタグ: <span className="text-gray-300">{history.hashtags}</span>
+                                {t("hashtagsLabel")}<span className="text-gray-300">{history.hashtags}</span>
                               </p>
                             )}
                           </div>
@@ -271,7 +266,7 @@ export default function HistoryList({ histories }: Props) {
                                   }}
                                   className="rounded-md border border-red-700/70 px-3 py-1 text-xs text-red-300 transition-colors hover:bg-red-950/40"
                                 >
-                                  削除
+                                  {t("delete")}
                                 </button>
                               }
                             />
@@ -302,10 +297,10 @@ export default function HistoryList({ histories }: Props) {
             <div className="h-px bg-gradient-to-r from-transparent via-red-500 to-transparent" />
             <div className="border-b border-gray-800 px-6 py-5">
               <h3 id="history-delete-confirm-title" className="font-semibold text-white">
-                この投稿案を削除しますか？
+                {t("confirmTitle")}
               </h3>
               <p className="mt-2 text-sm leading-6 text-gray-400">
-                削除すると元に戻せません。
+                {t("confirmBody")}
               </p>
             </div>
             <div className="space-y-4 px-6 py-5">
@@ -326,7 +321,7 @@ export default function HistoryList({ histories }: Props) {
                   disabled={isPending}
                   className="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-700 px-4 text-sm font-semibold text-gray-100 transition-colors hover:border-gray-600 hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  キャンセル
+                  {t("cancel")}
                 </button>
                 <button
                   type="button"
@@ -334,7 +329,7 @@ export default function HistoryList({ histories }: Props) {
                   disabled={isPending}
                   className="inline-flex min-h-11 items-center justify-center rounded-lg bg-red-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-red-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
                 >
-                  {isPending ? "削除中..." : "削除する"}
+                  {isPending ? t("deleting") : t("confirmDelete")}
                 </button>
               </div>
             </div>

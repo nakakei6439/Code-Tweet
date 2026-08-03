@@ -1,7 +1,7 @@
 "use client";
 
 import { useApiErrorMessage } from "@/lib/useApiErrorMessage";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
 type StripeAction = "portal" | "credits";
@@ -22,6 +22,7 @@ const ENDPOINTS: Record<StripeAction, string> = {
 
 export default function StripeActionButton({ action, children, className, disabled, packId }: Props) {
   const t = useTranslations("stripeButtons");
+  const locale = useLocale();
   const resolveApiError = useApiErrorMessage();
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +39,8 @@ export default function StripeActionButton({ action, children, className, disabl
         ...(action === "credits"
           ? {
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ packId }),
+              // locale は Stripe の決済ページ言語と商品名に使う（サーバー側で検証する）。
+              body: JSON.stringify({ packId, locale }),
             }
           : {}),
       });

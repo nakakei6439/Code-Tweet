@@ -17,10 +17,7 @@ export async function POST(request: Request) {
   const missingEnv = getMissingStripePortalEnv();
   if (missingEnv.length > 0) {
     logError("stripe/portal", "missing env", undefined, { missingEnv });
-    return Response.json(
-      "stripe_not_configured",
-      { status: 503 },
-    );
+    return apiError("stripe_not_configured", 503);
   }
 
   const admin = createAdminClient();

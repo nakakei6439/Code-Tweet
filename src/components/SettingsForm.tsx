@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useApiErrorMessage } from "@/lib/useApiErrorMessage";
 import { type FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
@@ -16,6 +17,8 @@ type Props = {
 
 function AccountDeletionSection({ hasActiveSubscription }: { hasActiveSubscription: boolean }) {
   const resolveApiError = useApiErrorMessage();
+  const t = useTranslations("settingsForm");
+  const tsb = useTranslations("stripeButtons");
   const [confirmation, setConfirmation] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -39,7 +42,7 @@ function AccountDeletionSection({ hasActiveSubscription }: { hasActiveSubscripti
       }
       window.location.href = data.url;
     } catch {
-      setPortalError("通信に失敗しました。時間をおいて再度お試しください。");
+      setPortalError(tsb("networkError"));
     } finally {
       setIsPortalPending(false);
     }
@@ -91,7 +94,7 @@ function AccountDeletionSection({ hasActiveSubscription }: { hasActiveSubscripti
 
       window.location.href = "/";
     } catch {
-      setError("アカウントの削除に失敗しました。通信環境を確認して再度お試しください。");
+      setError(t("deleteNetworkError"));
       setIsDeleting(false);
       setIsConfirmOpen(false);
     }
@@ -108,20 +111,20 @@ function AccountDeletionSection({ hasActiveSubscription }: { hasActiveSubscripti
         <div className="h-px bg-gradient-to-r from-transparent via-red-500 to-transparent" />
         <form onSubmit={handleDeleteSubmit} className="p-8 space-y-5">
           <div>
-            <h2 className="text-white font-semibold text-base mb-1">アカウントを削除</h2>
+            <h2 className="text-white font-semibold text-base mb-1">{t("deleteTitle")}</h2>
             <p className="text-gray-400 text-sm">
-              アカウント、GitHub 連携情報、利用履歴、生成履歴、プラン情報を削除します。
-              購入した未使用のクレジット残数も削除され、復元や返金はできません。この操作は取り消せません。
+              {t("deleteBody1")}
+              {t("deleteBody2")}
             </p>
           </div>
 
           {blockDelete && (
             <div className="rounded-lg border border-amber-800/70 bg-amber-950/30 px-4 py-4 space-y-3">
               <p className="text-amber-200 text-xs font-semibold">
-                サブスクリプション契約中はアカウントを削除できません
+                {t("blockedTitle")}
               </p>
               <p className="text-amber-100/80 text-xs leading-5">
-                先に Stripe カスタマーポータルからサブスクリプションを解約してください。Stripe 側で解約が完了すると、このページから削除できるようになります（反映に少し時間がかかる場合があります）。
+                {t("blockedBody")}
               </p>
               <button
                 type="button"
@@ -130,7 +133,7 @@ function AccountDeletionSection({ hasActiveSubscription }: { hasActiveSubscripti
                 className="inline-flex min-h-10 items-center justify-center rounded-lg border border-amber-700 bg-amber-900/30 px-4 text-xs font-semibold
                   text-amber-100 transition-colors hover:bg-amber-900/50 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isPortalPending ? "移動中..." : "Stripe カスタマーポータルを開く"}
+                {isPortalPending ? tsb("redirecting") : t("openPortal")}
               </button>
               {portalError && (
                 <p className="text-[11px] text-red-300">{portalError}</p>
@@ -140,7 +143,7 @@ function AccountDeletionSection({ hasActiveSubscription }: { hasActiveSubscripti
 
           <label className="block">
             <span className="block text-sm font-medium text-gray-300 mb-2">
-              削除するには DELETE と入力してください
+              {t("confirmPrompt")}
             </span>
             <input
               type="text"
@@ -166,7 +169,7 @@ function AccountDeletionSection({ hasActiveSubscription }: { hasActiveSubscripti
             className="w-full py-3 rounded-lg text-sm font-semibold text-white transition-colors
               bg-red-600 hover:bg-red-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
           >
-            {isDeleting ? "削除中..." : "アカウントを削除"}
+            {isDeleting ? t("deleting") : t("deleteTitle")}
           </button>
         </form>
       </div>
@@ -186,15 +189,15 @@ function AccountDeletionSection({ hasActiveSubscription }: { hasActiveSubscripti
             <div className="h-px bg-gradient-to-r from-transparent via-red-500 to-transparent" />
             <div className="px-6 py-5 border-b border-gray-800">
               <h3 id="account-delete-confirm-title" className="text-white font-semibold">
-                本当にアカウントを削除しますか？
+                {t("confirmTitle")}
               </h3>
               <p className="mt-2 text-sm text-gray-400">
-                これは誤操作を防ぐための最終確認です。削除を実行すると、アカウント情報と関連データは復元できません。
+                {t("confirmBody")}
               </p>
             </div>
             <div className="px-6 py-5 space-y-4">
               <div className="rounded-lg border border-red-900/70 bg-red-950/30 px-4 py-3 text-xs text-red-200">
-                対象: アカウント、GitHub 連携情報、利用履歴、生成履歴、プラン情報、購入済みクレジット残数（返金不可）
+                {t("confirmScope")}
               </div>
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <button
@@ -204,7 +207,7 @@ function AccountDeletionSection({ hasActiveSubscription }: { hasActiveSubscripti
                   className="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-700 px-4 text-sm font-semibold
                     text-gray-100 transition-colors hover:border-gray-600 hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  キャンセル
+                  {t("cancel")}
                 </button>
                 <button
                   type="button"
@@ -213,7 +216,7 @@ function AccountDeletionSection({ hasActiveSubscription }: { hasActiveSubscripti
                   className="inline-flex min-h-11 items-center justify-center rounded-lg bg-red-600 px-4 text-sm font-semibold
                     text-white transition-colors hover:bg-red-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
                 >
-                  {isDeleting ? "削除中..." : "削除を実行"}
+                  {isDeleting ? t("deleting") : t("confirmDelete")}
                 </button>
               </div>
             </div>
@@ -225,6 +228,8 @@ function AccountDeletionSection({ hasActiveSubscription }: { hasActiveSubscripti
 }
 
 export default function SettingsForm({ isConnected, hasProAccess, hasActiveSubscription, appConfigured }: Props) {
+  const t = useTranslations("settingsForm");
+  const th = useTranslations("historyPage");
   if (!hasProAccess) {
     return (
       <div className="space-y-6">
@@ -236,14 +241,13 @@ export default function SettingsForm({ isConnected, hasProAccess, hasActiveSubsc
                 <rect x="3" y="11" width="18" height="11" rx="2" />
                 <path d="M7 11V7a5 5 0 0110 0v4" />
               </svg>
-              <h2 className="text-white font-semibold text-base">プライベートリポジトリ対応</h2>
+              <h2 className="text-white font-semibold text-base">{t("privateRepoTitle")}</h2>
               <span className="text-xs font-medium text-fuchsia-400 bg-fuchsia-950/50 border border-fuchsia-800 px-2 py-0.5 rounded-full">
-                クレジット購入者向け
+                {t("paidBadge")}
               </span>
             </div>
             <p className="text-gray-400 text-sm">
-              クレジットを購入すると、GitHub 連携で取得した非公開リポジトリの README も
-              自動取得でき、リポジトリ一覧から選んで生成できます。
+              {t("privateRepoBody")}
             </p>
             <Link
               href="/pricing"
@@ -251,10 +255,10 @@ export default function SettingsForm({ isConnected, hasProAccess, hasActiveSubsc
                 bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400
                 text-white shadow-lg shadow-fuchsia-500/20 hover:opacity-90 transition-opacity"
             >
-              クレジットパックを見る
+              {th("viewPacks")}
             </Link>
             <p className="text-gray-400 text-xs">
-              購入後はこの画面でプライベートリポジトリ連携を設定できます。
+              {t("afterPurchase")}
             </p>
           </div>
         </div>
@@ -272,44 +276,44 @@ export default function SettingsForm({ isConnected, hasProAccess, hasActiveSubsc
 }
 
 function GithubAppSection({ isConnected, appConfigured }: { isConnected: boolean; appConfigured: boolean }) {
+  const t = useTranslations("settingsForm");
   return (
     <div className="bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden">
       <div className="h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
       <div className="p-8 space-y-6">
         <div>
-          <h2 className="text-white font-semibold text-base mb-1">GitHub App 連携</h2>
+          <h2 className="text-white font-semibold text-base mb-1">{t("githubAppTitle")}</h2>
           <p className="text-gray-400 text-sm">
-            プライベートリポジトリの README を取得するために使用します。アクセストークンは保存せず、
-            取得時に約1時間で失効する使い捨てトークンをサーバーで発行します。許可するのは
+            {t("githubAppBody1")}
             <code className="text-cyan-400 bg-gray-800/80 px-1 py-0.5 rounded mx-1">Contents: Read-only</code>
-            のみで、リポジトリの中身（ソースコード）の取得は行いません。
+            {t("githubAppBody2")}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-400">現在の状態：</span>
+          <span className="text-sm text-gray-400">{t("currentStatus")}</span>
           {isConnected ? (
             <span className="text-xs font-medium text-emerald-400 bg-emerald-950/50 border border-emerald-800 px-2 py-0.5 rounded-full">
-              接続済み
+              {t("connected")}
             </span>
           ) : (
             <span className="text-xs font-medium text-gray-400 bg-gray-800 border border-gray-700 px-2 py-0.5 rounded-full">
-              未接続
+              {t("notConnected")}
             </span>
           )}
         </div>
 
         <div className="border border-cyan-900/50 bg-cyan-950/20 rounded-lg p-4 space-y-2">
           <p className="text-cyan-200 text-xs font-semibold leading-6">
-            「GitHub を接続」を押すと GitHub のインストール画面が開きます。
+            {t("installIntro")}
           </p>
           <ol className="list-decimal list-inside text-xs text-gray-300 space-y-1 leading-6">
-            <li>許可するリポジトリを <span className="text-gray-200">Only select repositories</span> で選ぶ（<span className="text-gray-200">All repositories</span> でも可）</li>
-            <li>権限は <code className="text-cyan-400 bg-gray-800/80 px-1 py-0.5 rounded">Contents: Read-only</code> のみ（自動で設定済み・GitHub が強制します）</li>
-            <li>「Install」を押すとこの画面に戻り、接続済みになります</li>
+            <li>{t("installStep1a")}<span className="text-gray-200">Only select repositories</span>{t("installStep1b")}<span className="text-gray-200">All repositories</span>{t("installStep1c")}</li>
+            <li>{t("installStep2a")}<code className="text-cyan-400 bg-gray-800/80 px-1 py-0.5 rounded">Contents: Read-only</code>{t("installStep2b")}</li>
+            <li>{t("installStep3")}</li>
           </ol>
           <p className="text-gray-400 text-xs leading-5">
-            連携の解除はいつでも GitHub 側で行えます：GitHub の Settings → Applications → Installed GitHub Apps から Uninstall。
+            {t("revokeNote")}
           </p>
         </div>
 
@@ -324,11 +328,11 @@ function GithubAppSection({ isConnected, appConfigured }: { isConnected: boolean
               bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400
               text-white shadow-lg shadow-cyan-500/20 hover:opacity-90 transition-opacity"
           >
-            {isConnected ? "リポジトリを追加・再設定する" : "GitHub を接続する"}
+            {isConnected ? t("reconfigure") : t("connect")}
           </a>
         ) : (
           <div className="border border-amber-800/70 bg-amber-950/30 rounded-lg px-4 py-3 text-amber-200 text-xs leading-5">
-            GitHub App 連携は現在準備中です。設定が完了するまでお待ちください。
+            {t("notConfigured")}
           </div>
         )}
 

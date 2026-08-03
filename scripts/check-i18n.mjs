@@ -35,6 +35,11 @@ const ALLOWLIST = [
     pattern: /^src\/lib\/creditPacks\.ts$/,
     reason: "Stripe の決済記録に残る内部名。表示名は pricingPage.packName 側で翻訳する",
   },
+  {
+    pattern: /^src\/lib\/appss\/exporter\.ts$/,
+    reason:
+      "slugify の文字クラス。書き出しファイル名で日本語を保持するための正規表現で、表示文言ではない",
+  },
 ];
 
 function isAllowed(relPath) {

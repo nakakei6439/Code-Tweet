@@ -27,12 +27,9 @@ export async function POST(request: Request) {
 
   const tier = await getSubscriptionTier(user.id);
   if (tier === "paid") {
+    // needsCancel はクライアントが「解約が先」の UI を出すためのフラグ。
     return Response.json(
-      {
-        error:
-          "subscription_active",
-        needsCancel: true,
-      },
+      { code: "subscription_active", needsCancel: true },
       { status: 409 },
     );
   }
@@ -67,10 +64,7 @@ export async function POST(request: Request) {
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) {
     logError("account/delete", "failed to delete user", error, { userId: user.id });
-    return Response.json(
-      "delete_failed",
-      { status: 500 },
-    );
+    return apiError("delete_failed", 500);
   }
 
   await supabase.auth.signOut();

@@ -32,18 +32,12 @@ export async function GET(): Promise<Response> {
     .maybeSingle();
 
   if (!installRow) {
-    return Response.json(
-      "github_app_not_connected",
-      { status: 403 },
-    );
+    return apiError("github_app_not_connected", 403);
   }
 
   const token = await getInstallationToken(Number(installRow.installation_id));
   if (!token) {
-    return Response.json(
-      "github_app_invalid",
-      { status: 403 },
-    );
+    return apiError("github_app_invalid", 403);
   }
 
   let res: Response;

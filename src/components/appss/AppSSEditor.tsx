@@ -176,7 +176,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       }));
       setSelectedElement({ slideId, elementId: `text:${id}` });
     },
-    [updateSlide],
+    [updateSlide, te],
   );
 
   const deleteTextElement = React.useCallback(
@@ -212,7 +212,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
     const slide: AppSSSlide = { ...starter, id: nid(), label: te("newSlideLabel"), headline: te("newSlideHeadline") };
     setState((prev) => ({ ...prev, slides: [...prev.slides, slide] }));
     setActiveSlideId(slide.id);
-  }, [setState, slides.length]);
+  }, [setState, slides.length, te]);
 
   const duplicateSlide = React.useCallback(
     (slideId: string) => {

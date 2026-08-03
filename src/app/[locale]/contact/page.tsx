@@ -1,14 +1,21 @@
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 import StripePortalCard from "@/components/StripePortalCard";
 import { createClient } from "@/lib/supabase/server";
 import { getSubscriptionTier } from "@/lib/subscription";
 
-export const metadata: Metadata = {
-  title: "問い合わせ",
-  description: "Code Tweet への問い合わせ先を案内します。",
-};
+type Props = { params: Promise<{ locale: string }> };
 
-export default async function ContactPage() {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "contactPage" });
+  return { title: t("metaTitle"), description: t("metaDescription") };
+}
+
+export default async function ContactPage({ params }: Props) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations("contactPage");
   // 解約カードはサブスクリプション契約者にのみ表示する（新規販売停止済みの旧 Pro 向け）。
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -21,10 +28,10 @@ export default async function ContactPage() {
           Contact
         </p>
         <h1 className="mt-4 text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
-          問い合わせ
+          {t("heading")}
         </h1>
         <p className="mt-6 text-sm leading-7 text-gray-400">
-          不具合報告、要望、利用に関する相談は、以下の窓口から連絡してください。現時点では問い合わせフォームは用意せず、X と GitHub を窓口として運用しています。
+          {t("lead")}
         </p>
 
         <hr className="my-12 border-gray-800" />
@@ -37,9 +44,9 @@ export default async function ContactPage() {
             rel="noreferrer"
             className="block rounded-xl border border-gray-800 bg-gray-900/70 p-5 transition-colors hover:border-gray-700 hover:bg-gray-900"
           >
-            <p className="text-sm font-semibold text-white">X で問い合わせる</p>
+            <p className="text-sm font-semibold text-white">{t("xTitle")}</p>
             <p className="mt-2 text-sm leading-6 text-gray-400">
-              急ぎの連絡や簡単な相談はこちらからお願いします。
+              {t("xBody")}
             </p>
           </a>
           <a
@@ -48,9 +55,9 @@ export default async function ContactPage() {
             rel="noreferrer"
             className="block rounded-xl border border-gray-800 bg-gray-900/70 p-5 transition-colors hover:border-gray-700 hover:bg-gray-900"
           >
-            <p className="text-sm font-semibold text-white">GitHub を見る</p>
+            <p className="text-sm font-semibold text-white">{t("githubTitle")}</p>
             <p className="mt-2 text-sm leading-6 text-gray-400">
-              リポジトリ、実装状況、Issue などを確認できます。
+              {t("githubBody")}
             </p>
           </a>
         </div>
