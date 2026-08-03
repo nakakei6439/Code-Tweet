@@ -18,6 +18,7 @@ export async function exportProjectZip(state: AppSSProject): Promise<void> {
   for (const slide of state.slides) {
     if (slide.screenshotRef?.startsWith(IDB_PREFIX)) refs.add(slide.screenshotRef);
     if (slide.screenshotSecondaryRef?.startsWith(IDB_PREFIX)) refs.add(slide.screenshotSecondaryRef);
+    if (slide.screenshotTertiaryRef?.startsWith(IDB_PREFIX)) refs.add(slide.screenshotTertiaryRef);
   }
   for (const ref of refs) {
     const blob = await getImage(ref);
@@ -31,7 +32,8 @@ export async function importProjectZip(file: File): Promise<AppSSProject> {
   const zip = await JSZip.loadAsync(file);
   const projectEntry = zip.file(PROJECT_JSON);
   if (!projectEntry) {
-    throw new Error("プロジェクトファイルではありません（project.json が見つかりません）");
+    // UI にはエディタ側で appssEditor2.projectImportFailed を出すため、ここは開発者向けの英語で残す。
+    throw new Error("Not a project file: project.json not found");
   }
   const state = mergeWithDefaults(JSON.parse(await projectEntry.async("string")));
 

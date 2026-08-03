@@ -1,17 +1,42 @@
 "use client";
-// AppSS — AIキャッチコピー生成パネル。アプリ情報から Gemini がスライド構成案を生成する。
+// AppSS — AIコピー＆デザイン生成パネル。アプリ情報から Gemini がスライド構成案と
+// このアプリ専用の配色パレット（customTheme）を都度生成する（テンプレ選択ではなく生成）。
 // 生成は既存の無料枠 / 購入クレジットを 1 回分消費する（/api/appss/copy）。
+import { useApiErrorMessage } from "@/lib/useApiErrorMessage";
+import { useTranslations } from "next-intl";
 import * as React from "react";
 import { postJson } from "@/lib/apiClient";
-import type { AppSSCopyRequest, AppSSCopyResponse, AppSSCopySlideIdea } from "@/types/appss";
+import { LOCALE_LIST, type LocaleId } from "@/lib/locales";
+import type {
+  AppSSCopyRequest,
+  AppSSCopyResponse,
+  AppSSCopySlideIdea,
+  GeneratedPalette,
+} from "@/types/appss";
 import type { UsageInfo } from "@/types/usage";
-import { LAYOUT_LABEL } from "@/lib/appss/constants";
+import type { BackgroundStyle } from "@/lib/appss/types";
+
+type ApplyStyle = {
+  themeId?: string;
+  backgroundStyle?: BackgroundStyle;
+  generatedPalette?: GeneratedPalette;
+  /** 生成に使った言語。デッキの locale とフォントをこれに揃える */
+  locale?: LocaleId;
+};
 
 type Props = {
   isLoggedIn: boolean;
   initialUsage: UsageInfo | null;
   slideCount: number;
-  onApplyAll: (ideas: AppSSCopySlideIdea[], mode: "replace" | "append") => void;
+  /** 現在のデッキの言語。言語セレクタの初期値に使う */
+  projectLocale: LocaleId;
+  // トップページの「READMEからスクショを作る」フローで来た場合の初期値。
+  // ハンドオフが無い（localStorage再開・リセット直後など）場合は appName のみ
+  // state.appName（既定値含む）が渡り、説明・機能は空になる。
+  initialAppName?: string;
+  initialAppDescription?: string;
+  initialFeatures?: string[];
+  onApplyAll: (ideas: AppSSCopySlideIdea[], mode: "replace" | "append", style?: ApplyStyle) => void;
   onApplyOne: (idea: AppSSCopySlideIdea) => void;
   onClose: () => void;
 };
@@ -20,19 +45,31 @@ export function CopyAssistant({
   isLoggedIn,
   initialUsage,
   slideCount,
+  projectLocale,
+  initialAppName,
+  initialAppDescription,
+  initialFeatures,
   onApplyAll,
   onApplyOne,
   onClose,
 }: Props) {
-  const [appName, setAppName] = React.useState("");
-  const [appDescription, setAppDescription] = React.useState("");
-  const [featuresText, setFeaturesText] = React.useState("");
+  const tc = useTranslations("appssCopyAssistant");
+  const tae = useTranslations("apiErrors");
+  const taf = useTranslations("apiErrorFields");
+  const resolveApiError = useApiErrorMessage();
+  const tLayout = useTranslations("appssLayoutLabel");
+  const [appName, setAppName] = React.useState(initialAppName ?? "");
+  const [appDescription, setAppDescription] = React.useState(initialAppDescription ?? "");
+  const [featuresText, setFeaturesText] = React.useState((initialFeatures ?? []).join("\n"));
   const [tone, setTone] = React.useState("");
   const [count, setCount] = React.useState(Math.min(6, Math.max(3, slideCount)));
+  // 生成コピーの言語。適用時にデッキの locale とフォントもこれに合わせる。
+  const [copyLocale, setCopyLocale] = React.useState<LocaleId>(projectLocale);
   const [usage, setUsage] = React.useState<UsageInfo | null>(initialUsage);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [ideas, setIdeas] = React.useState<AppSSCopySlideIdea[] | null>(null);
+  const [result, setResult] = React.useState<AppSSCopyResponse | null>(null);
+  const ideas = result?.slides ?? null;
 
   async function refreshUsage() {
     try {
@@ -58,21 +95,22 @@ export function CopyAssistant({
           .slice(0, 8),
         tone: tone.trim() || undefined,
         slideCount: count,
+        locale: copyLocale,
       };
       if (!body.appName) {
-        setError("アプリ名を入力してください。");
+        setError(tae("field_required", { field: taf("appName") }));
         return;
       }
       if (!body.appDescription) {
-        setError("アプリの説明を入力してください。");
+        setError(tae("field_required", { field: taf("appDescription") }));
         return;
       }
       const outcome = await postJson<AppSSCopyResponse>("/api/appss/copy", body);
       if (!outcome.ok) {
-        setError(outcome.error.error);
+        setError(resolveApiError(outcome.error));
         return;
       }
-      setIdeas(outcome.data.slides);
+      setResult(outcome.data);
       void refreshUsage();
     } finally {
       setLoading(false);
@@ -80,85 +118,100 @@ export function CopyAssistant({
   }
 
   return (
-    <div className="flex h-full w-80 flex-col overflow-y-auto border-l border-gray-800 bg-gray-950/60 p-4 text-sm">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-fuchsia-200">✦ AIキャッチコピー生成</h3>
+    <div className="flex h-full w-[440px] flex-col overflow-y-auto border-l border-gray-800 bg-gray-950/60 p-5 text-base">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-base font-semibold text-fuchsia-200">✦ {tc("title")}</h3>
         <button
           type="button"
           onClick={onClose}
-          className="h-6 w-6 rounded text-gray-500 hover:bg-gray-800 hover:text-gray-200"
-          aria-label="閉じる"
+          className="h-7 w-7 rounded text-gray-500 hover:bg-gray-800 hover:text-gray-200"
+          aria-label={tc("close")}
         >
           ×
         </button>
       </div>
 
       {usage && (
-        <p className="mb-3 text-[11px] text-gray-500">
-          今月の残り生成回数: {Math.max(0, usage.remaining)} 回
-          {usage.credits > 0 && ` ＋ クレジット ${usage.credits} 回`}
+        <p className="mb-3 text-xs text-gray-500">
+          {tc("remaining", { n: Math.max(0, usage.remaining) })}
+          {usage.credits > 0 && tc("plusCredits", { n: usage.credits })}
         </p>
       )}
       {!isLoggedIn && (
-        <p className="mb-3 rounded-md border border-gray-800 bg-gray-900/60 px-2 py-1.5 text-[11px] text-gray-400">
-          未ログインでもお試し生成できます。ログインすると毎月の無料枠とクレジットが使えます。
+        <p className="mb-3 rounded-md border border-gray-800 bg-gray-900/60 px-2.5 py-2 text-xs text-gray-400">
+          {tc("guestNote")}
         </p>
       )}
 
-      <div className="space-y-3">
-        <label className="block text-xs text-gray-400">
-          アプリ名 <span className="text-red-400">*</span>
+      <div className="space-y-4">
+        <label className="block text-sm text-gray-400">
+          {tc("appName")} <span className="text-red-400">*</span>
           <input
             type="text"
             value={appName}
             onChange={(e) => setAppName(e.target.value)}
             maxLength={50}
-            placeholder="例: 家計簿サクッと"
-            className="mt-1 w-full rounded-md border border-gray-700 bg-gray-900 px-2 py-1.5 text-sm text-gray-100 placeholder:text-gray-600"
+            placeholder={tc("appNamePlaceholder")}
+            className="mt-1.5 w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-base text-gray-100 placeholder:text-gray-600"
           />
         </label>
-        <label className="block text-xs text-gray-400">
-          アプリの説明 <span className="text-red-400">*</span>
+        <label className="block text-sm text-gray-400">
+          {tc("appDescription")} <span className="text-red-400">*</span>
           <textarea
             value={appDescription}
             onChange={(e) => setAppDescription(e.target.value)}
             maxLength={2000}
             rows={4}
-            placeholder="どんなアプリで、誰のどんな悩みを解決するのかを書いてください"
-            className="mt-1 w-full rounded-md border border-gray-700 bg-gray-900 px-2 py-1.5 text-sm text-gray-100 placeholder:text-gray-600"
+            placeholder={tc("appDescriptionPlaceholder")}
+            className="mt-1.5 w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-base text-gray-100 placeholder:text-gray-600"
           />
         </label>
-        <label className="block text-xs text-gray-400">
-          主な機能・特徴（1行に1つ・優先順）
+        <label className="block text-sm text-gray-400">
+          {tc("features")}
           <textarea
             value={featuresText}
             onChange={(e) => setFeaturesText(e.target.value)}
             rows={4}
-            placeholder={"例:\nレシートを撮るだけで自動記録\n夫婦で共有できる\nグラフで支出が一目でわかる"}
-            className="mt-1 w-full rounded-md border border-gray-700 bg-gray-900 px-2 py-1.5 text-sm text-gray-100 placeholder:text-gray-600"
+            placeholder={tc("featuresPlaceholder")}
+            className="mt-1.5 w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-base text-gray-100 placeholder:text-gray-600"
           />
         </label>
-        <label className="block text-xs text-gray-400">
-          トーン指示（任意）
+        <label className="block text-sm text-gray-400">
+          {tc("tone")}
           <input
             type="text"
             value={tone}
             onChange={(e) => setTone(e.target.value)}
             maxLength={200}
-            placeholder="例: やわらかく親しみやすい"
-            className="mt-1 w-full rounded-md border border-gray-700 bg-gray-900 px-2 py-1.5 text-sm text-gray-100 placeholder:text-gray-600"
+            placeholder={tc("tonePlaceholder")}
+            className="mt-1.5 w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-base text-gray-100 placeholder:text-gray-600"
           />
         </label>
-        <label className="block text-xs text-gray-400">
-          スライド枚数
+        <label className="block text-sm text-gray-400">
+          {tc("copyLocale")}
+          <select
+            value={copyLocale}
+            onChange={(e) => setCopyLocale(e.target.value as LocaleId)}
+            className="mt-1.5 w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-base text-gray-100"
+          >
+            {LOCALE_LIST.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.nativeName}
+              </option>
+            ))}
+          </select>
+          <span className="mt-1 block text-[11px] text-gray-500">{tc("copyLocaleHint")}</span>
+        </label>
+        <label className="block text-sm text-gray-400">
+          {tc("slideCount")}
           <select
             value={count}
             onChange={(e) => setCount(Number(e.target.value))}
-            className="mt-1 w-full rounded-md border border-gray-700 bg-gray-900 px-2 py-1.5 text-sm text-gray-100"
+            className="mt-1.5 w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-base text-gray-100"
           >
             {[3, 4, 5, 6].map((n) => (
               <option key={n} value={n}>
-                {n} 枚
+                {tc("slidesUnit", { n })}
               </option>
             ))}
           </select>
@@ -168,51 +221,82 @@ export function CopyAssistant({
           type="button"
           onClick={() => void handleGenerate()}
           disabled={loading}
-          className="w-full rounded-md bg-gradient-to-r from-fuchsia-400 to-cyan-400 px-3 py-2 text-sm font-semibold text-gray-950 hover:opacity-90 disabled:opacity-60"
+          className="w-full rounded-md bg-gradient-to-r from-fuchsia-400 to-cyan-400 px-4 py-2.5 text-base font-semibold text-gray-950 hover:opacity-90 disabled:opacity-60"
         >
-          {loading ? "生成中…" : "コピーを生成（1回分消費）"}
+          {loading ? tc("generating") : tc("generate")}
         </button>
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error && <p className="text-sm text-red-400">{error}</p>}
       </div>
 
-      {ideas && (
-        <div className="mt-4 border-t border-gray-800 pt-3">
-          <div className="mb-2 flex items-center justify-between">
-            <h4 className="text-xs font-semibold text-gray-300">生成結果</h4>
+      {ideas && result && (
+        <div className="mt-5 border-t border-gray-800 pt-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-gray-300">{tc("results")}</h4>
             <div className="flex gap-1">
               <button
                 type="button"
-                onClick={() => onApplyAll(ideas, "replace")}
-                className="rounded bg-cyan-400/15 px-2 py-1 text-[11px] text-cyan-200 hover:bg-cyan-400/25"
-                title="現在のスライドの見出しを置き換える"
+                onClick={() =>
+                  onApplyAll(ideas, "replace", {
+                    themeId: result.recommendedThemeId,
+                    backgroundStyle: result.recommendedBackgroundStyle as BackgroundStyle | undefined,
+                    generatedPalette: result.generatedPalette,
+                    locale: copyLocale,
+                  })
+                }
+                className="rounded bg-cyan-400/15 px-3 py-1.5 text-sm text-cyan-200 hover:bg-cyan-400/25"
+                title={tc("applyAllTooltip")}
               >
-                全て適用
+                {tc("applyAll")}
+              </button>
+              <button
+                type="button"
+                onClick={() => onApplyAll(ideas, "append")}
+                className="rounded border border-gray-700 px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-800"
+                title={tc("appendTooltip")}
+              >
+                {tc("append")}
               </button>
             </div>
           </div>
-          <ul className="space-y-2">
+          {result.generatedPalette && (
+            <div className="mb-3 flex items-center gap-2 rounded-md border border-fuchsia-400/30 bg-fuchsia-400/5 px-3 py-2 text-sm text-fuchsia-200">
+              <span className="flex shrink-0 gap-1">
+                {[result.generatedPalette.bg, result.generatedPalette.accent, result.generatedPalette.fg].map(
+                  (c, i) => (
+                    <span
+                      key={i}
+                      className="h-3.5 w-3.5 rounded-full border border-white/20"
+                      style={{ background: c }}
+                    />
+                  ),
+                )}
+              </span>
+              {tc("paletteGenerated")}
+            </div>
+          )}
+          <ul className="space-y-2.5">
             {ideas.map((idea, i) => (
-              <li key={i} className="rounded-md border border-gray-800 bg-gray-900/50 p-2">
-                <div className="mb-1 flex items-center justify-between text-[10px] text-gray-500">
+              <li key={i} className="rounded-md border border-gray-800 bg-gray-900/50 p-3">
+                <div className="mb-1.5 flex items-center justify-between text-xs text-gray-500">
                   <span>
-                    {i + 1}枚目 · {LAYOUT_LABEL[idea.layoutHint]}
+                    {tc("slideNo", { n: i + 1 })} · {tLayout(idea.layoutHint)}
                   </span>
                   <button
                     type="button"
                     onClick={() => onApplyOne(idea)}
-                    className="rounded px-1.5 py-0.5 text-[11px] text-cyan-300 hover:bg-gray-800"
-                    title="選択中のスライドにこの見出しを適用"
+                    className="rounded px-2 py-1 text-sm text-cyan-300 hover:bg-gray-800"
+                    title={tc("applyOneTooltip")}
                   >
-                    適用
+                    {tc("applyOne")}
                   </button>
                 </div>
-                <p className="text-[11px] text-fuchsia-300">{idea.label}</p>
-                <p className="whitespace-pre-wrap text-xs font-semibold text-gray-100">{idea.headline}</p>
+                <p className="text-sm text-fuchsia-300">{idea.label}</p>
+                <p className="whitespace-pre-wrap text-sm font-semibold text-gray-100">{idea.headline}</p>
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-[10px] text-gray-600">
-            「全て適用」は各スライドの見出し・レイアウトを置き換えます（スクショ画像・配置は保持）
+          <p className="mt-3 text-xs text-gray-600">
+            {tc("applyAllNote")}
           </p>
         </div>
       )}

@@ -56,7 +56,8 @@ export function buildReadmePayload(data: { content?: string; size?: unknown }, u
       ok: false,
       status: 413,
       body: {
-        error: `README が大きすぎます。現在のプランでは ${readmeCharLimit.toLocaleString("ja-JP")} 文字以内にしてください。`,
+        code: "readme_too_large" as const,
+      params: { limit: readmeCharLimit },
         field: "projectText",
         contentLength: readmeBytes,
         projectTextLimit: readmeCharLimit,

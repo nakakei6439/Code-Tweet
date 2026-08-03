@@ -2,6 +2,7 @@
 // AppSS — トップフォームでのスクショ事前登録トレイ。
 // 画像はサーバーへ送信せず IndexedDB に保存し、"idb:<id>" 参照だけを親に渡す。
 // 生成後、登録順にスライドへ自動配置される（handoff → projectFromCopy）。
+import { useTranslations } from "next-intl";
 import * as React from "react";
 import { img, preloadImages, setImage } from "@/lib/appss/imageCache";
 import { putImage } from "@/lib/appss/imageStore";
@@ -27,6 +28,8 @@ function readAsDataUrl(file: File): Promise<string> {
 }
 
 export function AppssUploadTray({ value, onChange, disabled = false, max = MAX_SLIDES }: Props) {
+  const t = useTranslations("appssUpload");
+  const tf = useTranslations("generateForm");
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -55,7 +58,7 @@ export function AppssUploadTray({ value, onChange, disabled = false, max = MAX_S
 
     const room = max - value.length;
     if (room <= 0) {
-      setError(`スクショは最大${max}枚までです`);
+      setError(t("maxReached", { max }));
       return;
     }
 
@@ -69,11 +72,11 @@ export function AppssUploadTray({ value, onChange, disabled = false, max = MAX_S
           break;
         }
         if (!ACCEPT_TYPES.includes(file.type)) {
-          setError("PNG / JPEG / WebP のみ対応しています");
+          setError(t("unsupportedType"));
           continue;
         }
         if (file.size > MAX_BYTES) {
-          setError("20MB 以下の画像を選択してください");
+          setError(t("tooLarge"));
           continue;
         }
         const ref = await putImage(file);
@@ -84,11 +87,11 @@ export function AppssUploadTray({ value, onChange, disabled = false, max = MAX_S
         added.push(ref);
       }
       if (rejected && !error) {
-        setError(`スクショは最大${max}枚までです（超過分は追加されませんでした）`);
+        setError(t("maxReachedPartial", { max }));
       }
       if (added.length > 0) onChange([...value, ...added]);
     } catch {
-      setError("画像の保存に失敗しました。ブラウザの空き容量をご確認ください");
+      setError(t("saveFailed"));
     } finally {
       setBusy(false);
     }
@@ -110,10 +113,10 @@ export function AppssUploadTray({ value, onChange, disabled = false, max = MAX_S
     <div>
       <div className="mb-2 flex items-center justify-between">
         <label className="text-sm font-medium text-gray-300">
-          スクリーンショット <span className="text-gray-500 font-normal">（任意）</span>
+          {t("label")} <span className="text-gray-500 font-normal">{tf("optional")}</span>
         </label>
         <span className="text-xs text-gray-500">
-          {value.length} / {max} 枚
+          {t("count", { n: value.length, max })}
         </span>
       </div>
 
@@ -129,26 +132,26 @@ export function AppssUploadTray({ value, onChange, disabled = false, max = MAX_S
                 <div className="flex aspect-[9/19] items-center justify-center">
                   {src ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={src} alt={`スクショ${index + 1}`} className="h-full w-full object-cover" />
+                    <img src={src} alt={t("shotAlt", { n: index + 1 })} className="h-full w-full object-cover" />
                   ) : (
-                    <span className="text-[10px] text-gray-600">読込中…</span>
+                    <span className="text-[10px] text-gray-600">{t("loadingThumb")}</span>
                   )}
                 </div>
                 <span className="absolute left-1 top-1 rounded bg-gray-950/80 px-1 text-[10px] text-gray-200">
                   {index + 1}
                 </span>
                 <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-gray-950/70 py-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  <TrayButton label="前へ" disabled={index === 0 || disabled} onClick={() => move(index, -1)}>
+                  <TrayButton label={t("movePrev")} disabled={index === 0 || disabled} onClick={() => move(index, -1)}>
                     ←
                   </TrayButton>
                   <TrayButton
-                    label="次へ"
+                    label={t("moveNext")}
                     disabled={index === value.length - 1 || disabled}
                     onClick={() => move(index, 1)}
                   >
                     →
                   </TrayButton>
-                  <TrayButton label="削除" disabled={disabled} onClick={() => remove(index)}>
+                  <TrayButton label={t("remove")} disabled={disabled} onClick={() => remove(index)}>
                     ×
                   </TrayButton>
                 </div>
@@ -181,10 +184,10 @@ export function AppssUploadTray({ value, onChange, disabled = false, max = MAX_S
         }`}
       >
         {busy
-          ? "保存中…"
+          ? t("saving")
           : atMax
-            ? `最大${max}枚まで登録済み`
-            : "スクショをドロップ / クリックで選択（複数可）"}
+            ? t("atMax", { max })
+            : t("dropHint")}
       </button>
       <input
         ref={inputRef}
@@ -200,7 +203,7 @@ export function AppssUploadTray({ value, onChange, disabled = false, max = MAX_S
 
       {error && <p className="mt-1.5 text-[11px] text-red-400">{error}</p>}
       <p className="mt-1.5 text-[10px] leading-4 text-gray-600">
-        登録した順にスライドへ自動配置されます。画像は端末内にのみ保存され、サーバーへは送信されません。
+        {t("orderHint")}
       </p>
     </div>
   );

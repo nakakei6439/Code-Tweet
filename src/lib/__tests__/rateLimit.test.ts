@@ -1,13 +1,17 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  FREE_ENDPOINT_MAX_HITS,
+  FREE_ENDPOINT_WINDOW_MS,
   GUEST_TOTAL_LIMIT,
   USER_FREE_MONTHLY_LIMIT,
   USER_PAID_MONTHLY_LIMIT,
+  allowFreeEndpointHit,
   checkGuestLimit,
   checkUserLimit,
   getClientIp,
   getMonthWindowStart,
   hashIp,
+  resetFreeEndpointHits,
 } from "@/lib/rateLimit";
 
 const createAdminClientMock = vi.fn();
@@ -159,5 +163,46 @@ describe("checkGuestLimit", () => {
     createAdminClientMock.mockReturnValue(adminCount({ count: GUEST_TOTAL_LIMIT, error: null }));
 
     await expect(checkGuestLimit("hash")).resolves.toMatchObject({ ok: false, status: 429, code: "guest_limit" });
+  });
+});
+
+describe("allowFreeEndpointHit", () => {
+  beforeEach(() => {
+    resetFreeEndpointHits();
+  });
+
+  it("allows requests up to the per-window limit", () => {
+    for (let i = 0; i < FREE_ENDPOINT_MAX_HITS; i++) {
+      expect(allowFreeEndpointHit("hash-a")).toBe(true);
+    }
+  });
+
+  it("blocks the request past the per-window limit", () => {
+    for (let i = 0; i < FREE_ENDPOINT_MAX_HITS; i++) allowFreeEndpointHit("hash-a");
+
+    expect(allowFreeEndpointHit("hash-a")).toBe(false);
+  });
+
+  it("counts each ip hash separately", () => {
+    for (let i = 0; i < FREE_ENDPOINT_MAX_HITS; i++) allowFreeEndpointHit("hash-a");
+
+    expect(allowFreeEndpointHit("hash-b")).toBe(true);
+  });
+
+  it("lets the window expire", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-21T00:00:00.000Z"));
+    for (let i = 0; i < FREE_ENDPOINT_MAX_HITS; i++) allowFreeEndpointHit("hash-a");
+    expect(allowFreeEndpointHit("hash-a")).toBe(false);
+
+    vi.advanceTimersByTime(FREE_ENDPOINT_WINDOW_MS + 1);
+
+    expect(allowFreeEndpointHit("hash-a")).toBe(true);
+  });
+
+  it("passes through when the ip hash is unavailable", () => {
+    for (let i = 0; i < FREE_ENDPOINT_MAX_HITS * 2; i++) {
+      expect(allowFreeEndpointHit(null)).toBe(true);
+    }
   });
 });

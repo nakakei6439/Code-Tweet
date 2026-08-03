@@ -1,3 +1,4 @@
+import { isApiErrorCode } from "@/lib/apiErrors";
 import type { GenerateErrorResponse } from "@/types/tweet";
 
 export type PostJsonOutcome<T> =
@@ -22,23 +23,18 @@ function sleep(ms: number): Promise<void> {
 // 504 / 502 などはサーバが JSON ではなく HTML を返すため、res.json() が throw する。
 // text() で受けてから安全に JSON 解釈し、失敗時はステータスに応じた既定メッセージを返す。
 async function parseErrorBody(res: Response): Promise<GenerateErrorResponse> {
+  // サーバーが JSON を返せなかったとき用。ステータスから素性を推測してコードに畳む。
   const fallback = (): GenerateErrorResponse => {
-    if (res.status === 504 || res.status === 502) {
-      return { error: "生成に時間がかかり、サーバーが応答できませんでした。入力を短くするか、少し待って再試行してください。" };
-    }
-    if (res.status === 503) {
-      return { error: "サーバーが混雑しています。少し時間をおいて再試行してください。" };
-    }
-    if (res.status === 429) {
-      return { error: "利用が集中しています。少し時間をおいて再試行してください。" };
-    }
-    return { error: "エラーが発生しました。少し時間をおいて再試行してください。" };
+    if (res.status === 504 || res.status === 502) return { code: "timeout" };
+    if (res.status === 503) return { code: "server_busy" };
+    if (res.status === 429) return { code: "rate_limited" };
+    return { code: "unknown" };
   };
   try {
     const text = await res.text();
     if (!text) return fallback();
     const data = JSON.parse(text) as GenerateErrorResponse;
-    return data.error ? data : fallback();
+    return isApiErrorCode(data.code) ? data : fallback();
   } catch {
     return fallback();
   }
@@ -85,7 +81,7 @@ export async function postJson<T>(
       if (isAbort) {
         return {
           ok: false,
-          error: { error: "時間内に生成が完了しませんでした。入力を短くするか、少し待って再試行してください。" },
+          error: { code: "timeout" },
         };
       }
       // ネットワーク断などはリトライ余地があれば再試行
@@ -95,7 +91,7 @@ export async function postJson<T>(
       }
       return {
         ok: false,
-        error: { error: "ネットワークエラーが発生しました。接続を確認してください。" },
+        error: { code: "network" },
       };
     } finally {
       clearTimeout(timeoutId);

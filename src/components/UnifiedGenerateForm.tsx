@@ -1,9 +1,11 @@
 "use client";
 
+import { useApiErrorMessage } from "@/lib/useApiErrorMessage";
 import { useCallback, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 import GenerateInputs from "@/components/GenerateInputs";
 import GenerateTabs, { type GenerateTabKey } from "@/components/GenerateTabs";
@@ -13,7 +15,7 @@ import RepoSelectorModal from "@/components/RepoSelectorModal";
 // note Draft 生成時にだけ使う react-markdown 系の重い依存を初期バンドルから外し、
 // note タブで Draft を生成した瞬間に初めて読み込む。
 const NoteCard = dynamic(() => import("@/components/NoteCard"), {
-  loading: () => <div className="text-gray-400 text-sm">プレビューを準備中...</div>,
+  loading: () => <PreviewLoading />,
 });
 import { CREDIT_PACKS } from "@/lib/creditPacks";
 import {
@@ -26,6 +28,7 @@ import {
 } from "@/lib/noteLengthPresets";
 import { postJson } from "@/lib/apiClient";
 import { parseGitHubRepoUrl } from "@/lib/githubReadme";
+import { LOCALES, LOCALE_LIST, localePath, type LocaleId } from "@/lib/locales";
 import { writeHandoff } from "@/lib/appss/handoff";
 import { DEFAULT_THEME_ID, THEMES } from "@/lib/appss/constants";
 import { AppssUploadTray } from "@/components/appss/AppssUploadTray";
@@ -52,12 +55,18 @@ type Props = {
   initialTab: GenerateTabKey;
 };
 
-const FIELD_LABELS: Record<GenerateErrorField, string> = {
-  projectText: "プロジェクト説明（README）",
-  toneMemo: "追加プロンプト",
-  url: "URL",
-  hashtags: "ハッシュタグ",
+// エラー表示の「該当項目」に出すラベル。翻訳キーだけ持ち、描画時に解決する。
+const FIELD_LABEL_KEYS: Record<GenerateErrorField, string> = {
+  projectText: "fieldProjectText",
+  toneMemo: "fieldToneMemo",
+  url: "fieldUrl",
+  hashtags: "fieldHashtags",
 };
+
+function PreviewLoading() {
+  const t = useTranslations("generateForm");
+  return <div className="text-gray-400 text-sm">{t("preparingPreview")}</div>;
+}
 
 type ErrorState = {
   error: string | null;
@@ -67,11 +76,25 @@ type ErrorState = {
 
 const EMPTY_ERROR: ErrorState = { error: null, errorCode: null, errorField: null };
 
-function formatCount(value: number) {
-  return value.toLocaleString("ja-JP");
+// 追加言語の同時実行数。クレジットは 4 言語ごとに 1 消費（切り上げ）で、
+// この単位が「1 バッチ = 1 クレジット」に対応する。
+const LOCALE_BATCH_SIZE = 4;
+
+const KNOWN_FIELDS: GenerateErrorField[] = ["projectText", "toneMemo", "url", "hashtags"];
+
+/** サーバーの field はこのフォームに無い項目（appName 等）のこともあるので絞り込む。 */
+function isKnownField(field: string | undefined): field is GenerateErrorField {
+  return !!field && (KNOWN_FIELDS as string[]).includes(field);
+}
+
+function useFormatCount() {
+  const locale = useLocale();
+  return (value: number) => value.toLocaleString(locale);
 }
 
 function GuestLimitCTA() {
+  const t = useTranslations("generateForm");
+  const locale = useLocale() as LocaleId;
   const [isPending, setIsPending] = useState(false);
   async function handleLogin() {
     setIsPending(true);
@@ -79,7 +102,8 @@ function GuestLimitCTA() {
     await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        // ログイン後も同じ言語のトップへ戻す。
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(localePath(locale))}`,
         scopes: "read:user user:email",
       },
     });
@@ -96,12 +120,13 @@ function GuestLimitCTA() {
       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
         <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
       </svg>
-      {isPending ? "..." : "GitHub でログイン"}
+      {isPending ? "..." : t("loginWithGithub")}
     </button>
   );
 }
 
 function CreditPackCTA() {
+  const t = useTranslations("generateForm");
   const smallest = CREDIT_PACKS[0];
   return (
     <Link
@@ -110,17 +135,19 @@ function CreditPackCTA() {
         bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400
         text-white shadow-lg shadow-fuchsia-500/20 hover:opacity-90 transition-opacity"
     >
-      クレジットパックを見る（{smallest.credits}回 ¥{smallest.amountJpy}〜）
+      {t("creditPackCta", { credits: smallest.credits, amount: smallest.amountJpy })}
     </Link>
   );
 }
 
 function UsageBadge({ usage }: { usage: UsageInfo }) {
+  const t = useTranslations("generateForm");
+  const formatCount = useFormatCount();
   // 生成できる残数は「月次無料枠の残り + 購入クレジット」。
   const totalRemaining = usage.remaining + usage.credits;
   const isLow = totalRemaining <= 2;
   const isEmpty = totalRemaining === 0;
-  const tierLabel = usage.tier === "paid" ? "Pro" : usage.tier === "free" ? "無料" : "ゲスト";
+  const tierLabel = usage.tier === "paid" ? "Pro" : t(usage.tier === "free" ? "tierFree" : "tierGuest");
   const tierClass =
     usage.tier === "paid"
       ? "text-fuchsia-300 bg-fuchsia-950/40 border-fuchsia-800/60"
@@ -140,21 +167,27 @@ function UsageBadge({ usage }: { usage: UsageInfo }) {
           {tierLabel}
         </span>
         <span className="whitespace-nowrap">
-          {usage.tier === "guest" ? "あと" : "今月あと"} <span className={`font-bold text-sm ${remainClass}`}>{usage.remaining}</span>
-          <span className="text-gray-400"> / {usage.limit} 回</span>
+          {t.rich(usage.tier === "guest" ? "remainingGuest" : "remainingMonthly", {
+            remaining: usage.remaining,
+            limit: usage.limit,
+            n: (chunks) => <span className={`font-bold text-sm ${remainClass}`}>{chunks}</span>,
+          })}
           {usage.credits > 0 && (
-            <span className="text-gray-400"> + クレジット <span className="font-bold text-sm text-white">{usage.credits}</span> 回</span>
+            <span className="text-gray-400">
+              {t.rich("plusCredits", {
+                credits: usage.credits,
+                n: (chunks) => <span className="font-bold text-sm text-white">{chunks}</span>,
+              })}
+            </span>
           )}
         </span>
       </div>
       {usage.tier === "guest" && (
-        <p className="mt-2 leading-5 text-gray-400 sm:whitespace-nowrap">
-          ログインなしは3回まで、GitHubログインなら月3回まで使えます。ポストとnote Draftで合算カウントされます。
-        </p>
+        <p className="mt-2 leading-5 text-gray-400 sm:whitespace-nowrap">{t("guestNote")}</p>
       )}
       {usage.tier !== "guest" && (
         <p className="mt-2 leading-5 text-gray-400">
-          月の生成回数はポストとnote Draftで合算カウントされます（README上限 {PROJECT_TEXT_LIMITS[usage.tier].toLocaleString("ja-JP")} 文字）。
+          {t("memberNote", { limit: formatCount(PROJECT_TEXT_LIMITS[usage.tier]) })}
         </p>
       )}
     </div>
@@ -170,11 +203,14 @@ function LengthPresetSelector({
   onChange: (next: NoteLengthPreset) => void;
   disabled: boolean;
 }) {
+  const t = useTranslations("generateForm");
+  const tp = useTranslations("notePresets");
+  const formatCount = useFormatCount();
   const presetKeys = Object.keys(NOTE_LENGTH_PRESETS) as NoteLengthPreset[];
   return (
     <div>
       <label className="block text-sm font-medium text-gray-300 mb-3">
-        記事の長さ <span className="text-gray-500 font-normal">（任意）</span>
+        {t("articleLength")} <span className="text-gray-500 font-normal">{t("optional")}</span>
       </label>
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {presetKeys.map((key) => {
@@ -193,12 +229,12 @@ function LengthPresetSelector({
                   : "border-gray-700 bg-gray-800/40 text-gray-300 hover:border-gray-500 hover:bg-gray-800/60"
               }`}
             >
-              <span className="text-base font-semibold">{preset.label}</span>
+              <span className="text-base font-semibold">{tp(`${key}Label`)}</span>
               <span className={`text-xs ${isActive ? "text-cyan-200" : "text-gray-400"}`}>
-                {preset.minutesLabel}
+                {tp(`${key}Minutes`)}
               </span>
               <span className={`text-xs tabular-nums whitespace-nowrap ${isActive ? "text-cyan-200" : "text-gray-400"}`}>
-                約 {preset.min.toLocaleString("ja-JP")}〜{preset.max.toLocaleString("ja-JP")}字
+                {t("approxChars", { min: formatCount(preset.min), max: formatCount(preset.max) })}
               </span>
             </button>
           );
@@ -247,7 +283,81 @@ function ThemeChip({
   );
 }
 
+/** 生成結果の下に出す「この内容を他の言語でも作る」パネル。 */
+function LocalizePanel({
+  selected,
+  onToggle,
+  baseLocale,
+  done,
+  usage,
+  isLoading,
+  onGenerate,
+}: {
+  selected: LocaleId[];
+  onToggle: (id: LocaleId) => void;
+  baseLocale: LocaleId;
+  done: LocaleId[];
+  usage: UsageInfo | null;
+  isLoading: boolean;
+  onGenerate: () => void;
+}) {
+  const t = useTranslations("generateForm");
+  // クレジットは 4 言語ごとに 1 消費（切り上げ）。
+  const cost = Math.ceil(selected.length / LOCALE_BATCH_SIZE);
+  const available = usage ? usage.remaining + usage.credits : null;
+  // 送信前に残高を確認する。途中で切れると成功分だけ残って分かりにくいため。
+  const notEnough = available !== null && cost > available;
+
+  return (
+    <section className="mt-8 rounded-2xl border border-gray-800 bg-gray-900/60 p-5">
+      <p className="text-sm font-semibold text-white">{t("localizeTitle")}</p>
+      <p className="mt-1 text-xs text-gray-400">{t("localizeHintText")}</p>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        {LOCALE_LIST.filter((l) => l.id !== baseLocale).map((l) => {
+          const isDone = done.includes(l.id);
+          const isOn = selected.includes(l.id);
+          return (
+            <button
+              key={l.id}
+              type="button"
+              disabled={isDone || isLoading}
+              onClick={() => onToggle(l.id)}
+              aria-pressed={isOn}
+              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                isOn
+                  ? "border-cyan-500 bg-cyan-500/10 text-white"
+                  : "border-gray-700 bg-gray-800/40 text-gray-300 hover:border-gray-500"
+              }`}
+            >
+              {l.nativeName}
+              {isDone && " ✓"}
+            </button>
+          );
+        })}
+      </div>
+
+      {selected.length > 0 && (
+        <p className="mt-3 text-xs text-gray-400">{t("localizeCost", { count: selected.length, cost })}</p>
+      )}
+      {notEnough && <p className="mt-2 text-xs font-semibold text-red-300">{t("localizeNotEnough")}</p>}
+
+      <button
+        type="button"
+        onClick={onGenerate}
+        disabled={selected.length === 0 || isLoading || notEnough}
+        className="mt-4 w-full rounded-lg bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-yellow-400
+          py-2.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-opacity
+          hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none sm:w-auto sm:px-6"
+      >
+        {isLoading ? t("generating") : t("localizeGenerate")}
+      </button>
+    </section>
+  );
+}
+
 function Hero({ activeTab }: { activeTab: GenerateTabKey }) {
+  const t = useTranslations("generateForm");
   const gradient =
     "bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-yellow-200 bg-clip-text text-transparent";
   const title =
@@ -264,23 +374,14 @@ function Hero({ activeTab }: { activeTab: GenerateTabKey }) {
         Code <span className={gradient}>Tweet</span>
       </>
     );
-  const subtitle =
-    activeTab === "note" ? (
-      <>
-        <span className="block">GitHubリポジトリURLを貼るだけで、</span>
-        <span className="block">note.com に貼り付けられるMarkdown Draftを1本生成します。</span>
-      </>
-    ) : activeTab === "appss" ? (
-      <>
-        <span className="block">GitHubリポジトリURLを貼るだけで、</span>
-        <span className="block">App Store用スクショの見出しをAIが考えます。</span>
-      </>
-    ) : (
-      <>
-        <span className="block">GitHubリポジトリURLを貼るだけで、</span>
-        <span className="block">READMEから1週間分のポストを5件作成します。</span>
-      </>
-    );
+  const subtitleKey =
+    activeTab === "note" ? "heroNote" : activeTab === "appss" ? "heroAppss" : "heroTweet";
+  const subtitle = (
+    <>
+      <span className="block">{t("heroLead")}</span>
+      <span className="block">{t(subtitleKey)}</span>
+    </>
+  );
   return (
     <>
       <h1 className="text-center text-6xl font-medium tracking-tight text-white sm:text-8xl">
@@ -294,6 +395,12 @@ function Hero({ activeTab }: { activeTab: GenerateTabKey }) {
 }
 
 export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props) {
+  const t = useTranslations("generateForm");
+  const tTheme = useTranslations("appssThemes");
+  const resolveApiError = useApiErrorMessage();
+  // 生成言語の既定は現在の UI 言語。英語 UI の人は英語ポストが欲しいはず。
+  const locale = useLocale() as LocaleId;
+  const formatCount = useFormatCount();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -316,9 +423,26 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
   const [appssTone, setAppssTone] = useState("");
   const [appssThemeId, setAppssThemeId] = useState(""); // "" = AIおまかせ
   const [appssShots, setAppssShots] = useState<string[]>([]);
+  const [appssAppName, setAppssAppName] = useState("");
+  const [isExtractingAppName, setIsExtractingAppName] = useState(false);
+  // ユーザーが「アプリ名」欄を手動編集したら true。以後はAI抽出結果で上書きしない。
+  const appssAppNameTouchedRef = useRef(false);
+  // 直近に情報推定を実行したREADME本文（同一テキストでの再実行を避ける）
+  const lastExtractedReadmeRef = useRef("");
+  // README から推定したアプリの説明・主な機能。トップページ上に編集欄は無く、
+  // /appss エディタの「AIコピー＆デザイン生成」パネルの初期値としてハンドオフ経由で渡すだけ。
+  const [appssExtractedDescription, setAppssExtractedDescription] = useState("");
+  const [appssExtractedFeatures, setAppssExtractedFeatures] = useState<string[]>([]);
 
   // タブ固有結果
   const [tweets, setTweets] = useState<Tweet[]>([]);
+  // 追加言語の生成結果。1 言語 1 ブロックで結果欄の下に積む。
+  const [localizedTweets, setLocalizedTweets] = useState<{ locale: LocaleId; tweets: Tweet[] }[]>([]);
+  // 「他の言語でも作る」で選択中の言語（既定ロケールは元の生成で作るので除く）。
+  const [extraLocales, setExtraLocales] = useState<LocaleId[]>([]);
+  const [isLocalizing, setIsLocalizing] = useState(false);
+  // 追加生成に使った入力。結果を見てから作るので、生成時の入力を覚えておく。
+  const lastGenerateInputRef = useRef<{ projectText: string; url: string } | null>(null);
   const [note, setNote] = useState<NoteDraft | null>(null);
 
   // タブ固有 ローディング/エラー
@@ -387,13 +511,13 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
       const res = await fetch("/api/repos");
       const data = await res.json();
       if (!res.ok) {
-        setReposError(data.error ?? "取得に失敗しました。");
+        setReposError(resolveApiError(data));
         setRepos([]);
       } else {
         setRepos(data.repos);
       }
     } catch {
-      setReposError("ネットワークエラーが発生しました。");
+      setReposError(t("errorNetwork"));
       setRepos([]);
     } finally {
       setReposLoading(false);
@@ -426,11 +550,12 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
     setCurrentErrorState({ error: message, errorCode: null, errorField: field });
   }
 
+  // サーバーはコードだけを返すので、ここで現在のロケールの文言に解決する。
   function setApiError(err: GenerateErrorResponse) {
     setCurrentErrorState({
-      error: err.error ?? "エラーが発生しました。",
+      error: resolveApiError(err),
       errorCode: err.code ?? null,
-      errorField: err.field ?? null,
+      errorField: isKnownField(err.field) ? err.field : null,
     });
   }
 
@@ -438,9 +563,9 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
     const result = await postJson<{ content: string }>("/api/github", { url: targetUrl });
     if (!result.ok) {
       setCurrentErrorState({
-        error: result.error.error ?? "README の取得に失敗しました。",
+        error: resolveApiError(result.error),
         errorCode: null,
-        errorField: result.error.field ?? null,
+        errorField: isKnownField(result.error.field) ? result.error.field : null,
       });
       return null;
     }
@@ -457,11 +582,45 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
       if (content.length > projectTextLimit) {
         setValidationError(
           "projectText",
-          `READMEが長すぎます。現在のプランでは ${formatCount(projectTextLimit)} 文字以内にしてください。`,
+          t("errorReadmeTooLong", { limit: formatCount(projectTextLimit) }),
         );
       }
+      // 新しいREADMEを取得した＝別プロジェクトの可能性が高いので、アプリ名の自動推定を再度許可する
+      appssAppNameTouchedRef.current = false;
+      void runAppssInfoExtraction(content);
     } finally {
       setIsFetchingReadme(false);
+    }
+  }
+
+  // AppSS: README本文からアプリ名・説明・主な機能を推定する（App SSタブのみ）。
+  // /api/appss/copy（1回消費）とは無関係の、無料・即時の軽量呼び出し。
+  // - アプリ名: ユーザーが既に手入力していれば上書きしない（欄が見えているのはこれだけのため）。
+  // - 説明・機能: トップページ上に編集欄が無いので、常に最新の推定結果で更新し、
+  //   /appss エディタの「AIコピー＆デザイン生成」パネルの初期値としてハンドオフ経由で渡す。
+  // 失敗しても無視（ユーザーが手入力すればよい・フォームは止めない）。
+  async function runAppssInfoExtraction(readme: string) {
+    if (activeTab !== "appss") return;
+    const trimmed = readme.trim();
+    if (!trimmed) return;
+    if (trimmed === lastExtractedReadmeRef.current) return;
+    lastExtractedReadmeRef.current = trimmed;
+    setIsExtractingAppName(true);
+    try {
+      const result = await postJson<{
+        appName: string | null;
+        appDescription: string | null;
+        features: string[];
+      }>("/api/appss/extract-info", { readme: trimmed });
+      if (result.ok) {
+        if (result.data.appName && !appssAppNameTouchedRef.current) {
+          setAppssAppName(result.data.appName);
+        }
+        setAppssExtractedDescription(result.data.appDescription ?? "");
+        setAppssExtractedFeatures(result.data.features ?? []);
+      }
+    } finally {
+      setIsExtractingAppName(false);
     }
   }
 
@@ -477,7 +636,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
       return;
     }
     setCurrentErrorState({
-      error: "GitHubリポジトリURLを入力してください。",
+      error: t("errorRepoUrlRequired"),
       errorCode: null,
       errorField: null,
     });
@@ -489,15 +648,18 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
     clearErrorState();
     setIsTweetLoading(true);
     setTweets([]);
+    setLocalizedTweets([]);
+    setExtraLocales([]);
     try {
       const result = await postJson<GenerateResponse>("/api/generate", {
-        projectText: textToGenerate, toneMemo, url: urlToGenerate, hashtags,
+        projectText: textToGenerate, toneMemo, url: urlToGenerate, hashtags, locale,
       } satisfies GenerateRequest);
       if (!result.ok) {
         setApiError(result.error);
         return;
       }
       setTweets(result.data.tweets);
+      lastGenerateInputRef.current = { projectText: textToGenerate, url: urlToGenerate };
       // ファネル: 生成成功のたびに core_action、初回のみ activation。
       trackCoreAction("tweet", result.data.tweets.length);
       trackActivationOnce();
@@ -505,6 +667,57 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
       refreshUsage();
     } finally {
       setIsTweetLoading(false);
+    }
+  }
+
+  // 追加言語のポストを生成する。
+  //
+  // 1 リクエスト = 1 言語に分割する。理由は 3 つ:
+  //  - サーバーの maxDuration は 60 秒で、1 リクエストに複数言語を詰めると超える
+  //  - recordUserUsage（1 行 insert）と consumeCredit（常に 1 減算）が無改造で動く
+  //  - Gemini のコストが言語数に比例するので粗利率が保てる
+  // クレジットは 4 言語ごとに 1 消費（切り上げ）＝ 4 言語ずつ並列で投げる。
+  async function generateExtraLocales() {
+    const input = lastGenerateInputRef.current;
+    if (!input || extraLocales.length === 0) return;
+
+    clearErrorState();
+    setIsLocalizing(true);
+    try {
+      const results: { locale: LocaleId; tweets: Tweet[] }[] = [];
+      // 同時実行数を絞る（Gemini 側の 503 を誘発しないため）。
+      for (let i = 0; i < extraLocales.length; i += LOCALE_BATCH_SIZE) {
+        const batch = extraLocales.slice(i, i + LOCALE_BATCH_SIZE);
+        const settled = await Promise.all(
+          batch.map(async (target) => {
+            const result = await postJson<GenerateResponse>("/api/generate", {
+              projectText: input.projectText,
+              toneMemo,
+              url: input.url,
+              hashtags,
+              locale: target,
+            } satisfies GenerateRequest);
+            return { target, result };
+          }),
+        );
+        for (const { target, result } of settled) {
+          if (!result.ok) {
+            // 1 言語でも失敗したら、成功分は残したうえで打ち切る
+            // （残高切れで残りを投げ続けても全部失敗するため）。
+            setApiError(result.error);
+            setLocalizedTweets((prev) => [...prev, ...results]);
+            refreshUsage();
+            return;
+          }
+          results.push({ locale: target, tweets: result.data.tweets });
+        }
+      }
+      setLocalizedTweets((prev) => [...prev, ...results]);
+      setExtraLocales([]);
+      trackCoreAction("tweet", results.reduce((sum, r) => sum + r.tweets.length, 0));
+      refreshUsage();
+    } finally {
+      setIsLocalizing(false);
     }
   }
 
@@ -557,7 +770,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
       if (!description) {
         if (!repo) {
           setCurrentErrorState({
-            error: "GitHub のリポジトリ URL を入力してください。",
+            error: t("errorRepoUrlRequired"),
             errorCode: null,
             errorField: null,
           });
@@ -568,7 +781,8 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         description = content;
       }
 
-      const appName = repo?.repo ?? "マイアプリ";
+      // 「アプリ名」欄（手入力 or README自動推定）を優先し、無ければリポジトリ名にフォールバック
+      const appName = appssAppName.trim() || repo?.repo || t("defaultAppName");
       const result = await postJson<AppSSCopyResponse>("/api/appss/copy", {
         appName,
         // /api/appss/copy の appDescription 上限（10,000字）に合わせて先頭を渡す
@@ -584,6 +798,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
 
       // テーマは明示選択があればそれを優先、なければ AI 推奨（未指定なら既定）。
       // 事前登録したスクショ（idb:参照）は登録順にスライドへ配置される。
+      // AI 生成パレット（customTheme）はユーザーがプリセットを明示選択していない時のみ適用する。
       const chosenTheme =
         appssThemeId || result.data.recommendedThemeId || DEFAULT_THEME_ID;
       writeHandoff(
@@ -592,6 +807,9 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         chosenTheme,
         result.data.recommendedBackgroundStyle,
         appssShots,
+        appssThemeId ? undefined : result.data.generatedPalette,
+        appssExtractedDescription,
+        appssExtractedFeatures,
       );
       trackActivationOnce();
       refreshUsage();
@@ -608,7 +826,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
     clearErrorState();
     if (!trimmedUrl) {
       setCurrentErrorState({
-        error: "GitHubリポジトリURLを入力してください。",
+        error: t("errorRepoUrlRequired"),
         errorCode: null,
         errorField: null,
       });
@@ -624,7 +842,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
     if (content.length > projectTextLimit) {
       setValidationError(
         "projectText",
-        `READMEが長すぎます。現在のプランでは ${formatCount(projectTextLimit)} 文字以内にしてください。`,
+        t("errorReadmeTooLong", { limit: formatCount(projectTextLimit) }),
       );
       return;
     }
@@ -641,23 +859,23 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
   const labels =
     activeTab === "tweet"
       ? {
-          quickGenerateLabel: "READMEからポストを作る",
-          quickFetchingLabel: "READMEを読んでいます...",
-          generateLabel: "ポストを生成する",
-          loadingTitle: "AIがポストを作成しています",
+          quickGenerateLabel: t("quickTweet"),
+          quickFetchingLabel: t("readingReadme"),
+          generateLabel: t("generateTweet"),
+          loadingTitle: t("loadingTweet"),
         }
       : activeTab === "appss"
         ? {
-            quickGenerateLabel: "READMEからスクショを作る",
-            quickFetchingLabel: "READMEを読んでいます...",
-            generateLabel: "READMEからスクショを作る",
-            loadingTitle: "AIがスクショの見出しを考えています",
+            quickGenerateLabel: t("quickAppss"),
+            quickFetchingLabel: t("readingReadme"),
+            generateLabel: t("quickAppss"),
+            loadingTitle: t("loadingAppss"),
           }
         : {
-            quickGenerateLabel: "READMEからnote Draftを作る",
-            quickFetchingLabel: "READMEを読んでいます...",
-            generateLabel: "note Draftを生成する",
-            loadingTitle: "AIがnote Draftを書いています",
+            quickGenerateLabel: t("quickNote"),
+            quickFetchingLabel: t("readingReadme"),
+            generateLabel: t("generateNote"),
+            loadingTitle: t("loadingNote"),
           };
 
   const { error, errorCode, errorField } = currentErrorState;
@@ -673,7 +891,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                 <div className="w-full h-full rounded-full bg-gray-900" />
               </div>
               <div className="text-center">
-                <p className="text-white font-semibold text-base">生成中...</p>
+                <p className="text-white font-semibold text-base">{t("generating")}</p>
                 <p className="text-gray-400 text-sm mt-1">{labels.loadingTitle}</p>
               </div>
             </div>
@@ -691,10 +909,8 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
             <div className="h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
             <div className="p-8 space-y-6">
               <div>
-                <p className="text-sm font-semibold text-white">READMEからスクショの見出しを作る</p>
-                <p className="mt-1 text-xs text-gray-400">
-                  GitHubからリポジトリを選ぶか、URLを入力してください。非公開リポジトリはクレジット購入者向けの機能です。
-                </p>
+                <p className="text-sm font-semibold text-white">{t("appssFormTitle")}</p>
+                <p className="mt-1 text-xs text-gray-400">{t("appssFormDesc")}</p>
               </div>
 
               <div className="rounded-2xl border border-cyan-400/25 bg-cyan-400/10 p-4">
@@ -710,7 +926,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                     <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                       <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
                     </svg>
-                    GitHubからREADMEを選ぶ
+                    {t("chooseRepo")}
                   </button>
                   <input
                     type="url"
@@ -722,7 +938,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                         void loadReadmeIntoProjectText(githubUrl.trim());
                       }
                     }}
-                    placeholder="例：https://github.com/owner/repo"
+                    placeholder={t("repoUrlPlaceholder")}
                     disabled={formDisabled}
                     className="w-full flex-1 rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 text-sm text-white placeholder-gray-500 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
                   />
@@ -730,8 +946,32 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
               </div>
 
               <div>
+                <label className="mb-2 block text-sm font-medium text-gray-300">{t("appNameLabel")}</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={appssAppName}
+                    onChange={(e) => {
+                      appssAppNameTouchedRef.current = true;
+                      setAppssAppName(e.target.value);
+                    }}
+                    maxLength={50}
+                    placeholder={t("appNamePlaceholder")}
+                    disabled={formDisabled}
+                    className="w-full rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 text-sm text-white placeholder-gray-500 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  {isExtractingAppName && (
+                    <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                      {t("extracting")}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1.5 text-xs text-gray-500">{t("appNameHint")}</p>
+              </div>
+
+              <div>
                 <label className="mb-2 block text-sm font-medium text-gray-300">
-                  プロジェクト説明（README） <span className="text-red-400">*</span>
+                  {t("fieldProjectText")} <span className="text-red-400">*</span>
                 </label>
                 <textarea
                   rows={8}
@@ -740,7 +980,8 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                     setProjectText(e.target.value);
                     clearFieldError("projectText");
                   }}
-                  placeholder="READMEを読み込むと自動で入ります。ここを編集して、伝えたい内容に絞るとコピーの精度が上がります。"
+                  onBlur={(e) => void runAppssInfoExtraction(e.target.value)}
+                  placeholder={t("appssProjectTextPlaceholder")}
                   disabled={formDisabled}
                   className={`w-full resize-none rounded-lg border bg-gray-800/50 px-4 py-3 text-sm text-white placeholder-gray-500 transition-colors focus:border-transparent focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 ${
                     errorField === "projectText"
@@ -752,7 +993,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                   <p className={errorField === "projectText" && error ? "font-semibold text-red-300" : "text-gray-400"}>
                     {errorField === "projectText" && error
                       ? error
-                      : "README全文、リリースノート、機能説明のどれでも使えます。"}
+                      : t("projectTextHint")}
                   </p>
                   <span
                     className={`shrink-0 tabular-nums ${
@@ -766,27 +1007,27 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-300">
-                  追加プロンプト <span className="text-gray-500 font-normal">（任意）</span>
+                  {t("fieldToneMemo")} <span className="text-gray-500 font-normal">{t("optional")}</span>
                 </label>
                 <textarea
                   rows={2}
                   value={appssTone}
                   maxLength={200}
                   onChange={(e) => setAppssTone(e.target.value)}
-                  placeholder="例：やさしく親しみやすいトーンで。20〜30代の女性向け。"
+                  placeholder={t("appssTonePlaceholder")}
                   disabled={formDisabled}
                   className="w-full resize-none rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 text-sm text-white placeholder-gray-500 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
                 />
-                <p className="mt-1.5 text-xs text-gray-500">見出しの雰囲気・ターゲットを自然文で指定できます（最大200字）。</p>
+                <p className="mt-1.5 text-xs text-gray-500">{t("appssToneHint")}</p>
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-300">
-                  配色テーマ <span className="text-gray-500 font-normal">（任意）</span>
+                  {t("themeLabel")} <span className="text-gray-500 font-normal">{t("optional")}</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   <ThemeChip
-                    label="AIおまかせ"
+                    label={t("themeAuto")}
                     active={appssThemeId === ""}
                     disabled={formDisabled}
                     onClick={() => setAppssThemeId("")}
@@ -794,7 +1035,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                   {Object.values(THEMES).map((theme) => (
                     <ThemeChip
                       key={theme.id}
-                      label={theme.name}
+                      label={tTheme(theme.nameKey)}
                       active={appssThemeId === theme.id}
                       disabled={formDisabled}
                       swatch={theme.accent}
@@ -803,7 +1044,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                     />
                   ))}
                 </div>
-                <p className="mt-1.5 text-xs text-gray-500">「AIおまかせ」だとアプリ内容から自動で選びます（エディタで変更可）。</p>
+                <p className="mt-1.5 text-xs text-gray-500">{t("themeHint")}</p>
               </div>
 
               <AppssUploadTray value={appssShots} onChange={setAppssShots} disabled={formDisabled} />
@@ -817,14 +1058,12 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                   hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
               >
                 {isFetchingReadme
-                  ? "READMEを読んでいます..."
+                  ? t("readingReadme")
                   : isAppssLoading
-                    ? "見出しを生成中..."
-                    : "READMEからスクショを作る"}
+                    ? t("generatingHeadlines")
+                    : t("quickAppss")}
               </button>
-              <p className="text-xs leading-5 text-gray-400">
-                READMEを読んで、App Store用スクショの見出しをAIが作成します。登録したスクショは最初から配置され、エディタで差し替え・追加もできます（生成に1回分を消費します）。
-              </p>
+              <p className="text-xs leading-5 text-gray-400">{t("appssGenerateHint")}</p>
             </div>
           </div>
         ) : (
@@ -855,10 +1094,10 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                   hover:border-gray-600 hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isFetchingReadme
-                  ? "READMEを読んでいます..."
+                  ? t("readingReadme")
                   : isAppssLoading
-                    ? "見出しを生成中..."
-                    : "READMEからスクショを作る"}
+                    ? t("generatingHeadlines")
+                    : t("quickAppss")}
               </button>
             </div>
             <div className="mt-4 flex justify-center">
@@ -868,7 +1107,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                 rel="noreferrer"
                 className="text-xs font-medium text-gray-400 transition-colors hover:text-gray-200"
               >
-                GitHubを開いてリポジトリURLをコピーする
+                {t("openGithub")}
               </a>
             </div>
           </section>
@@ -916,11 +1155,11 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
       {error && (
         <div className="mt-6 border border-red-800 bg-red-950/50 rounded-lg px-4 py-3 text-red-300 text-sm space-y-3">
           <div>
-            <p className="font-semibold text-red-200">処理できませんでした</p>
+            <p className="font-semibold text-red-200">{t("errorTitle")}</p>
             <p className="mt-1 text-red-300">{error}</p>
             {errorField && (
               <p className="mt-2 inline-flex rounded-md border border-red-700/80 bg-red-900/40 px-2 py-1 text-xs font-semibold text-red-100">
-                該当項目：{FIELD_LABELS[errorField]}
+                {t("errorFieldLabel", { field: t(FIELD_LABEL_KEYS[errorField]) })}
               </p>
             )}
           </div>
@@ -933,18 +1172,48 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
 
       {activeTab === "tweet" && tweets.length > 0 && (
         <div ref={resultsRef} className="mt-12">
-          <p className="text-gray-400 text-sm mb-4">生成されたポスト（{tweets.length}件）</p>
+          <p className="text-gray-400 text-sm mb-4">{t("resultPosts", { count: tweets.length })}</p>
           <div className="space-y-4">
             {tweets.map((tweet) => (
               <TweetCard key={tweet.id} tweet={tweet} />
             ))}
           </div>
+
+          <LocalizePanel
+            selected={extraLocales}
+            onToggle={(id) =>
+              setExtraLocales((prev) =>
+                prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+              )
+            }
+            baseLocale={locale}
+            done={localizedTweets.map((r) => r.locale)}
+            usage={usage}
+            isLoading={isLocalizing}
+            onGenerate={generateExtraLocales}
+          />
+
+          {localizedTweets.map((group) => (
+            <div key={group.locale} className="mt-10">
+              <p className="mb-4 text-sm text-gray-400">
+                {LOCALES[group.locale].nativeName}
+                {LOCALES[group.locale].xBlockedInPrimaryMarket && (
+                  <span className="ml-2 text-xs text-amber-400">{t("xBlockedNote")}</span>
+                )}
+              </p>
+              <div className="space-y-4">
+                {group.tweets.map((tweet) => (
+                  <TweetCard key={`${group.locale}-${tweet.id}`} tweet={tweet} />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
       {activeTab === "note" && note && (
         <div ref={resultsRef} className="mt-12">
-          <p className="text-gray-400 text-sm mb-4">生成されたnote Draft</p>
+          <p className="text-gray-400 text-sm mb-4">{t("resultNote")}</p>
           <NoteCard note={note} />
         </div>
       )}

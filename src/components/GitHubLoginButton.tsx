@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
+import { localePath, type LocaleId } from "@/lib/locales";
 
 type Props = {
   children: string;
@@ -10,6 +12,8 @@ type Props = {
 };
 
 export default function GitHubLoginButton({ children, className, next = "/" }: Props) {
+  const t = useTranslations("githubLogin");
+  const locale = useLocale() as LocaleId;
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,7 +24,8 @@ export default function GitHubLoginButton({ children, className, next = "/" }: P
     setError(null);
 
     const callbackUrl = new URL("/auth/callback", window.location.origin);
-    callbackUrl.searchParams.set("next", next);
+    // next はロケール接頭辞のないパスで渡ってくるので、ここで現在の言語に合わせる。
+    callbackUrl.searchParams.set("next", localePath(locale, next));
 
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
@@ -32,7 +37,7 @@ export default function GitHubLoginButton({ children, className, next = "/" }: P
     });
 
     if (error) {
-      setError("ログインを開始できませんでした。少し時間をおいて再試行してください。");
+      setError(t("error"));
       setIsPending(false);
     }
   }
@@ -40,7 +45,7 @@ export default function GitHubLoginButton({ children, className, next = "/" }: P
   return (
     <div className="space-y-2">
       <button type="button" onClick={handleClick} disabled={isPending} className={className}>
-        {isPending ? "リダイレクト中..." : children}
+        {isPending ? t("redirecting") : children}
       </button>
       {error && <p className="text-xs text-red-300">{error}</p>}
     </div>

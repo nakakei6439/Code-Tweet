@@ -1,18 +1,20 @@
 // AppSS — キャンバス寸法・書き出しサイズ・ベゼル座標・テーマ定義。
 // Based on MIT-licensed https://github.com/ParthJadhav/app-store-screenshots
 
-import type { BackgroundStyle, FontId, SlideLayout, Theme } from "./types";
+import type { LocaleScript } from "@/lib/locales";
+import type { BackgroundStyle, FontId, Theme } from "./types";
 
 // 設計キャンバス = App Store 最大要求解像度（iPhone 6.9インチ）
 export const CANVAS = { w: 1320, h: 2868 };
 
 // App Store 提出に必要な iPhone スクリーンショットサイズ
-export type ExportSize = { label: string; w: number; h: number };
+// label は持たず inches だけ持つ。表示は messages の appssEditor.inchLabel で組み立てる。
+export type ExportSize = { inches: string; w: number; h: number };
 export const EXPORT_SIZES: ExportSize[] = [
-  { label: "6.9インチ", w: 1320, h: 2868 },
-  { label: "6.5インチ", w: 1284, h: 2778 },
-  { label: "6.3インチ", w: 1206, h: 2622 },
-  { label: "6.1インチ", w: 1125, h: 2436 },
+  { inches: "6.9", w: 1320, h: 2868 },
+  { inches: "6.5", w: 1284, h: 2778 },
+  { inches: "6.3", w: 1206, h: 2622 },
+  { inches: "6.1", w: 1125, h: 2436 },
 ];
 
 // Apple Design Resources 公式 Product Bezel (iPhone 16 Pro Max, Portrait)。
@@ -34,13 +36,50 @@ export function phoneWSmall(cW: number, cH: number) {
   return phoneW(cW, cH, 0.66);
 }
 
-// ---------- 日本語フォント ----------
-export const FONTS: Record<FontId, { name: string; cssVar: string }> = {
-  gothic: { name: "Noto Sans JP", cssVar: "var(--font-appss-gothic)" },
-  maru: { name: "Zen Maru Gothic", cssVar: "var(--font-appss-maru)" },
-  mincho: { name: "Noto Serif JP", cssVar: "var(--font-appss-mincho)" },
+// ---------- フォント ----------
+// script は「そのフォントが本文グリフを持つ文字体系」。日本語フォントで
+// 簡体字を組むと豆腐（□）になるため、UI ではロケールに合うものだけを出す。
+// latin 圏（英・西・仏・独）は日本語フォントでもラテン文字を持つのでそのまま使える。
+export const FONTS: Record<FontId, { name: string; cssVar: string; script: LocaleScript }> = {
+  gothic: { name: "Noto Sans JP", cssVar: "var(--font-appss-gothic)", script: "jp" },
+  maru: { name: "Zen Maru Gothic", cssVar: "var(--font-appss-maru)", script: "jp" },
+  mincho: { name: "Noto Serif JP", cssVar: "var(--font-appss-mincho)", script: "jp" },
+  rounded: { name: "M PLUS Rounded 1c", cssVar: "var(--font-appss-rounded)", script: "jp" },
+  dela: { name: "Dela Gothic One", cssVar: "var(--font-appss-dela)", script: "jp" },
+  shippori: { name: "Shippori Mincho", cssVar: "var(--font-appss-shippori)", script: "jp" },
+  klee: { name: "Klee One", cssVar: "var(--font-appss-klee)", script: "jp" },
+  rocknroll: { name: "RocknRoll One", cssVar: "var(--font-appss-rocknroll)", script: "jp" },
+  kaku: { name: "Zen Kaku Gothic New", cssVar: "var(--font-appss-kaku)", script: "jp" },
+  "sc-sans": { name: "Noto Sans SC", cssVar: "var(--font-appss-sc-sans)", script: "sc" },
+  "sc-serif": { name: "Noto Serif SC", cssVar: "var(--font-appss-sc-serif)", script: "sc" },
+  "tc-sans": { name: "Noto Sans TC", cssVar: "var(--font-appss-tc-sans)", script: "tc" },
+  "tc-serif": { name: "Noto Serif TC", cssVar: "var(--font-appss-tc-serif)", script: "tc" },
+  "kr-sans": { name: "Noto Sans KR", cssVar: "var(--font-appss-kr-sans)", script: "kr" },
+  "kr-serif": { name: "Noto Serif KR", cssVar: "var(--font-appss-kr-serif)", script: "kr" },
 };
 export const DEFAULT_FONT_ID: FontId = "gothic";
+
+/** 文字体系ごとの既定フォント。ロケール切替時のフォールバックに使う。 */
+export const SCRIPT_DEFAULT_FONT: Record<LocaleScript, FontId> = {
+  jp: "gothic",
+  sc: "sc-sans",
+  tc: "tc-sans",
+  kr: "kr-sans",
+  // ラテン文字は日本語フォントでも問題なく出るので既定を共有する。
+  latin: "gothic",
+};
+
+/** そのロケールで選べるフォント一覧。latin は日本語フォント（ラテン字形）を流用する。 */
+export function fontIdsForScript(script: LocaleScript): FontId[] {
+  const target = script === "latin" ? "jp" : script;
+  return (Object.keys(FONTS) as FontId[]).filter((id) => FONTS[id].script === target);
+}
+
+/** フォントがその文字体系のグリフを持つか。持たなければ既定へ差し替える。 */
+export function resolveFontForScript(fontId: FontId, script: LocaleScript): FontId {
+  const target = script === "latin" ? "jp" : script;
+  return FONTS[fontId]?.script === target ? fontId : SCRIPT_DEFAULT_FONT[script];
+}
 
 // ---------- 日本語アプリ向けテーマ ----------
 export const DEFAULT_THEME_ID = "simple-white";
@@ -48,7 +87,7 @@ export const DEFAULT_THEME_ID = "simple-white";
 export const THEMES: Record<string, Theme> = {
   "simple-white": {
     id: "simple-white",
-    name: "シンプル白",
+    nameKey: "simpleWhite",
     bg: "#F8FAFC",
     bgAlt: "#0F172A",
     fg: "#0F172A",
@@ -59,7 +98,7 @@ export const THEMES: Record<string, Theme> = {
   },
   pastel: {
     id: "pastel",
-    name: "パステル",
+    nameKey: "pastel",
     bg: "#FDF2F8",
     bgAlt: "#4C1D4B",
     fg: "#50314C",
@@ -70,7 +109,7 @@ export const THEMES: Record<string, Theme> = {
   },
   "dark-neon": {
     id: "dark-neon",
-    name: "ダークネオン",
+    nameKey: "darkNeon",
     bg: "#030712",
     bgAlt: "#F9FAFB",
     fg: "#F9FAFB",
@@ -81,7 +120,7 @@ export const THEMES: Record<string, Theme> = {
   },
   washi: {
     id: "washi",
-    name: "和紙",
+    nameKey: "washi",
     bg: "#F5F0E6",
     bgAlt: "#2D2A24",
     fg: "#3B372F",
@@ -92,7 +131,7 @@ export const THEMES: Record<string, Theme> = {
   },
   pop: {
     id: "pop",
-    name: "ポップ",
+    nameKey: "pop",
     bg: "#FEF3C7",
     bgAlt: "#1E3A8A",
     fg: "#1F2937",
@@ -101,10 +140,159 @@ export const THEMES: Record<string, Theme> = {
     muted: "#92742A",
     fontId: "maru",
   },
+  ocean: {
+    id: "ocean",
+    nameKey: "ocean",
+    bg: "#F0F9FF",
+    bgAlt: "#0C4A6E",
+    fg: "#0C4A6E",
+    fgAlt: "#F0F9FF",
+    accent: "#0EA5E9",
+    muted: "#64A0BE",
+    fontId: "kaku",
+  },
+  forest: {
+    id: "forest",
+    nameKey: "forest",
+    bg: "#F0FDF4",
+    bgAlt: "#14532D",
+    fg: "#14532D",
+    fgAlt: "#F0FDF4",
+    accent: "#16A34A",
+    muted: "#6B9080",
+    fontId: "rounded",
+  },
+  sunset: {
+    id: "sunset",
+    nameKey: "sunset",
+    bg: "#FFF1F2",
+    bgAlt: "#7C2D12",
+    fg: "#7C2D12",
+    fgAlt: "#FFF1F2",
+    accent: "#FB7185",
+    muted: "#C08776",
+    fontId: "rounded",
+  },
+  mono: {
+    id: "mono",
+    nameKey: "mono",
+    bg: "#FAFAFA",
+    bgAlt: "#171717",
+    fg: "#171717",
+    fgAlt: "#FAFAFA",
+    accent: "#404040",
+    muted: "#8A8A8A",
+    fontId: "gothic",
+  },
+  midnight: {
+    id: "midnight",
+    nameKey: "midnight",
+    bg: "#0B1120",
+    bgAlt: "#E0E7FF",
+    fg: "#E0E7FF",
+    fgAlt: "#0B1120",
+    accent: "#818CF8",
+    muted: "#94A3B8",
+    fontId: "shippori",
+  },
+  mocha: {
+    id: "mocha",
+    nameKey: "mocha",
+    bg: "#FAF3EB",
+    bgAlt: "#3F2E22",
+    fg: "#3F2E22",
+    fgAlt: "#FAF3EB",
+    accent: "#B45309",
+    muted: "#9C8371",
+    fontId: "klee",
+  },
 };
 
 export function themeById(themeId: string | undefined): Theme {
   return THEMES[themeId || ""] || THEMES[DEFAULT_THEME_ID];
+}
+
+// ---------- AI 生成パレット（プリセットから選ぶのではなく都度生成） ----------
+// AI がアプリ専用の配色を生成した場合の「疑似テーマ」id。プリセット THEMES には含めない。
+export const AI_CUSTOM_THEME_ID = "ai-custom";
+
+const HEX_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+// #rgb / #rrggbb のみ許可し #rrggbb 小文字へ正規化する。それ以外は undefined。
+// AI 出力・保存データの両方をここに通し、CSS へ渡る色を安全な値だけに限定する。
+export function sanitizeHex(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const v = value.trim();
+  if (!HEX_RE.test(v)) return undefined;
+  if (v.length === 4) {
+    const [, r, g, b] = v;
+    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+  }
+  return v.toLowerCase();
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const c = hex.replace("#", "");
+  const full = c.length === 3 ? c.split("").map((x) => x + x).join("") : c;
+  const num = parseInt(full, 16);
+  return { r: (num >> 16) & 0xff, g: (num >> 8) & 0xff, b: num & 0xff };
+}
+
+// 2色を t(0..1) で線形補間。muted 色の自動導出などに使う。
+export function mixHex(a: string, b: string, t: number): string {
+  const ca = hexToRgb(a);
+  const cb = hexToRgb(b);
+  const r = Math.round(ca.r + (cb.r - ca.r) * t);
+  const g = Math.round(ca.g + (cb.g - ca.g) * t);
+  const bl = Math.round(ca.b + (cb.b - ca.b) * t);
+  return `#${((r << 16) | (g << 8) | bl).toString(16).padStart(6, "0")}`;
+}
+
+// AI が返した配色(bg/fg/accent[/muted]) から完全な Theme を構築する。
+// 反転背景 bgAlt / 反転前景 fgAlt は前景・背景を入れ替えて導出（既存プリセットと同じ関係）。
+// 必須3色(bg/fg/accent)が有効な hex で揃わなければ undefined（＝プリセットへフォールバック）。
+export function buildCustomTheme(
+  palette: { bg?: unknown; fg?: unknown; accent?: unknown; muted?: unknown },
+  fontId?: FontId,
+): Theme | undefined {
+  const bg = sanitizeHex(palette.bg);
+  const fg = sanitizeHex(palette.fg);
+  const accent = sanitizeHex(palette.accent);
+  if (!bg || !fg || !accent) return undefined;
+  const muted = sanitizeHex(palette.muted) ?? mixHex(fg, bg, 0.5);
+  return {
+    id: AI_CUSTOM_THEME_ID,
+    nameKey: "aiCustom",
+    bg,
+    bgAlt: fg,
+    fg,
+    fgAlt: bg,
+    accent,
+    muted,
+    ...(fontId ? { fontId } : {}),
+  };
+}
+
+// 保存データ(localStorage / import zip)内の customTheme を検証・正規化する。
+// 全色を sanitizeHex に通し、欠けた派生色は導出。必須3色が無ければ undefined。
+export function sanitizeTheme(value: unknown): Theme | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const raw = value as Partial<Theme>;
+  const bg = sanitizeHex(raw.bg);
+  const fg = sanitizeHex(raw.fg);
+  const accent = sanitizeHex(raw.accent);
+  if (!bg || !fg || !accent) return undefined;
+  return {
+    id: typeof raw.id === "string" && raw.id.trim() ? raw.id : AI_CUSTOM_THEME_ID,
+    nameKey: typeof raw.nameKey === "string" && raw.nameKey.trim() ? raw.nameKey : "aiCustom",
+    bg,
+    bgAlt: sanitizeHex(raw.bgAlt) ?? fg,
+    fg,
+    fgAlt: sanitizeHex(raw.fgAlt) ?? bg,
+    accent,
+    muted: sanitizeHex(raw.muted) ?? mixHex(fg, bg, 0.5),
+    ...(raw.fontId && raw.fontId in FONTS ? { fontId: raw.fontId } : {}),
+  };
 }
 
 export const STORAGE_KEY = "code-tweet:appss:project:v1";
@@ -118,30 +306,16 @@ export const MAX_SLIDES = 6;
 // ---------- 背景スタイル ----------
 export const DEFAULT_BACKGROUND_STYLE: BackgroundStyle = "soft";
 
-export const BACKGROUND_STYLES: { id: BackgroundStyle; name: string; vibe: string }[] = [
-  { id: "soft", name: "ソフト光彩", vibe: "やわらかい光のにじみ。万能・親しみ" },
-  { id: "plain", name: "無地グラデ", vibe: "装飾なしの上品なグラデ。ミニマル/ビジネス" },
-  { id: "grid", name: "ドットグリッド", vibe: "細かなドット格子。テック/ツール/整然" },
-  { id: "spotlight", name: "スポットライト", vibe: "上部からの光。プロダクトを主役に演出" },
-  { id: "stripes", name: "斜めストライプ", vibe: "動きのある斜め帯。ポップ/エンタメ/元気" },
+// vibe（Gemini に渡す雰囲気の説明）はプロンプト側の関心事なので geminiAppSS.ts に置いた。
+export const BACKGROUND_STYLES: { id: BackgroundStyle; nameKey: string }[] = [
+  { id: "soft", nameKey: "soft" },
+  { id: "plain", nameKey: "plain" },
+  { id: "grid", nameKey: "grid" },
+  { id: "spotlight", nameKey: "spotlight" },
+  { id: "stripes", nameKey: "stripes" },
 ];
 
 export function isBackgroundStyle(v: unknown): v is BackgroundStyle {
   return BACKGROUND_STYLES.some((s) => s.id === v);
 }
 
-export const LAYOUT_LABEL: Record<SlideLayout, string> = {
-  hero: "ヒーロー",
-  "device-bottom": "デバイス下",
-  "device-top": "デバイス上",
-  "two-devices": "2台重ね",
-  "no-device": "見出しのみ",
-};
-
-export const LAYOUT_HINT: Record<SlideLayout, string> = {
-  hero: "大見出し + 下部にデバイス",
-  "device-bottom": "小さめ見出し + 下部デバイス",
-  "device-top": "デバイスを上に（リズム変化用）",
-  "two-devices": "前後2画面を重ねて表示",
-  "no-device": "デバイス無しの大見出し",
-};

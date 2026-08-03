@@ -1,3 +1,6 @@
+import { getTranslations } from "next-intl/server";
+import { DEFAULT_LOCALE, toLocaleId, type LocaleId } from "@/lib/locales";
+import { apiError } from "@/lib/apiErrors";
 import { logError } from "@/lib/logger";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -6,37 +9,55 @@ import { getAppUrl, getMissingStripeCreditsEnv, getStripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
+// Stripe Checkout がサポートするロケールへの対応表。
+// 簡体字は "zh"、繁体字は Stripe 側に該当が無いので最も近い "zh-TW" を当てる。
+type CheckoutLocale = NonNullable<
+  Parameters<ReturnType<typeof getStripe>["checkout"]["sessions"]["create"]>[0]
+>["locale"];
+
+const STRIPE_LOCALES: Record<LocaleId, CheckoutLocale> = {
+  ja: "ja",
+  en: "en",
+  es: "es",
+  "zh-Hans": "zh",
+  "zh-Hant": "zh-TW",
+  fr: "fr",
+  de: "de",
+  ko: "ko",
+};
+
 // クレジットパック（単発課金）の Stripe Checkout Session を作成する。
 export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return Response.json({ error: "ログインが必要です。" }, { status: 401 });
+    return apiError("login_required", 401);
   }
 
   const missingEnv = getMissingStripeCreditsEnv();
   if (missingEnv.length > 0) {
     logError("stripe/credits", "missing env", undefined, { missingEnv });
-    return Response.json(
-      { error: "Stripe の環境変数が未設定です。STRIPE_SECRET_KEY を設定してください。" },
-      { status: 503 },
-    );
+    return apiError("stripe_not_configured", 503);
   }
 
   let packId: string | undefined;
+  let locale = DEFAULT_LOCALE;
   try {
-    const body = (await request.json()) as { packId?: string };
+    const body = (await request.json()) as { packId?: string; locale?: string };
     packId = body.packId;
+    // クライアント申告の locale は信用せず、既知のロケールに丸める。
+    locale = toLocaleId(body.locale);
   } catch {
-    return Response.json({ error: "リクエストが不正です。" }, { status: 400 });
+    return apiError("invalid_request", 400);
   }
 
   const pack = packId ? getCreditPack(packId) : null;
   if (!pack) {
-    return Response.json({ error: "指定されたパックが見つかりません。" }, { status: 400 });
+    return apiError("pack_not_found", 400);
   }
 
+  const t = await getTranslations({ locale, namespace: "stripeProduct" });
   const appUrl = getAppUrl(request.url);
   const admin = createAdminClient();
   const { data: subscriptionRow, error } = await admin
@@ -47,7 +68,7 @@ export async function POST(request: Request) {
 
   if (error) {
     logError("stripe/credits", "subscription fetch error", error, { userId: user.id });
-    return Response.json({ error: "プラン情報の取得に失敗しました。" }, { status: 500 });
+    return apiError("plan_fetch_failed", 500);
   }
 
   try {
@@ -58,6 +79,8 @@ export async function POST(request: Request) {
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
+      // Stripe のホスト決済ページ自体もユーザーの言語にする（未対応なら Stripe 側で自動判定）。
+      locale: STRIPE_LOCALES[locale],
       ...customer,
       client_reference_id: user.id,
       line_items: [
@@ -65,8 +88,10 @@ export async function POST(request: Request) {
           price_data: {
             currency: "jpy",
             unit_amount: pack.amountJpy, // 円はゼロ小数通貨（¥300 → 300）
+            // 商品名は購入時の言語で作る。決済記録・領収書にはこの名前が残るため、
+            // 集計は言語に依存しない metadata.pack_id 側で行うこと。
             product_data: {
-              name: `Code Tweet クレジット ${pack.name}（生成${pack.credits}回分）`,
+              name: t("creditPack", { credits: pack.credits }),
             },
           },
           quantity: 1,
@@ -82,6 +107,6 @@ export async function POST(request: Request) {
     return Response.json({ url: session.url });
   } catch (err) {
     logError("stripe/credits", "session create error", err, { userId: user.id, packId: pack.id });
-    return Response.json({ error: "決済ページの作成に失敗しました。" }, { status: 500 });
+    return apiError("checkout_failed", 500);
   }
 }

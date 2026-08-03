@@ -1,3 +1,4 @@
+import { apiError } from "@/lib/apiErrors";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getEntitlements } from "@/lib/entitlements";
@@ -21,12 +22,12 @@ export async function POST(request: Request): Promise<Response> {
   try {
     body = await request.json();
   } catch {
-    return Response.json({ error: "リクエストが不正です。" }, { status: 400 });
+    return apiError("invalid_request", 400);
   }
 
   const parsed = parseGitHubRepoUrl(body.url ?? "");
   if (!parsed) {
-    return Response.json({ error: "GitHub のリポジトリ URL を入力してください。" }, { status: 400 });
+    return apiError("repo_url_required", 400);
   }
 
   const { owner, repo } = parsed;
@@ -70,52 +71,34 @@ export async function POST(request: Request): Promise<Response> {
   try {
     res = await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`, { headers });
   } catch {
-    return Response.json({ error: "README の取得に失敗しました。" }, { status: 502 });
+    return apiError("readme_fetch_failed", 502);
   }
 
   if (res.status === 401) {
-    return Response.json(
-      { error: "GitHub App の接続が無効です。設定画面から接続し直してください。" },
-      { status: 401 },
-    );
+    return apiError("github_app_invalid", 401);
   }
 
   if (res.status === 403 || res.status === 404) {
     // 公開リポジトリなら未認証でも見えるはず。見えない＝非公開（または存在しない）
     if (await publicRepoExists(owner, repo)) {
-      return Response.json(
-        { error: "README が見つかりません。リポジトリに README ファイルがあるか確認してください。" },
-        { status: 404 },
-      );
+      return apiError("readme_not_found", 404);
     }
     if (!isPaid) {
-      return Response.json(
-        { error: "非公開リポジトリの README 取得はクレジット購入者向けの機能です。公開リポジトリをご利用ください。" },
-        { status: 403 },
-      );
+      return apiError("private_repo_paid_only", 403);
     }
     if (!hasInstallation) {
-      return Response.json(
-        { error: "GitHub App が未接続です。設定画面から「GitHub を接続」してください。" },
-        { status: 403 },
-      );
+      return apiError("github_app_not_connected", 403);
     }
-    return Response.json(
-      {
-        error:
-          "リポジトリが見つからないか、GitHub App にこのリポジトリへのアクセスが許可されていません。GitHub のインストール設定で対象リポジトリを追加してください。",
-      },
-      { status: 404 },
-    );
+    return apiError("repo_not_accessible", 404);
   }
 
   if (!res.ok) {
-    return Response.json({ error: "README の取得に失敗しました。" }, { status: 502 });
+    return apiError("readme_fetch_failed", 502);
   }
 
   const data = await res.json();
   if (!data.content) {
-    return Response.json({ error: "README が見つかりません。" }, { status: 404 });
+    return apiError("readme_not_found", 404);
   }
 
   const readmePayload = buildReadmePayload(data, usageTier);

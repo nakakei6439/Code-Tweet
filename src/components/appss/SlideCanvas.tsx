@@ -2,6 +2,7 @@
 // AppSS — スライドキャンバス描画（1320×2868 の実寸 DOM を CSS scale で表示）。
 // Based on MIT-licensed https://github.com/ParthJadhav/app-store-screenshots
 // (iPhone 縦向き・単一ロケール・日本語タイポグラフィ向けに簡約)
+import { useTranslations } from "next-intl";
 import * as React from "react";
 import { Rnd } from "react-rnd";
 import type {
@@ -180,6 +181,7 @@ function Caption({
   inverted?: boolean;
   onFocus?: () => void;
 }) {
+  const tcv = useTranslations("appssCanvas");
   const fg = inverted ? theme.fgAlt : theme.fg;
   const unit = Math.min(cW, cH);
   return (
@@ -189,7 +191,7 @@ function Caption({
         editable={editable}
         onChange={edit?.onLabelChange}
         onFocus={onFocus}
-        placeholder="ラベル"
+        placeholder={tcv("labelPlaceholder")}
         style={{
           fontSize: unit * 0.03,
           fontWeight: 700,
@@ -205,7 +207,7 @@ function Caption({
         multiline
         onChange={edit?.onHeadlineChange}
         onFocus={onFocus}
-        placeholder="見出しを入力"
+        placeholder={tcv("headlinePlaceholder")}
         emphasis={slide.emphasis}
         emphasisColor={theme.accent}
         style={{
@@ -364,11 +366,14 @@ function SlideBackground({
 
 // ---------- レイアウトごとの既定配置 ----------
 
-type Rect = { x: number; y: number; width: number; height: number };
+// rotation/zIndex はレイアウトの既定傾き用（例: collage-duo）。
+// スライド側で個別に transforms を設定していれば、そちらが優先される（rectFor/getElementTransform 参照）。
+type Rect = { x: number; y: number; width: number; height: number; rotation?: number; zIndex?: number };
 type LayoutRects = {
   caption?: Rect & { align?: "center" | "left" };
   device?: Rect;
   deviceSecondary?: Rect;
+  deviceTertiary?: Rect;
 };
 
 function getDefaultRects(layout: AppSSSlide["layout"]): LayoutRects {
@@ -428,6 +433,63 @@ function getDefaultRects(layout: AppSSSlide["layout"]): LayoutRects {
           height: (deviceW * 0.9) / BEZEL_RATIO,
         },
       };
+    case "collage-duo": {
+      // 2台を大胆に反対向きへ傾けて重ねる。見出しは上部で両画面をまたぐ。
+      const duoW = phoneW(cW, cH, 0.6) * cW;
+      const duoH = duoW / BEZEL_RATIO;
+      return {
+        caption: { x: cW * 0.06, y: cH * 0.06, width: cW * 0.88, height: cH * 0.18, align: "center" },
+        deviceSecondary: {
+          x: cW * 0.04,
+          y: cH * 0.3,
+          width: duoW,
+          height: duoH,
+          rotation: -10,
+          zIndex: 2,
+        },
+        device: {
+          x: cW - duoW - cW * 0.04,
+          y: cH * 0.34,
+          width: duoW,
+          height: duoH,
+          rotation: 9,
+          zIndex: 3,
+        },
+      };
+    }
+    case "collage-trio": {
+      // 3台を扇状に配置。中央は正立・大きめ・最前面、左右は傾けて背面に。
+      const centerW = phoneW(cW, cH, 0.5) * cW;
+      const centerH = centerW / BEZEL_RATIO;
+      const sideW = phoneW(cW, cH, 0.42) * cW;
+      const sideH = sideW / BEZEL_RATIO;
+      return {
+        caption: { x: cW * 0.06, y: cH * 0.06, width: cW * 0.88, height: cH * 0.18, align: "center" },
+        deviceSecondary: {
+          x: cW * 0.02,
+          y: cH * 0.34,
+          width: sideW,
+          height: sideH,
+          rotation: -14,
+          zIndex: 1,
+        },
+        deviceTertiary: {
+          x: cW - sideW - cW * 0.02,
+          y: cH * 0.34,
+          width: sideW,
+          height: sideH,
+          rotation: 14,
+          zIndex: 2,
+        },
+        device: {
+          x: (cW - centerW) / 2,
+          y: cH * 0.42,
+          width: centerW,
+          height: centerH,
+          zIndex: 3,
+        },
+      };
+    }
     case "no-device":
       return {
         caption: { x: cW * 0.1, y: cH * 0.35, width: cW * 0.8, height: cH * 0.3, align: "center" },
@@ -451,6 +513,10 @@ function rectFor(
     y: saved.y,
     width: saved.width,
     height: saved.height,
+    // 位置・サイズはユーザー保存値を優先するが、回転・重なり順はレイアウトの既定値を引き継ぐ
+    // （ユーザーが個別に回転させていれば saved.rotation が別途優先される。呼び出し側参照）
+    rotation: def?.rotation,
+    zIndex: def?.zIndex,
     align: (def as { align?: "center" | "left" } | undefined)?.align,
   };
 }
@@ -470,15 +536,49 @@ export function getElementTransform(slide: AppSSSlide, id: ElementId): ElementTr
     y: rect.y,
     width: rect.width,
     height: rect.height,
-    rotation: saved?.rotation ?? 0,
-    zIndex: saved?.zIndex ?? defaultElementZ(id as BuiltInElementId),
+    rotation: saved?.rotation ?? rect.rotation ?? 0,
+    zIndex: saved?.zIndex ?? rect.zIndex ?? defaultElementZ(id as BuiltInElementId),
   };
 }
 
 function defaultElementZ(id: BuiltInElementId): number {
   if (id === "deviceSecondary") return 2;
+  if (id === "deviceTertiary") return 2;
   if (id === "device") return 3;
   return 4;
+}
+
+// ---------- 透かし（無料書き出し用） ----------
+// 課金の壁: 無料の書き出しには常にこの帯を焼き込む。透かし解除（有料）時は watermark=false で
+// レンダーしないだけ（描画パイプライン自体は変わらないため export の安全性に影響しない）。
+// filter:blur 等は使わず単色 rgba 背景のみで Safari の foreignObject バグを回避する。
+function Watermark() {
+  const cW = CANVAS.w;
+  const cH = CANVAS.h;
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: "absolute",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: cH * 0.055,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(15, 23, 42, 0.78)",
+        color: "#f8fafc",
+        fontSize: cW * 0.03,
+        fontWeight: 700,
+        letterSpacing: "0.04em",
+        // 全要素より確実に前面（テキスト要素の zIndex は 5+index）
+        zIndex: 100,
+      }}
+    >
+      Made with Code Tweet — AppSS
+    </div>
+  );
 }
 
 // ---------- 単一スライドキャンバス（書き出し・サムネ用） ----------
@@ -493,6 +593,8 @@ type Props = {
   // CSS transform で縮小表示している場合の倍率（react-rnd のドラッグ座標補正用）
   previewScale?: number;
   hideEmpty?: boolean;
+  // true の場合、下部に透かし帯を焼き込む（無料書き出し用）
+  watermark?: boolean;
 };
 
 export function SlideCanvas({
@@ -504,6 +606,7 @@ export function SlideCanvas({
   selectedElementId = null,
   previewScale = 1,
   hideEmpty,
+  watermark,
 }: Props) {
   const handleBackgroundMouseDown = editable
     ? (e: React.MouseEvent<HTMLDivElement>) => {
@@ -526,6 +629,7 @@ export function SlideCanvas({
         previewScale={previewScale}
         hideEmpty={hideEmpty}
       />
+      {watermark && <Watermark />}
     </div>
   );
 }
@@ -676,6 +780,7 @@ function SlideElements({
   previewScale: number;
   hideEmpty?: boolean;
 }) {
+  const tcv = useTranslations("appssCanvas");
   const cW = CANVAS.w;
   const cH = CANVAS.h;
   const inverted = !!slide.inverted;
@@ -683,12 +788,13 @@ function SlideElements({
   const captionRect = rectFor("caption", slide, defaults);
   const deviceRect = rectFor("device", slide, defaults);
   const secondaryRect = rectFor("deviceSecondary", slide, defaults);
+  const tertiaryRect = rectFor("deviceTertiary", slide, defaults);
 
   function renderCaption() {
     if (!captionRect) return null;
     const saved = slide.transforms?.caption;
-    const rotation = saved?.rotation ?? 0;
-    const zIndex = saved?.zIndex ?? 4;
+    const rotation = saved?.rotation ?? captionRect.rotation ?? 0;
+    const zIndex = saved?.zIndex ?? captionRect.zIndex ?? 4;
     return (
       <Movable
         rect={captionRect}
@@ -726,14 +832,14 @@ function SlideElements({
   }
 
   function renderDevice(
-    id: "device" | "deviceSecondary",
+    id: "device" | "deviceSecondary" | "deviceTertiary",
     rect: Rect,
     src: string,
     extraStyle?: React.CSSProperties,
   ) {
     const saved = slide.transforms?.[id];
-    const rotation = saved?.rotation ?? 0;
-    const zIndex = saved?.zIndex ?? (id === "deviceSecondary" ? 2 : 3);
+    const rotation = saved?.rotation ?? rect.rotation ?? 0;
+    const zIndex = saved?.zIndex ?? rect.zIndex ?? defaultElementZ(id);
     return (
       <Movable
         rect={rect}
@@ -807,7 +913,7 @@ function SlideElements({
             multiline
             onChange={(value) => edit?.onTextElementTextChange?.(textElement.id, value)}
             onFocus={() => edit?.onSelectElement?.(elementId)}
-            placeholder="テキスト"
+            placeholder={tcv("textPlaceholder")}
             style={{
               width: "100%",
               color: textColor,
@@ -830,6 +936,13 @@ function SlideElements({
           "deviceSecondary",
           secondaryRect,
           slide.screenshotSecondaryRef || slide.screenshotRef,
+          { opacity: 0.85 },
+        )}
+      {tertiaryRect &&
+        renderDevice(
+          "deviceTertiary",
+          tertiaryRect,
+          slide.screenshotTertiaryRef || slide.screenshotSecondaryRef || slide.screenshotRef,
           { opacity: 0.85 },
         )}
       {deviceRect && renderDevice("device", deviceRect, slide.screenshotRef)}
@@ -890,6 +1003,7 @@ function Movable({
   selected?: boolean;
   onSelect?: () => void;
 }) {
+  const tcv = useTranslations("appssCanvas");
   const rotationRef = React.useRef(rotation);
   React.useEffect(() => {
     rotationRef.current = rotation;
@@ -1019,8 +1133,8 @@ function Movable({
           height: 28 / controlScale,
         }}
         onPointerDown={startRotate}
-        title="回転"
-        aria-label="要素を回転"
+        title={tcv("rotate")}
+        aria-label={tcv("rotateElement")}
       >
         <svg
           viewBox="0 0 24 24"

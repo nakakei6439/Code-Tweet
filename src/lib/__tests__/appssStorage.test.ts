@@ -64,6 +64,32 @@ describe("migrateSlide", () => {
     const slide = migrateSlide({ layout: "hero", label: "", headline: "" });
     expect(slide?.id).toBeTruthy();
   });
+
+  it("collage-trio レイアウトと screenshotTertiaryRef を受け付ける", () => {
+    const slide = migrateSlide({
+      id: "a",
+      layout: "collage-trio",
+      label: "l",
+      headline: "h",
+      screenshotRef: "idb:main",
+      screenshotSecondaryRef: "idb:second",
+      screenshotTertiaryRef: "idb:third",
+    });
+    expect(slide?.layout).toBe("collage-trio");
+    expect(slide?.screenshotSecondaryRef).toBe("idb:second");
+    expect(slide?.screenshotTertiaryRef).toBe("idb:third");
+  });
+
+  it("screenshotTertiaryRef の data:URL は空文字に落とす", () => {
+    const slide = migrateSlide({
+      id: "a",
+      layout: "collage-trio",
+      label: "l",
+      headline: "h",
+      screenshotTertiaryRef: "data:image/png;base64,AAAA",
+    });
+    expect(slide?.screenshotTertiaryRef).toBe("");
+  });
 });
 
 describe("mergeWithDefaults", () => {
@@ -95,5 +121,51 @@ describe("mergeWithDefaults", () => {
   it("slides が空配列ならスターターデッキを使う", () => {
     const project = mergeWithDefaults({ slides: [] });
     expect(project.slides.length).toBeGreaterThan(0);
+  });
+
+  it("正常な customTheme（AI生成パレット）を保持する", () => {
+    const project = mergeWithDefaults({
+      customTheme: { bg: "#fff", fg: "#000", accent: "#22d3ee" },
+    });
+    expect(project.customTheme?.bg).toBe("#ffffff");
+    expect(project.customTheme?.accent).toBe("#22d3ee");
+  });
+
+  it("不正な customTheme は破棄する", () => {
+    const project = mergeWithDefaults({ customTheme: { bg: "notacolor" } });
+    expect(project.customTheme).toBeUndefined();
+  });
+});
+
+describe("mergeWithDefaults — ロケールとフォント", () => {
+  it("locale を持たない旧データは日本語として扱う", () => {
+    const project = mergeWithDefaults({ appName: "旧データ" });
+    expect(project.locale).toBe("ja");
+  });
+
+  it("保存された locale を保持する", () => {
+    const project = mergeWithDefaults({ locale: "ko", slides: [] });
+    expect(project.locale).toBe("ko");
+  });
+
+  it("未知の locale は既定に丸める", () => {
+    const project = mergeWithDefaults({ locale: "pt" });
+    expect(project.locale).toBe("ja");
+  });
+
+  it("言語の文字体系に合わないフォントは既定へ差し替える", () => {
+    // 日本語フォントのまま韓国語に切り替えた保存データ。豆腐を出さないための保険。
+    const project = mergeWithDefaults({ locale: "ko", fontId: "mincho" });
+    expect(project.fontId).toBe("kr-sans");
+  });
+
+  it("文字体系が合っているフォントはそのまま残す", () => {
+    const project = mergeWithDefaults({ locale: "zh-Hans", fontId: "sc-serif" });
+    expect(project.fontId).toBe("sc-serif");
+  });
+
+  it("ラテン圏は日本語フォントをそのまま使える（ラテン字形を持つため）", () => {
+    const project = mergeWithDefaults({ locale: "de", fontId: "maru" });
+    expect(project.fontId).toBe("maru");
   });
 });

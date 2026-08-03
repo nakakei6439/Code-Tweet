@@ -1,5 +1,7 @@
 import { generateTweets } from "@/lib/gemini";
-import { logError } from "@/lib/logger";
+import { apiError } from "@/lib/apiErrors";
+import { toLocaleId } from "@/lib/locales";
+import { mapGeminiError } from "@/lib/geminiErrors";
 import { isSameOriginRequest } from "@/lib/origin";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -20,7 +22,7 @@ import {
   MAX_URL_LENGTH,
   getProjectTextLimit,
 } from "@/lib/generateLimits";
-import type { GenerateRequest, GenerateResponse, GenerateErrorResponse, GenerateErrorField } from "@/types/tweet";
+import type { GenerateRequest, GenerateResponse, GenerateErrorField } from "@/types/tweet";
 import type { UsageTier } from "@/types/usage";
 
 export const runtime = "nodejs";
@@ -34,77 +36,46 @@ function validateRequestSize(request: Request): Response | null {
 
   const bytes = Number(contentLength);
   if (Number.isFinite(bytes) && bytes > MAX_REQUEST_BYTES) {
-    return Response.json(
-      { error: "リクエストが大きすぎます。入力内容を短くしてください。" } satisfies GenerateErrorResponse,
-      { status: 413 },
-    );
+    return apiError("payload_too_large", 413);
   }
 
   return null;
 }
 
-function fieldError(field: GenerateErrorField, error: string, status = 400): Response {
-  return Response.json({ error, field } satisfies GenerateErrorResponse, { status });
+function tooLong(field: GenerateErrorField, limit: number): Response {
+  return apiError("field_too_long", 400, { field, params: { limit } });
 }
 
 function validateGenerateRequest(body: GenerateRequest, tier: UsageTier): Response | null {
   const projectTextLimit = getProjectTextLimit(tier);
 
   if (!body.projectText?.trim()) {
-    return fieldError("projectText", "プロジェクト説明を入力してください。");
+    return apiError("field_required", 400, { field: "projectText" });
   }
 
   if (body.projectText.length > projectTextLimit) {
-    return fieldError("projectText", `現在のプランでは、プロジェクト説明は ${projectTextLimit.toLocaleString("ja-JP")} 文字以内にしてください。`);
+    return tooLong("projectText", projectTextLimit);
   }
   if ((body.toneMemo ?? "").length > MAX_TONE_MEMO_LENGTH) {
-    return fieldError("toneMemo", `追加プロンプトは ${MAX_TONE_MEMO_LENGTH.toLocaleString("ja-JP")} 文字以内にしてください。`);
+    return tooLong("toneMemo", MAX_TONE_MEMO_LENGTH);
   }
   if ((body.url ?? "").length > MAX_URL_LENGTH) {
-    return fieldError("url", `URL は ${MAX_URL_LENGTH.toLocaleString("ja-JP")} 文字以内にしてください。`);
+    return tooLong("url", MAX_URL_LENGTH);
   }
   if ((body.hashtags ?? "").length > MAX_HASHTAGS_LENGTH) {
-    return fieldError("hashtags", `ハッシュタグは ${MAX_HASHTAGS_LENGTH.toLocaleString("ja-JP")} 文字以内にしてください。`);
+    return tooLong("hashtags", MAX_HASHTAGS_LENGTH);
   }
 
   return null;
 }
 
-function mapGeminiError(err: unknown): { message: string; status: number } {
-  const raw = err instanceof Error ? err.message : "";
-  logError("generate", "Gemini API error", err);
-
-  if (/5件のポストを生成できませんでした/.test(raw)) {
-    return { message: raw, status: 500 };
-  }
-  if (/API key|API_KEY_INVALID|\b401\b|\b403\b/i.test(raw)) {
-    return { message: "APIキーが無効です。Gemini APIキーを確認してください。", status: 401 };
-  }
-  if (/\b503\b|Service Unavailable|overloaded|high demand|UNAVAILABLE/i.test(raw)) {
-    return { message: "Gemini API が混雑しています。少し時間をおいて再試行してください。", status: 503 };
-  }
-  if (/\b429\b|quota|rate limit|RESOURCE_EXHAUSTED/i.test(raw)) {
-    return { message: "Gemini API の利用上限に達しました。少し時間をおいて再試行してください。", status: 429 };
-  }
-  if (/\b400\b|INVALID_ARGUMENT|safety/i.test(raw)) {
-    return { message: "リクエスト内容に問題があります。プロジェクト説明を見直してください。", status: 400 };
-  }
-  if (/fetch failed|ENOTFOUND|ECONNRESET|timeout|network/i.test(raw)) {
-    return { message: "Gemini API への接続に失敗しました。ネットワークを確認してください。", status: 502 };
-  }
-  return { message: "ポスト生成に失敗しました。少し時間をおいて再試行してください。", status: 500 };
-}
-
 export async function POST(request: Request): Promise<Response> {
   if (!isSameOriginRequest(request)) {
-    return Response.json(
-      { error: "許可されていないリクエスト元です。" } satisfies GenerateErrorResponse,
-      { status: 403 },
-    );
+    return apiError("forbidden_origin", 403);
   }
 
   if (!process.env.GEMINI_API_KEY) {
-    return Response.json({ error: "現在サービスが利用できません。しばらくお待ちください。" } satisfies GenerateErrorResponse, { status: 503 });
+    return apiError("service_unavailable", 503);
   }
 
   const sizeError = validateRequestSize(request);
@@ -122,24 +93,18 @@ export async function POST(request: Request): Promise<Response> {
     usageTier = entitlements.perkTier;
     const limit = await checkUserLimit(supabase, user.id, entitlements);
     if (!limit.ok) {
-      return Response.json(
-        { error: limit.message, code: limit.code } satisfies GenerateErrorResponse,
-        { status: limit.status },
-      );
+      return apiError(limit.code, limit.status, { params: limit.params });
     }
     useCredit = limit.useCredit;
   } else {
     const ip = getClientIp(request);
     if (!ip) {
-      return Response.json({ error: "IP アドレスを特定できませんでした。" } satisfies GenerateErrorResponse, { status: 400 });
+      return apiError("ip_unavailable", 400);
     }
     ipHash = hashIp(ip);
     const limit = await checkGuestLimit(ipHash);
     if (!limit.ok) {
-      return Response.json(
-        { error: limit.message, code: limit.code } satisfies GenerateErrorResponse,
-        { status: limit.status },
-      );
+      return apiError(limit.code, limit.status, { params: limit.params });
     }
   }
 
@@ -147,16 +112,18 @@ export async function POST(request: Request): Promise<Response> {
   try {
     body = await request.json();
   } catch {
-    return Response.json({ error: "リクエストが不正です。" } satisfies GenerateErrorResponse, { status: 400 });
+    return apiError("invalid_request", 400);
   }
 
   const validationError = validateGenerateRequest(body, usageTier);
   if (validationError) return validationError;
 
+  // クライアント申告の locale は信用せず既知のロケールに丸める。
+  const locale = toLocaleId(body.locale);
   const url = normalizeUrl(body.url ?? "");
 
   try {
-    const tweets = await generateTweets(body.projectText, body.toneMemo ?? "", url, body.hashtags ?? "");
+    const tweets = await generateTweets(body.projectText, body.toneMemo ?? "", url, body.hashtags ?? "", locale);
     if (user) {
       await recordUserUsage(supabase, user.id);
       // 無料枠超過分のみ購入クレジットを消費（生成成功時のみ）。
@@ -170,9 +137,9 @@ export async function POST(request: Request): Promise<Response> {
     } else if (ipHash) {
       await recordGuestUsage(ipHash);
     }
-    return Response.json({ tweets } satisfies GenerateResponse, { status: 200 });
+    return Response.json({ tweets, locale } satisfies GenerateResponse, { status: 200 });
   } catch (err) {
-    const { message, status } = mapGeminiError(err);
-    return Response.json({ error: message } satisfies GenerateErrorResponse, { status });
+    const { code, status } = mapGeminiError("generate", err);
+    return apiError(code, status);
   }
 }

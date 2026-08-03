@@ -1,5 +1,7 @@
 "use client";
 
+import { useApiErrorMessage } from "@/lib/useApiErrorMessage";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
 type StripeAction = "portal" | "credits";
@@ -19,6 +21,9 @@ const ENDPOINTS: Record<StripeAction, string> = {
 };
 
 export default function StripeActionButton({ action, children, className, disabled, packId }: Props) {
+  const t = useTranslations("stripeButtons");
+  const locale = useLocale();
+  const resolveApiError = useApiErrorMessage();
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,20 +39,21 @@ export default function StripeActionButton({ action, children, className, disabl
         ...(action === "credits"
           ? {
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ packId }),
+              // locale は Stripe の決済ページ言語と商品名に使う（サーバー側で検証する）。
+              body: JSON.stringify({ packId, locale }),
             }
           : {}),
       });
       const data = await res.json().catch(() => null);
 
       if (!res.ok || !data?.url) {
-        setError(data?.error ?? "決済ページの作成に失敗しました。");
+        setError(resolveApiError(data));
         return;
       }
 
       window.location.href = data.url;
     } catch {
-      setError("通信に失敗しました。時間をおいて再度お試しください。");
+      setError(t("networkError"));
     } finally {
       setIsPending(false);
     }
@@ -61,7 +67,7 @@ export default function StripeActionButton({ action, children, className, disabl
         disabled={disabled || isPending}
         className={className}
       >
-        {isPending ? "移動中..." : children}
+        {isPending ? t("redirecting") : children}
       </button>
       {error && <p className="text-xs text-red-300">{error}</p>}
     </div>

@@ -1,21 +1,22 @@
 # Code Tweet 運用メモ
 
-最終更新: 2026-05-16
+最終更新: 2026-07-18
 
 ## 運用方針
 
 Code Tweet は開発フェーズから運用フェーズに移行済みです。2026-05 から 2026-10 までは、機能追加より認知、課金転換、計測改善を優先します。
 
-短期目標は Pro 課金者 10 人です。新機能は課金転換や継続率に直結するものだけ検討します。
+短期目標は課金者（旧 Pro + クレジット購入者）10 人です。新機能は課金転換や継続率に直結するものだけ検討します。
 
 ## 本番ヘルスチェック
 
 - 本番 URL、Supabase Redirect URLs、GitHub OAuth callback URL が一致している
 - `GEMINI_API_KEY`、Supabase、Stripe、管理画面用の環境変数が本番に設定されている
-- Stripe Checkout、Webhook、Customer Portal が本番キーで動く
+- Stripe Checkout（クレジットパック）、Webhook、Customer Portal が本番キーで動く
 - `/terms`、`/privacy`、`/contact`、`/pricing`、`/settings` が表示できる
-- ゲスト、無料ログイン、Pro の生成回数と README 上限が仕様どおり
-- Pro のプライベートリポジトリ取得と生成履歴保存が動く
+- `/appss`、`/?tab=appss`、`/about/appss` が表示でき、コピー生成・透かし解除書き出しが動く
+- ゲスト、無料ログイン、クレジット購入者の生成回数と README 上限が仕様どおり（Code Tweet / note Draft / App SS で合算）
+- クレジット購入者のプライベートリポジトリ取得と生成履歴保存が動く
 - 管理画面の Basic 認証、TOTP、失敗回数ロックが動く
 - `npm run lint`、`npx tsc --noEmit`、`npm run build`、`git diff --check` が通る
 

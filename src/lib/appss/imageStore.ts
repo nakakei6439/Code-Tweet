@@ -18,7 +18,7 @@ function openDb(): Promise<IDBDatabase> {
       }
     };
     req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error ?? new Error("IndexedDB を開けませんでした"));
+    req.onerror = () => reject(req.error ?? new Error("Failed to open IndexedDB"));
   });
 }
 
@@ -32,7 +32,7 @@ async function withStore<T>(
       const tx = db.transaction(STORE, mode);
       const req = fn(tx.objectStore(STORE));
       req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error ?? new Error("IndexedDB の操作に失敗しました"));
+      req.onerror = () => reject(req.error ?? new Error("IndexedDB operation failed"));
     });
   } finally {
     db.close();

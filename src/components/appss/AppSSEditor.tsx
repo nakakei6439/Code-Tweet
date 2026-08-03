@@ -1,16 +1,30 @@
 "use client";
 // AppSS — エディタ本体。状態管理・キーボードショートカット・書き出しオーケストレーション。
 // Based on MIT-licensed https://github.com/ParthJadhav/app-store-screenshots
+import { useTranslations } from "next-intl";
+import { DEFAULT_LOCALE, LOCALES, type LocaleId } from "@/lib/locales";
+import { useApiErrorMessage } from "@/lib/useApiErrorMessage";
 import * as React from "react";
 import type {
   AppSSSlide,
+  BackgroundStyle,
   ElementId,
   ElementTransform,
   FontId,
   SelectedElement,
   TextElement,
 } from "@/lib/appss/types";
-import { BEZEL, CANVAS, EXPORT_SIZES, FONTS, MAX_SLIDES, THEMES, themeById } from "@/lib/appss/constants";
+import {
+  BEZEL,
+  CANVAS,
+  EXPORT_SIZES,
+  FONTS,
+  MAX_SLIDES,
+  THEMES,
+  resolveFontForScript,
+  buildCustomTheme,
+  themeById,
+} from "@/lib/appss/constants";
 import { isTextElementId, textElementKey } from "@/lib/appss/elements";
 import { preloadImages } from "@/lib/appss/imageCache";
 import { useAppSSProject } from "@/lib/appss/storage";
@@ -27,7 +41,8 @@ import {
   warmupCapture,
 } from "@/lib/appss/exporter";
 import { exportProjectZip, importProjectZip } from "@/lib/appss/projectFile";
-import type { AppSSCopySlideIdea } from "@/types/appss";
+import { postJson } from "@/lib/apiClient";
+import type { AppSSCopySlideIdea, AppSSExportUnlockResponse, GeneratedPalette } from "@/types/appss";
 import type { UsageInfo } from "@/types/usage";
 import { PreviewStage } from "./PreviewStage";
 import { Sidebar } from "./Sidebar";
@@ -42,17 +57,34 @@ type Props = {
 };
 
 export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
-  const { state, setState, hydrated, savedAt, saveError, reset, undo, redo } = useAppSSProject();
+  const resolveApiError = useApiErrorMessage();
+  const te = useTranslations("appssEditor2");
+  const { state, setState, hydrated, savedAt, saveError, reset, undo, redo, copyAssistantSeed } =
+    useAppSSProject();
   const [activeSlideId, setActiveSlideId] = React.useState<string | null>(null);
   const [selectedElement, setSelectedElement] = React.useState<SelectedElement | null>(null);
   const [exporting, setExporting] = React.useState<string | null>(null);
   const [exportSlideIndex, setExportSlideIndex] = React.useState(0);
   const [exportError, setExportError] = React.useState<string | null>(null);
+  // 現在実行中の書き出しに透かしを焼き込むか（無料=true、透かし解除=false）
+  const [exportWatermark, setExportWatermark] = React.useState(true);
   const [copyAssistantOpen, setCopyAssistantOpen] = React.useState(false);
+  const [usage, setUsage] = React.useState<UsageInfo | null>(initialUsage);
   const [, forceRender] = React.useReducer((n: number) => n + 1, 0);
   const exportRef = React.useRef<HTMLDivElement | null>(null);
 
-  const theme = themeById(state.themeId);
+  async function refreshUsage() {
+    try {
+      const res = await fetch("/api/usage");
+      if (res.ok) setUsage((await res.json()) as UsageInfo);
+    } catch {
+      /* 表示用のため失敗は無視 */
+    }
+  }
+
+  // AI が都度生成したパレット（customTheme）があればプリセットより優先して描画する
+  const theme = state.customTheme ?? themeById(state.themeId);
+  const projectLocale = state.locale ?? DEFAULT_LOCALE;
   const fontFamily = FONTS[state.fontId].cssVar;
   const backgroundStyle = state.backgroundStyle;
   const slides = state.slides;
@@ -65,6 +97,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
     for (const slide of slides) {
       if (slide.screenshotRef) refs.add(slide.screenshotRef);
       if (slide.screenshotSecondaryRef) refs.add(slide.screenshotSecondaryRef);
+      if (slide.screenshotTertiaryRef) refs.add(slide.screenshotTertiaryRef);
     }
     return Array.from(refs);
   }, [slides]);
@@ -132,7 +165,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       const id = nid();
       const element: TextElement = {
         id,
-        text: "テキスト",
+        text: te("textElement"),
         transform: {
           x: CANVAS.w * 0.2,
           y: CANVAS.h * 0.42,
@@ -146,7 +179,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       }));
       setSelectedElement({ slideId, elementId: `text:${id}` });
     },
-    [updateSlide],
+    [updateSlide, te],
   );
 
   const deleteTextElement = React.useCallback(
@@ -179,10 +212,10 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
   const addSlide = React.useCallback(() => {
     if (slides.length >= MAX_SLIDES) return; // 上限（6枚）を超えて追加しない
     const starter = makeStarterSlides()[1];
-    const slide: AppSSSlide = { ...starter, id: nid(), label: "新しいスライド", headline: "見出しを\n入力" };
+    const slide: AppSSSlide = { ...starter, id: nid(), label: te("newSlideLabel"), headline: te("newSlideHeadline") };
     setState((prev) => ({ ...prev, slides: [...prev.slides, slide] }));
     setActiveSlideId(slide.id);
-  }, [setState, slides.length]);
+  }, [setState, slides.length, te]);
 
   const duplicateSlide = React.useCallback(
     (slideId: string) => {
@@ -231,7 +264,16 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
   // ---------- AIコピー適用 ----------
 
   const applyCopyIdeas = React.useCallback(
-    (ideas: AppSSCopySlideIdea[], mode: "replace" | "append") => {
+    (
+      ideas: AppSSCopySlideIdea[],
+      mode: "replace" | "append",
+      style?: {
+        themeId?: string;
+        backgroundStyle?: BackgroundStyle;
+        generatedPalette?: GeneratedPalette;
+        locale?: LocaleId;
+      },
+    ) => {
       setState((prev) => {
         if (mode === "replace") {
           const slides = ideas.map((idea, i) => {
@@ -241,16 +283,39 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
               layout: idea.layoutHint,
               label: idea.label,
               headline: idea.headline,
+              ...(idea.emphasis ? { emphasis: idea.emphasis } : {}),
               screenshotRef: existing?.screenshotRef ?? "",
               ...(existing?.screenshotSecondaryRef !== undefined
                 ? { screenshotSecondaryRef: existing.screenshotSecondaryRef }
+                : {}),
+              ...(existing?.screenshotTertiaryRef !== undefined
+                ? { screenshotTertiaryRef: existing.screenshotTertiaryRef }
                 : {}),
               ...(existing?.inverted ? { inverted: true } : {}),
               ...(existing?.transforms ? { transforms: existing.transforms } : {}),
               ...(existing?.textElements ? { textElements: existing.textElements } : {}),
             } satisfies AppSSSlide;
           });
-          return { ...prev, slides };
+          const themeId = style?.themeId && THEMES[style.themeId] ? style.themeId : prev.themeId;
+          const customTheme = style?.generatedPalette
+            ? buildCustomTheme(style.generatedPalette, THEMES[themeId]?.fontId)
+            : prev.customTheme;
+          // 生成した言語にデッキを合わせる。テーマ推奨フォントがその文字体系を
+          // 持たない場合は既定へ差し替える（日本語フォントのままだと豆腐になる）。
+          const locale = style?.locale ?? prev.locale ?? DEFAULT_LOCALE;
+          const fontId = resolveFontForScript(
+            THEMES[themeId]?.fontId ?? prev.fontId,
+            LOCALES[locale].script,
+          );
+          return {
+            ...prev,
+            slides,
+            locale,
+            themeId,
+            ...(customTheme ? { customTheme } : { customTheme: undefined }),
+            fontId,
+            backgroundStyle: style?.backgroundStyle ?? prev.backgroundStyle,
+          };
         }
         const appended = ideas.map(
           (idea) =>
@@ -259,6 +324,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
               layout: idea.layoutHint,
               label: idea.label,
               headline: idea.headline,
+              ...(idea.emphasis ? { emphasis: idea.emphasis } : {}),
               screenshotRef: "",
             }) satisfies AppSSSlide,
         );
@@ -271,7 +337,13 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
   const applySingleIdea = React.useCallback(
     (idea: AppSSCopySlideIdea) => {
       if (!activeSlide) return;
-      updateSlide(activeSlide.id, { label: idea.label, headline: idea.headline });
+      // 「全て適用」と同じく emphasis / layout も反映する（以前は捨てていて挙動が非対称だった）。
+      updateSlide(activeSlide.id, {
+        label: idea.label,
+        headline: idea.headline,
+        layout: idea.layoutHint,
+        ...(idea.emphasis ? { emphasis: idea.emphasis } : { emphasis: undefined }),
+      });
     },
     [activeSlide, updateSlide],
   );
@@ -313,10 +385,13 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
 
   const exportSlide = slides[exportSlideIndex] || null;
 
-  async function exportAll() {
+  // watermark=true: 無料・常に許可（サーバー通信なし）。false: 透かし解除（有料、呼び出し元で
+  // /api/appss/export-unlock によるクレジット消費が成功した後にのみ呼ばれる想定。
+  async function exportAll(watermark: boolean) {
     if (!slides.length || exporting) return;
     setExportError(null);
-    setExporting("準備中");
+    setExportWatermark(watermark);
+    setExporting(te("preparing"));
 
     try {
       await preloadImages(assetRefs, { retryFailed: true });
@@ -325,7 +400,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       await waitForPaint();
 
       const el = exportRef.current;
-      if (!el) throw new Error("書き出し用キャンバスを初期化できませんでした");
+      if (!el) throw new Error(te("canvasInitFailed"));
 
       // フォント埋め込み CSS は 1 回だけ計算して全キャプチャで再利用
       const fontEmbedCSS = await computeFontEmbedCSS(el);
@@ -345,7 +420,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
           await waitForPaint();
           const node = exportRef.current;
           if (!node) {
-            errors.push(`${size.w}×${size.h} ${i + 1}枚目: 描画先が見つかりません`);
+            errors.push(te("exportTargetMissing", { size: `${size.w}×${size.h}`, n: i + 1 }));
             continue;
           }
           try {
@@ -356,26 +431,43 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
             okCount += 1;
           } catch (e) {
             const msg = e instanceof Error ? e.message : String(e);
-            errors.push(`${size.w}×${size.h} ${i + 1}枚目: ${msg}`);
+            errors.push(te("exportSlideFailed", { size: `${size.w}×${size.h}`, n: i + 1, message: msg }));
           }
         }
       }
 
       if (okCount > 0) {
-        await downloadZip(zip, `${slugify(state.appName)}-appstore-${stamp()}.zip`);
+        // 言語を名前に入れる。複数言語を書き出したとき、どの zip が何語か分かるようにする。
+        await downloadZip(zip, `${slugify(state.appName)}-${projectLocale}-appstore-${stamp()}.zip`);
       }
       if (errors.length > 0) {
         setExportError(
           okCount === 0
-            ? `書き出しに失敗しました: ${errors[0]}`
-            : `${errors.length}枚の書き出しに失敗しました（${okCount}枚は成功）`,
+            ? te("exportFailedOne", { reason: errors[0] })
+            : te("exportFailedMany", { failed: errors.length, ok: okCount }),
         );
       }
     } catch (e) {
-      setExportError(e instanceof Error ? e.message : "書き出しに失敗しました");
+      setExportError(e instanceof Error ? e.message : te("exportFailed"));
     } finally {
       setExporting(null);
     }
+  }
+
+  // 透かし解除書き出し。まずクレジット消費の許可を取り、通れば透かし無しで exportAll する。
+  // 画像は一切送信しない（許可チェックのみのAPI）。
+  async function exportUnlocked() {
+    if (!slides.length || exporting) return;
+    setExportError(null);
+    setExporting(te("checking"));
+    const outcome = await postJson<AppSSExportUnlockResponse>("/api/appss/export-unlock", {});
+    if (!outcome.ok) {
+      setExporting(null);
+      setExportError(resolveApiError(outcome.error));
+      return;
+    }
+    void refreshUsage();
+    await exportAll(false);
   }
 
   // ---------- Render ----------
@@ -385,7 +477,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       <div className="flex h-[70vh] items-center justify-center text-gray-500">
         <div className="flex flex-col items-center gap-2">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          <p className="text-sm">エディタを読み込み中…</p>
+          <p className="text-sm">{te("loadingEditor")}</p>
         </div>
       </div>
     );
@@ -401,7 +493,9 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       <Toolbar
         appName={state.appName}
         themeId={state.themeId}
+        hasCustomTheme={!!state.customTheme}
         fontId={state.fontId}
+        locale={projectLocale}
         backgroundStyle={backgroundStyle}
         savedAt={savedAt}
         saveError={saveError}
@@ -409,24 +503,29 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
         onAppNameChange={(v) => setState((prev) => ({ ...prev, appName: v }))}
         onThemeChange={(id) => {
           const nextFont = THEMES[id]?.fontId;
+          // プリセットを手動選択した場合は AI 生成パレット(customTheme)を解除する
           setState((prev) => ({
             ...prev,
             themeId: id,
+            customTheme: undefined,
             ...(nextFont ? { fontId: nextFont } : {}),
           }));
         }}
         onFontChange={(id: FontId) => setState((prev) => ({ ...prev, fontId: id }))}
         onBackgroundStyleChange={(id) => setState((prev) => ({ ...prev, backgroundStyle: id }))}
-        onExport={() => void exportAll()}
+        onExport={() => void exportAll(true)}
+        onExportUnlocked={() => void exportUnlocked()}
+        usage={usage}
+        isLoggedIn={isLoggedIn}
         onReset={() => {
-          if (window.confirm("編集内容を破棄して初期状態に戻しますか？")) {
+          if (window.confirm(te("resetConfirm"))) {
             reset();
             setSelectedElement(null);
           }
         }}
         onExportProject={() => {
           void exportProjectZip(state).catch(() => {
-            setExportError("プロジェクトの書き出しに失敗しました");
+            setExportError(te("projectExportFailed"));
           });
         }}
         onImportProject={(file) => {
@@ -437,7 +536,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
               setExportError(null);
             })
             .catch((e) => {
-              setExportError(e instanceof Error ? e.message : "プロジェクトの読み込みに失敗しました");
+              setExportError(e instanceof Error ? e.message : te("projectImportFailed"));
             });
         }}
         onToggleCopyAssistant={() => setCopyAssistantOpen((v) => !v)}
@@ -489,6 +588,10 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
             isLoggedIn={isLoggedIn}
             initialUsage={initialUsage}
             slideCount={slides.length}
+            initialAppName={state.appName}
+            initialAppDescription={copyAssistantSeed?.appDescription ?? ""}
+            initialFeatures={copyAssistantSeed?.features ?? []}
+            projectLocale={projectLocale}
             onApplyAll={applyCopyIdeas}
             onApplyOne={applySingleIdea}
             onClose={() => setCopyAssistantOpen(false)}
@@ -527,7 +630,13 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
             pointerEvents: "none",
           }}
         >
-          <SlideCanvas slide={exportSlide} theme={theme} backgroundStyle={backgroundStyle} hideEmpty />
+          <SlideCanvas
+            slide={exportSlide}
+            theme={theme}
+            backgroundStyle={backgroundStyle}
+            hideEmpty
+            watermark={exportWatermark}
+          />
         </div>
       )}
     </div>

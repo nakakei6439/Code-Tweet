@@ -4,7 +4,9 @@ import {
   APPSS_MIN_SLIDES,
   generateAppSSCopy,
 } from "@/lib/geminiAppSS";
-import { logError } from "@/lib/logger";
+import { apiError } from "@/lib/apiErrors";
+import { toLocaleId } from "@/lib/locales";
+import { mapGeminiError } from "@/lib/geminiErrors";
 import { isSameOriginRequest } from "@/lib/origin";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -19,7 +21,6 @@ import { consumeCredit } from "@/lib/credits";
 import { getEntitlements } from "@/lib/entitlements";
 import type {
   AppSSCopyErrorField,
-  AppSSCopyErrorResponse,
   AppSSCopyRequest,
   AppSSCopyResponse,
 } from "@/types/appss";
@@ -36,89 +37,52 @@ const MAX_FEATURES = 8;
 const MAX_FEATURE_LENGTH = 100;
 const MAX_TONE_LENGTH = 200;
 
-function fieldError(field: AppSSCopyErrorField, error: string, status = 400): Response {
-  return Response.json({ error, field } satisfies AppSSCopyErrorResponse, { status });
+function tooLong(field: AppSSCopyErrorField, limit: number): Response {
+  return apiError("field_too_long", 400, { field, params: { limit } });
 }
 
 function validateRequest(body: AppSSCopyRequest): Response | null {
   if (!body.appName?.trim()) {
-    return fieldError("appName", "アプリ名を入力してください。");
+    return apiError("field_required", 400, { field: "appName" });
   }
   if (body.appName.length > MAX_APP_NAME_LENGTH) {
-    return fieldError("appName", `アプリ名は ${MAX_APP_NAME_LENGTH} 文字以内にしてください。`);
+    return tooLong("appName", MAX_APP_NAME_LENGTH);
   }
   if (!body.appDescription?.trim()) {
-    return fieldError("appDescription", "アプリの説明を入力してください。");
+    return apiError("field_required", 400, { field: "appDescription" });
   }
   if (body.appDescription.length > MAX_DESCRIPTION_LENGTH) {
-    return fieldError(
-      "appDescription",
-      `アプリの説明は ${MAX_DESCRIPTION_LENGTH.toLocaleString("ja-JP")} 文字以内にしてください。`,
-    );
+    return tooLong("appDescription", MAX_DESCRIPTION_LENGTH);
   }
   if (!Array.isArray(body.features ?? [])) {
-    return fieldError("features", "機能リストの形式が不正です。");
+    return apiError("features_invalid", 400, { field: "features" });
   }
   if ((body.features ?? []).length > MAX_FEATURES) {
-    return fieldError("features", `機能・特徴は ${MAX_FEATURES} 件以内にしてください。`);
+    return apiError("features_too_many", 400, { field: "features", params: { limit: MAX_FEATURES } });
   }
   if ((body.features ?? []).some((f) => typeof f !== "string" || f.length > MAX_FEATURE_LENGTH)) {
-    return fieldError("features", `各機能・特徴は ${MAX_FEATURE_LENGTH} 文字以内にしてください。`);
+    return apiError("feature_too_long", 400, { field: "features", params: { limit: MAX_FEATURE_LENGTH } });
   }
   if ((body.tone ?? "").length > MAX_TONE_LENGTH) {
-    return fieldError("tone", `トーン指示は ${MAX_TONE_LENGTH} 文字以内にしてください。`);
+    return tooLong("tone", MAX_TONE_LENGTH);
   }
   return null;
 }
 
-function mapGeminiError(err: unknown): { message: string; status: number } {
-  const raw = err instanceof Error ? err.message : "";
-  logError("appss-copy", "Gemini API error", err);
-
-  if (/スライド案を生成できませんでした/.test(raw)) {
-    return { message: raw, status: 500 };
-  }
-  if (/API key|API_KEY_INVALID|\b401\b|\b403\b/i.test(raw)) {
-    return { message: "APIキーが無効です。Gemini APIキーを確認してください。", status: 401 };
-  }
-  if (/\b503\b|Service Unavailable|overloaded|high demand|UNAVAILABLE/i.test(raw)) {
-    return { message: "Gemini API が混雑しています。少し時間をおいて再試行してください。", status: 503 };
-  }
-  if (/\b429\b|quota|rate limit|RESOURCE_EXHAUSTED/i.test(raw)) {
-    return { message: "Gemini API の利用上限に達しました。少し時間をおいて再試行してください。", status: 429 };
-  }
-  if (/\b400\b|INVALID_ARGUMENT|safety/i.test(raw)) {
-    return { message: "リクエスト内容に問題があります。アプリの説明を見直してください。", status: 400 };
-  }
-  if (/fetch failed|ENOTFOUND|ECONNRESET|timeout|network/i.test(raw)) {
-    return { message: "Gemini API への接続に失敗しました。ネットワークを確認してください。", status: 502 };
-  }
-  return { message: "コピー生成に失敗しました。少し時間をおいて再試行してください。", status: 500 };
-}
-
 export async function POST(request: Request): Promise<Response> {
   if (!isSameOriginRequest(request)) {
-    return Response.json(
-      { error: "許可されていないリクエスト元です。" } satisfies AppSSCopyErrorResponse,
-      { status: 403 },
-    );
+    return apiError("forbidden_origin", 403);
   }
 
   if (!process.env.GEMINI_API_KEY) {
-    return Response.json(
-      { error: "現在サービスが利用できません。しばらくお待ちください。" } satisfies AppSSCopyErrorResponse,
-      { status: 503 },
-    );
+    return apiError("service_unavailable", 503);
   }
 
   const contentLength = request.headers.get("content-length");
   if (contentLength) {
     const bytes = Number(contentLength);
     if (Number.isFinite(bytes) && bytes > MAX_REQUEST_BYTES) {
-      return Response.json(
-        { error: "リクエストが大きすぎます。入力内容を短くしてください。" } satisfies AppSSCopyErrorResponse,
-        { status: 413 },
-      );
+      return apiError("payload_too_large", 413);
     }
   }
 
@@ -131,27 +95,18 @@ export async function POST(request: Request): Promise<Response> {
     const entitlements = await getEntitlements(user.id, user.email);
     const limit = await checkUserLimit(supabase, user.id, entitlements);
     if (!limit.ok) {
-      return Response.json(
-        { error: limit.message, code: limit.code } satisfies AppSSCopyErrorResponse,
-        { status: limit.status },
-      );
+      return apiError(limit.code, limit.status, { params: limit.params });
     }
     useCredit = limit.useCredit;
   } else {
     const ip = getClientIp(request);
     if (!ip) {
-      return Response.json(
-        { error: "IP アドレスを特定できませんでした。" } satisfies AppSSCopyErrorResponse,
-        { status: 400 },
-      );
+      return apiError("ip_unavailable", 400);
     }
     ipHash = hashIp(ip);
     const limit = await checkGuestLimit(ipHash);
     if (!limit.ok) {
-      return Response.json(
-        { error: limit.message, code: limit.code } satisfies AppSSCopyErrorResponse,
-        { status: limit.status },
-      );
+      return apiError(limit.code, limit.status, { params: limit.params });
     }
   }
 
@@ -159,24 +114,27 @@ export async function POST(request: Request): Promise<Response> {
   try {
     body = await request.json();
   } catch {
-    return Response.json({ error: "リクエストが不正です。" } satisfies AppSSCopyErrorResponse, { status: 400 });
+    return apiError("invalid_request", 400);
   }
 
   const validationError = validateRequest(body);
   if (validationError) return validationError;
 
+  // クライアント申告の locale は信用せず既知のロケールに丸める。
+  const locale = toLocaleId(body.locale);
   const slideCount = Math.min(
     APPSS_MAX_SLIDES,
     Math.max(APPSS_MIN_SLIDES, Math.trunc(body.slideCount ?? APPSS_DEFAULT_SLIDES)),
   );
 
   try {
-    const { slides, recommendedThemeId, recommendedBackgroundStyle } = await generateAppSSCopy(
+    const { slides, recommendedThemeId, recommendedBackgroundStyle, generatedPalette } = await generateAppSSCopy(
       body.appName.trim(),
       body.appDescription.trim(),
       (body.features ?? []).map((f) => f.trim()).filter(Boolean),
       (body.tone ?? "").trim(),
       slideCount,
+      locale,
     );
     if (user) {
       await recordUserUsage(supabase, user.id);
@@ -188,11 +146,11 @@ export async function POST(request: Request): Promise<Response> {
       await recordGuestUsage(ipHash);
     }
     return Response.json(
-      { slides, recommendedThemeId, recommendedBackgroundStyle } satisfies AppSSCopyResponse,
+      { slides, recommendedThemeId, recommendedBackgroundStyle, generatedPalette } satisfies AppSSCopyResponse,
       { status: 200 },
     );
   } catch (err) {
-    const { message, status } = mapGeminiError(err);
-    return Response.json({ error: message } satisfies AppSSCopyErrorResponse, { status });
+    const { code, status } = mapGeminiError("appss-copy", err);
+    return apiError(code, status);
   }
 }
