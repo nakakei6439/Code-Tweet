@@ -54,6 +54,7 @@ export function Toolbar({
   onToggleCopyAssistant,
   copyAssistantOpen,
 }: Props) {
+  const tb = useTranslations("appssToolbar");
   const tTheme = useTranslations("appssThemes");
   const tBg = useTranslations("appssBackgrounds");
   const importInputRef = React.useRef<HTMLInputElement>(null);
@@ -63,13 +64,13 @@ export function Toolbar({
         type="text"
         value={appName}
         onChange={(e) => onAppNameChange(e.target.value)}
-        placeholder="アプリ名"
+        placeholder={tb("appNamePlaceholder")}
         className="w-40 rounded-md border border-gray-700 bg-gray-900 px-2 py-1.5 text-sm text-gray-100 placeholder:text-gray-600"
-        aria-label="アプリ名"
+        aria-label={tb("appNamePlaceholder")}
       />
 
       <label className="flex items-center gap-1.5 text-xs text-gray-400">
-        テーマ
+        {tb("theme")}
         <select
           value={hasCustomTheme ? "" : themeId}
           onChange={(e) => onThemeChange(e.target.value)}
@@ -77,7 +78,7 @@ export function Toolbar({
         >
           {hasCustomTheme && (
             <option value="" disabled>
-              ✦ AI生成配色（適用中）
+              {tb("aiPaletteActive")}
             </option>
           )}
           {Object.values(THEMES).map((theme) => (
@@ -89,7 +90,7 @@ export function Toolbar({
       </label>
 
       <label className="flex items-center gap-1.5 text-xs text-gray-400">
-        フォント
+        {tb("font")}
         <select
           value={fontId}
           onChange={(e) => onFontChange(e.target.value as FontId)}
@@ -104,7 +105,7 @@ export function Toolbar({
       </label>
 
       <label className="flex items-center gap-1.5 text-xs text-gray-400">
-        背景
+        {tb("background")}
         <select
           value={backgroundStyle}
           onChange={(e) => onBackgroundStyleChange(e.target.value as BackgroundStyle)}
@@ -127,32 +128,32 @@ export function Toolbar({
             : "border-gray-700 text-gray-300 hover:border-fuchsia-400/60 hover:text-fuchsia-200"
         }`}
       >
-        ✦ AIコピー＆デザイン生成
+        {tb("aiCopy")}
       </button>
 
       <div className="ml-auto flex items-center gap-3">
         <span className="text-[11px] text-gray-500">
           {saveError
-            ? `保存エラー: ${saveError}`
+            ? tb("saveError", { message: saveError })
             : savedAt
-              ? "保存済み（この端末内）"
+              ? tb("saved")
               : ""}
         </span>
         <button
           type="button"
           onClick={onExportProject}
           className="rounded-md border border-gray-800 px-2.5 py-1.5 text-xs text-gray-500 hover:border-gray-600 hover:text-gray-300"
-          title="プロジェクト（JSON + 画像）を zip でバックアップ"
+          title={tb("backupTooltip")}
         >
-          保存(zip)
+          {tb("backup")}
         </button>
         <button
           type="button"
           onClick={() => importInputRef.current?.click()}
           className="rounded-md border border-gray-800 px-2.5 py-1.5 text-xs text-gray-500 hover:border-gray-600 hover:text-gray-300"
-          title="バックアップ zip からプロジェクトを復元"
+          title={tb("restoreTooltip")}
         >
-          読み込み
+          {tb("restore")}
         </button>
         <input
           ref={importInputRef}
@@ -170,35 +171,35 @@ export function Toolbar({
           onClick={onReset}
           className="rounded-md border border-gray-800 px-2.5 py-1.5 text-xs text-gray-500 hover:border-gray-600 hover:text-gray-300"
         >
-          リセット
+          {tb("reset")}
         </button>
         <button
           type="button"
           onClick={onExport}
           disabled={!!exporting}
-          title="常に無料。書き出したPNGには透かしが入ります"
+          title={tb("exportFreeTooltip")}
           className="rounded-md border border-gray-700 px-4 py-1.5 text-sm font-semibold text-gray-200 hover:border-gray-500 disabled:opacity-60"
         >
-          {exporting ? `書き出し中… ${exporting}` : "PNG一括書き出し（透かし付き・無料）"}
+          {exporting ? tb("exporting", { status: exporting }) : tb("exportFree")}
         </button>
         <div className="flex flex-col items-end gap-0.5">
           <button
             type="button"
             onClick={onExportUnlocked}
             disabled={!!exporting}
-            title="透かしを解除して書き出します（1クレジット消費）"
+            title={tb("exportUnlockTooltip")}
             className="rounded-md bg-gradient-to-r from-cyan-400 to-fuchsia-400 px-4 py-1.5 text-sm font-semibold text-gray-950 hover:opacity-90 disabled:opacity-60"
           >
-            透かしを解除して書き出す（1クレジット）
+            {tb("exportUnlock")}
           </button>
           {usage && (
             <span className="text-[10px] text-gray-500">
-              残り無料枠 {Math.max(0, usage.remaining)} 回
-              {usage.credits > 0 && ` ＋ クレジット ${usage.credits} 回`}
+              {tb("remainingFree", { n: Math.max(0, usage.remaining) })}
+              {usage.credits > 0 && tb("plusCredits", { n: usage.credits })}
             </span>
           )}
           {!isLoggedIn && !usage && (
-            <span className="text-[10px] text-gray-500">ログインするとクレジットで解除できます</span>
+            <span className="text-[10px] text-gray-500">{tb("loginToUnlock")}</span>
           )}
         </div>
       </div>

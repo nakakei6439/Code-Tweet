@@ -23,11 +23,12 @@ const LAYOUTS: SlideLayout[] = [
   "no-device",
 ];
 
-const ELEMENT_LABEL: Record<string, string> = {
-  caption: "見出し",
-  device: "デバイス",
-  deviceSecondary: "背面デバイス",
-  deviceTertiary: "3枚目デバイス",
+// 値は messages の appssInspector 配下のキー（表示時に解決する）。
+const ELEMENT_LABEL_KEY: Record<string, string> = {
+  caption: "elementCaption",
+  device: "elementDevice",
+  deviceSecondary: "elementDeviceSecondary",
+  deviceTertiary: "elementDeviceTertiary",
 };
 
 type Props = {
@@ -53,6 +54,7 @@ export function Inspector({
   onUpdateTextElement,
   onSelectElement,
 }: Props) {
+  const ti = useTranslations("appssInspector");
   const tLayout = useTranslations("appssLayoutLabel");
   const tHint = useTranslations("appssLayoutHint");
   const selectedTransform = selectedElementId
@@ -66,7 +68,7 @@ export function Inspector({
   return (
     <div className="flex h-full w-64 flex-col gap-4 overflow-y-auto border-l border-gray-800 bg-gray-950/60 p-4 text-sm">
       <section>
-        <h3 className="mb-2 text-xs font-semibold text-gray-400">レイアウト</h3>
+        <h3 className="mb-2 text-xs font-semibold text-gray-400">{ti("layout")}</h3>
         <select
           value={slide.layout}
           onChange={(e) => onUpdateSlide({ layout: e.target.value as SlideLayout })}
@@ -86,30 +88,30 @@ export function Inspector({
             onChange={(e) => onUpdateSlide({ inverted: e.target.checked })}
             className="accent-cyan-400"
           />
-          背景を反転（ダーク）
+          {ti("invertBackground")}
         </label>
         <div className="mt-3">
           <label className="mb-1 block text-[11px] text-gray-500">
-            強調ワード <span className="text-gray-600">（見出し内の語句をアクセント色に）</span>
+            {ti("emphasis")} <span className="text-gray-600">{ti("emphasisHint")}</span>
           </label>
           <input
             type="text"
             value={slide.emphasis ?? ""}
             onChange={(e) => onUpdateSlide({ emphasis: e.target.value || undefined })}
-            placeholder="例：ラク"
+            placeholder={ti("emphasisPlaceholder")}
             className="w-full rounded-md border border-gray-700 bg-gray-900 px-2 py-1.5 text-sm text-gray-100 placeholder:text-gray-600"
           />
           {slide.emphasis && !slide.headline.includes(slide.emphasis) && (
-            <p className="mt-1 text-[10px] text-amber-400">見出しに含まれない語句は色が付きません</p>
+            <p className="mt-1 text-[10px] text-amber-400">{ti("emphasisWarning")}</p>
           )}
         </div>
       </section>
 
       {slide.layout !== "no-device" && (
         <section className="space-y-3">
-          <h3 className="text-xs font-semibold text-gray-400">スクリーンショット</h3>
+          <h3 className="text-xs font-semibold text-gray-400">{ti("screenshots")}</h3>
           <ScreenshotPicker
-            label="メイン画像"
+            label={ti("mainImage")}
             currentRef={slide.screenshotRef}
             onChange={(ref) => onUpdateSlide({ screenshotRef: ref })}
           />
@@ -117,14 +119,14 @@ export function Inspector({
             slide.layout === "collage-duo" ||
             slide.layout === "collage-trio") && (
             <ScreenshotPicker
-              label={slide.layout === "two-devices" ? "背面画像" : "2枚目の画像"}
+              label={slide.layout === "two-devices" ? ti("backImage") : ti("secondImage")}
               currentRef={slide.screenshotSecondaryRef || ""}
               onChange={(ref) => onUpdateSlide({ screenshotSecondaryRef: ref })}
             />
           )}
           {slide.layout === "collage-trio" && (
             <ScreenshotPicker
-              label="3枚目の画像"
+              label={ti("thirdImage")}
               currentRef={slide.screenshotTertiaryRef || ""}
               onChange={(ref) => onUpdateSlide({ screenshotTertiaryRef: ref })}
             />
@@ -134,17 +136,17 @@ export function Inspector({
 
       <section>
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-gray-400">テキスト要素</h3>
+          <h3 className="text-xs font-semibold text-gray-400">{ti("textElements")}</h3>
           <button
             type="button"
             onClick={onAddTextElement}
             className="rounded px-1.5 py-0.5 text-xs text-cyan-300 hover:bg-gray-800"
           >
-            ＋追加
+            {ti("add")}
           </button>
         </div>
         {(slide.textElements || []).length === 0 ? (
-          <p className="text-[11px] text-gray-600">補足テキストや装飾文字を追加できます</p>
+          <p className="text-[11px] text-gray-600">{ti("textElementsHint")}</p>
         ) : (
           <ul className="space-y-1">
             {(slide.textElements || []).map((t) => {
@@ -159,14 +161,14 @@ export function Inspector({
                       active ? "bg-cyan-400/15 text-cyan-200" : "text-gray-300 hover:bg-gray-800"
                     }`}
                   >
-                    {t.text.trim() || "（空のテキスト）"}
+                    {t.text.trim() || ti("emptyText")}
                   </button>
                   <button
                     type="button"
                     onClick={() => onDeleteTextElement(t.id)}
                     className="h-6 w-6 rounded text-xs text-gray-500 hover:bg-gray-800 hover:text-red-300"
-                    title="削除"
-                    aria-label="テキスト要素を削除"
+                    title={ti("delete")}
+                    aria-label={ti("deleteTextElement")}
                   >
                     ×
                   </button>
@@ -181,14 +183,14 @@ export function Inspector({
         <section className="border-t border-gray-800 pt-3">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-xs font-semibold text-gray-400">
-              選択中: {ELEMENT_LABEL[selectedElementId] || "テキスト"}
+              {ti("selected", { name: ELEMENT_LABEL_KEY[selectedElementId] ? ti(ELEMENT_LABEL_KEY[selectedElementId]) : ti("elementText") })}
             </h3>
             <button
               type="button"
               onClick={() => onResetElement(selectedElementId)}
               className="text-[11px] text-gray-500 hover:text-gray-300"
             >
-              位置をリセット
+              {ti("resetPosition")}
             </button>
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -196,8 +198,8 @@ export function Inspector({
               [
                 ["X", "x"],
                 ["Y", "y"],
-                ["幅", "width"],
-                ["高さ", "height"],
+                [ti("width"), "width"],
+                [ti("height"), "height"],
               ] as const
             ).map(([label, key]) => (
               <label key={key} className="text-[11px] text-gray-500">
@@ -215,7 +217,7 @@ export function Inspector({
               </label>
             ))}
             <label className="col-span-2 text-[11px] text-gray-500">
-              回転（度）
+              {ti("rotation")}
               <input
                 type="number"
                 value={Math.round(selectedTransform.rotation ?? 0)}
@@ -232,7 +234,7 @@ export function Inspector({
           {selectedTextElement && (
             <div className="mt-3 space-y-2">
               <label className="block text-[11px] text-gray-500">
-                文字サイズ
+                {ti("fontSize")}
                 <input
                   type="number"
                   value={selectedTextElement.fontSize ?? 79}
@@ -245,7 +247,7 @@ export function Inspector({
                 />
               </label>
               <label className="block text-[11px] text-gray-500">
-                太さ
+                {ti("fontWeight")}
                 <select
                   value={selectedTextElement.fontWeight ?? 700}
                   onChange={(e) =>
@@ -253,13 +255,13 @@ export function Inspector({
                   }
                   className="mt-0.5 w-full rounded border border-gray-700 bg-gray-900 px-1.5 py-1 text-xs text-gray-100"
                 >
-                  <option value={400}>標準</option>
-                  <option value={700}>太字</option>
-                  <option value={900}>極太</option>
+                  <option value={400}>{ti("weightNormal")}</option>
+                  <option value={700}>{ti("weightBold")}</option>
+                  <option value={900}>{ti("weightBlack")}</option>
                 </select>
               </label>
               <label className="block text-[11px] text-gray-500">
-                文字色
+                {ti("textColor")}
                 <input
                   type="color"
                   value={selectedTextElement.color || "#ffffff"}
@@ -268,7 +270,7 @@ export function Inspector({
                 />
               </label>
               <label className="block text-[11px] text-gray-500">
-                揃え
+                {ti("align")}
                 <select
                   value={selectedTextElement.align ?? "center"}
                   onChange={(e) =>
@@ -278,9 +280,9 @@ export function Inspector({
                   }
                   className="mt-0.5 w-full rounded border border-gray-700 bg-gray-900 px-1.5 py-1 text-xs text-gray-100"
                 >
-                  <option value="left">左</option>
-                  <option value="center">中央</option>
-                  <option value="right">右</option>
+                  <option value="left">{ti("alignLeft")}</option>
+                  <option value="center">{ti("alignCenter")}</option>
+                  <option value="right">{ti("alignRight")}</option>
                 </select>
               </label>
             </div>

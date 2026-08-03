@@ -42,6 +42,7 @@ export function PreviewStage({
   onElementChange,
   onSelectElement,
 }: Props) {
+  const tp = useTranslations("appssPreview");
   const tLayout = useTranslations("appssLayoutLabel");
   const containerRef = React.useRef<HTMLDivElement>(null);
   const scrollerRef = React.useRef<HTMLDivElement>(null);
@@ -142,7 +143,7 @@ export function PreviewStage({
         {activeSlide && (
           <>
             <span aria-hidden>·</span>
-            <span>{activeIndex + 1}枚目</span>
+            <span>{tp("slideNo", { n: activeIndex + 1 })}</span>
             <span aria-hidden>·</span>
             <span>{tLayout(activeSlide.layout)}</span>
           </>
@@ -151,7 +152,7 @@ export function PreviewStage({
 
       <div className="absolute bottom-4 right-4 flex items-center gap-1 rounded-md bg-gray-950/85 px-1.5 py-1 text-[10px] tabular-nums text-gray-400 shadow-sm backdrop-blur">
         <span className="px-1">
-          {slides.length}枚 × {cW}×{cH}
+          {tp("summary", { count: slides.length, w: cW, h: cH })}
         </span>
         <span aria-hidden className="text-gray-700">|</span>
         <button
@@ -159,8 +160,8 @@ export function PreviewStage({
           className="h-6 w-6 rounded text-gray-300 hover:bg-gray-800 disabled:opacity-40"
           onClick={() => setZoom((value) => Math.max(0.25, Number((value - 0.1).toFixed(2))))}
           disabled={zoom <= 0.25}
-          title="縮小"
-          aria-label="縮小"
+          title={tp("zoomOut")}
+          aria-label={tp("zoomOut")}
         >
           −
         </button>
@@ -170,8 +171,8 @@ export function PreviewStage({
           className="h-6 w-6 rounded text-gray-300 hover:bg-gray-800 disabled:opacity-40"
           onClick={() => setZoom((value) => Math.min(2, Number((value + 0.1).toFixed(2))))}
           disabled={zoom >= 2}
-          title="拡大"
-          aria-label="拡大"
+          title={tp("zoomIn")}
+          aria-label={tp("zoomIn")}
         >
           ＋
         </button>
@@ -179,8 +180,8 @@ export function PreviewStage({
           type="button"
           className="h-6 px-1.5 rounded text-gray-300 hover:bg-gray-800"
           onClick={() => setZoom(1)}
-          title="全体表示"
-          aria-label="全体表示"
+          title={tp("fit")}
+          aria-label={tp("fit")}
         >
           Fit
         </button>

@@ -2,6 +2,7 @@
 // AppSS — スクショ画像の取り込み（ドロップ / ファイル選択）。
 // 画像はサーバーへ送信せず IndexedDB に保存し、"idb:<id>" 参照を返す。
 // PNG / JPEG のみ許可（SVG はスクリプト混入の恐れがあるため不可）。
+import { useTranslations } from "next-intl";
 import * as React from "react";
 import { setImage } from "@/lib/appss/imageCache";
 import { putImage } from "@/lib/appss/imageStore";
@@ -16,6 +17,8 @@ type Props = {
 };
 
 export function ScreenshotPicker({ label, currentRef, onChange }: Props) {
+  const t = useTranslations("appssPicker");
+  const tu = useTranslations("appssUpload");
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -25,11 +28,11 @@ export function ScreenshotPicker({ label, currentRef, onChange }: Props) {
     if (!file) return;
     setError(null);
     if (!ACCEPT_TYPES.includes(file.type)) {
-      setError("PNG / JPEG / WebP のみ対応しています");
+      setError(tu("unsupportedType"));
       return;
     }
     if (file.size > MAX_BYTES) {
-      setError("20MB 以下の画像を選択してください");
+      setError(tu("tooLarge"));
       return;
     }
     setBusy(true);
@@ -45,7 +48,7 @@ export function ScreenshotPicker({ label, currentRef, onChange }: Props) {
       setImage(ref, dataUrl);
       onChange(ref);
     } catch {
-      setError("画像の保存に失敗しました。ブラウザの空き容量をご確認ください");
+      setError(tu("saveFailed"));
     } finally {
       setBusy(false);
     }
@@ -61,7 +64,7 @@ export function ScreenshotPicker({ label, currentRef, onChange }: Props) {
             onClick={() => onChange("")}
             className="text-[11px] text-gray-500 hover:text-gray-300"
           >
-            クリア
+            {t("clear")}
           </button>
         )}
       </div>
@@ -87,7 +90,7 @@ export function ScreenshotPicker({ label, currentRef, onChange }: Props) {
         }`}
         disabled={busy}
       >
-        {busy ? "保存中…" : currentRef ? "画像を差し替える" : "スクショをドロップ / クリックで選択"}
+        {busy ? tu("saving") : currentRef ? t("replace") : t("dropHint")}
       </button>
       <input
         ref={inputRef}
@@ -100,7 +103,7 @@ export function ScreenshotPicker({ label, currentRef, onChange }: Props) {
         }}
       />
       {error && <p className="mt-1 text-[11px] text-red-400">{error}</p>}
-      <p className="mt-1 text-[10px] text-gray-600">画像は端末内にのみ保存され、サーバーへは送信されません</p>
+      <p className="mt-1 text-[10px] text-gray-600">{t("localOnly")}</p>
     </div>
   );
 }

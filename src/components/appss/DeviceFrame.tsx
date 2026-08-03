@@ -3,6 +3,7 @@
 // Apple Design Resources 公式 Product Bezel (iPhone 16 Pro Max) を使用。
 // https://developer.apple.com/design/resources/ — App Store Marketing Artwork
 // License Agreement に基づき、ベゼル画像は改変せず画面領域に実アプリのスクショを表示する。
+import { useTranslations } from "next-intl";
 import * as React from "react";
 import { BEZEL } from "@/lib/appss/constants";
 import { img } from "@/lib/appss/imageCache";
@@ -57,6 +58,7 @@ export function Phone({ src, alt = "", style, hideEmpty }: FrameProps) {
 }
 
 function EmptySlot() {
+  const t = useTranslations("appssCanvas");
   return (
     <div
       style={{
@@ -79,9 +81,9 @@ function EmptySlot() {
         <path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" />
       </svg>
       <div style={{ fontSize: 60, fontWeight: 600, lineHeight: 1.4 }}>
-        スクショを
+        {t("dropLine1")}
         <br />
-        ドロップ
+        {t("dropLine2")}
       </div>
     </div>
   );

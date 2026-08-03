@@ -1,5 +1,6 @@
 "use client";
 // AppSS — スライド一覧サイドバー（サムネ・選択・追加/複製/削除・上下並べ替え）。
+import { useTranslations } from "next-intl";
 import * as React from "react";
 import type { AppSSSlide, BackgroundStyle, Theme } from "@/lib/appss/types";
 import { CANVAS, MAX_SLIDES } from "@/lib/appss/constants";
@@ -33,23 +34,24 @@ export function Sidebar({
   onDelete,
   onMove,
 }: Props) {
+  const t = useTranslations("appssSidebar");
   const atMax = slides.length >= MAX_SLIDES;
   return (
     <div className="flex h-full w-40 flex-col border-r border-gray-800 bg-gray-950/60">
       <div className="flex items-center justify-between px-3 py-2 text-xs text-gray-400">
-        <span>スライド</span>
+        <span>{t("slides")}</span>
         <button
           type="button"
           onClick={onAdd}
           disabled={atMax}
           className="rounded px-1.5 py-0.5 text-cyan-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-600 disabled:hover:bg-transparent"
-          title={atMax ? `最大${MAX_SLIDES}枚まで` : "スライドを追加"}
+          title={atMax ? t("maxSlides", { max: MAX_SLIDES }) : t("addSlide")}
         >
-          ＋追加
+          {t("add")}
         </button>
       </div>
       {atMax && (
-        <p className="px-3 pb-1 text-[10px] leading-4 text-gray-500">最大{MAX_SLIDES}枚まで</p>
+        <p className="px-3 pb-1 text-[10px] leading-4 text-gray-500">{t("maxSlides", { max: MAX_SLIDES })}</p>
       )}
       <div className="flex-1 space-y-2 overflow-y-auto px-3 pb-3">
         {slides.map((slide, index) => {
@@ -63,7 +65,7 @@ export function Sidebar({
                   active ? "border-cyan-400" : "border-gray-800 hover:border-gray-600"
                 }`}
                 style={{ height: CANVAS.h * THUMB_SCALE }}
-                title={`${index + 1}枚目を選択`}
+                title={t("selectSlide", { n: index + 1 })}
               >
                 <div
                   aria-hidden
@@ -83,21 +85,21 @@ export function Sidebar({
                 </span>
               </button>
               <div className="mt-1 flex items-center justify-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                <IconButton label="上へ" disabled={index === 0} onClick={() => onMove(slide.id, -1)}>
+                <IconButton label={t("moveUp")} disabled={index === 0} onClick={() => onMove(slide.id, -1)}>
                   ↑
                 </IconButton>
                 <IconButton
-                  label="下へ"
+                  label={t("moveDown")}
                   disabled={index === slides.length - 1}
                   onClick={() => onMove(slide.id, 1)}
                 >
                   ↓
                 </IconButton>
-                <IconButton label="複製" onClick={() => onDuplicate(slide.id)}>
+                <IconButton label={t("duplicate")} onClick={() => onDuplicate(slide.id)}>
                   ⧉
                 </IconButton>
                 <IconButton
-                  label="削除"
+                  label={t("delete")}
                   disabled={slides.length <= 1}
                   onClick={() => onDelete(slide.id)}
                 >

@@ -2,6 +2,7 @@
 // AppSS — スライドキャンバス描画（1320×2868 の実寸 DOM を CSS scale で表示）。
 // Based on MIT-licensed https://github.com/ParthJadhav/app-store-screenshots
 // (iPhone 縦向き・単一ロケール・日本語タイポグラフィ向けに簡約)
+import { useTranslations } from "next-intl";
 import * as React from "react";
 import { Rnd } from "react-rnd";
 import type {
@@ -180,6 +181,7 @@ function Caption({
   inverted?: boolean;
   onFocus?: () => void;
 }) {
+  const tcv = useTranslations("appssCanvas");
   const fg = inverted ? theme.fgAlt : theme.fg;
   const unit = Math.min(cW, cH);
   return (
@@ -189,7 +191,7 @@ function Caption({
         editable={editable}
         onChange={edit?.onLabelChange}
         onFocus={onFocus}
-        placeholder="ラベル"
+        placeholder={tcv("labelPlaceholder")}
         style={{
           fontSize: unit * 0.03,
           fontWeight: 700,
@@ -205,7 +207,7 @@ function Caption({
         multiline
         onChange={edit?.onHeadlineChange}
         onFocus={onFocus}
-        placeholder="見出しを入力"
+        placeholder={tcv("headlinePlaceholder")}
         emphasis={slide.emphasis}
         emphasisColor={theme.accent}
         style={{
@@ -778,6 +780,7 @@ function SlideElements({
   previewScale: number;
   hideEmpty?: boolean;
 }) {
+  const tcv = useTranslations("appssCanvas");
   const cW = CANVAS.w;
   const cH = CANVAS.h;
   const inverted = !!slide.inverted;
@@ -910,7 +913,7 @@ function SlideElements({
             multiline
             onChange={(value) => edit?.onTextElementTextChange?.(textElement.id, value)}
             onFocus={() => edit?.onSelectElement?.(elementId)}
-            placeholder="テキスト"
+            placeholder={tcv("textPlaceholder")}
             style={{
               width: "100%",
               color: textColor,
@@ -1000,6 +1003,7 @@ function Movable({
   selected?: boolean;
   onSelect?: () => void;
 }) {
+  const tcv = useTranslations("appssCanvas");
   const rotationRef = React.useRef(rotation);
   React.useEffect(() => {
     rotationRef.current = rotation;
@@ -1129,8 +1133,8 @@ function Movable({
           height: 28 / controlScale,
         }}
         onPointerDown={startRotate}
-        title="回転"
-        aria-label="要素を回転"
+        title={tcv("rotate")}
+        aria-label={tcv("rotateElement")}
       >
         <svg
           viewBox="0 0 24 24"

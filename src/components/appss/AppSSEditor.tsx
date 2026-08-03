@@ -1,6 +1,7 @@
 "use client";
 // AppSS — エディタ本体。状態管理・キーボードショートカット・書き出しオーケストレーション。
 // Based on MIT-licensed https://github.com/ParthJadhav/app-store-screenshots
+import { useTranslations } from "next-intl";
 import { useApiErrorMessage } from "@/lib/useApiErrorMessage";
 import * as React from "react";
 import type {
@@ -55,6 +56,7 @@ type Props = {
 
 export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
   const resolveApiError = useApiErrorMessage();
+  const te = useTranslations("appssEditor2");
   const { state, setState, hydrated, savedAt, saveError, reset, undo, redo, copyAssistantSeed } =
     useAppSSProject();
   const [activeSlideId, setActiveSlideId] = React.useState<string | null>(null);
@@ -160,7 +162,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       const id = nid();
       const element: TextElement = {
         id,
-        text: "テキスト",
+        text: te("textElement"),
         transform: {
           x: CANVAS.w * 0.2,
           y: CANVAS.h * 0.42,
@@ -207,7 +209,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
   const addSlide = React.useCallback(() => {
     if (slides.length >= MAX_SLIDES) return; // 上限（6枚）を超えて追加しない
     const starter = makeStarterSlides()[1];
-    const slide: AppSSSlide = { ...starter, id: nid(), label: "新しいスライド", headline: "見出しを\n入力" };
+    const slide: AppSSSlide = { ...starter, id: nid(), label: te("newSlideLabel"), headline: te("newSlideHeadline") };
     setState((prev) => ({ ...prev, slides: [...prev.slides, slide] }));
     setActiveSlideId(slide.id);
   }, [setState, slides.length]);
@@ -367,7 +369,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
     if (!slides.length || exporting) return;
     setExportError(null);
     setExportWatermark(watermark);
-    setExporting("準備中");
+    setExporting(te("preparing"));
 
     try {
       await preloadImages(assetRefs, { retryFailed: true });
@@ -376,7 +378,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       await waitForPaint();
 
       const el = exportRef.current;
-      if (!el) throw new Error("書き出し用キャンバスを初期化できませんでした");
+      if (!el) throw new Error(te("canvasInitFailed"));
 
       // フォント埋め込み CSS は 1 回だけ計算して全キャプチャで再利用
       const fontEmbedCSS = await computeFontEmbedCSS(el);
@@ -396,7 +398,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
           await waitForPaint();
           const node = exportRef.current;
           if (!node) {
-            errors.push(`${size.w}×${size.h} ${i + 1}枚目: 描画先が見つかりません`);
+            errors.push(te("exportTargetMissing", { size: `${size.w}×${size.h}`, n: i + 1 }));
             continue;
           }
           try {
@@ -407,7 +409,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
             okCount += 1;
           } catch (e) {
             const msg = e instanceof Error ? e.message : String(e);
-            errors.push(`${size.w}×${size.h} ${i + 1}枚目: ${msg}`);
+            errors.push(te("exportSlideFailed", { size: `${size.w}×${size.h}`, n: i + 1, message: msg }));
           }
         }
       }
@@ -418,12 +420,12 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       if (errors.length > 0) {
         setExportError(
           okCount === 0
-            ? `書き出しに失敗しました: ${errors[0]}`
-            : `${errors.length}枚の書き出しに失敗しました（${okCount}枚は成功）`,
+            ? te("exportFailedOne", { reason: errors[0] })
+            : te("exportFailedMany", { failed: errors.length, ok: okCount }),
         );
       }
     } catch (e) {
-      setExportError(e instanceof Error ? e.message : "書き出しに失敗しました");
+      setExportError(e instanceof Error ? e.message : te("exportFailed"));
     } finally {
       setExporting(null);
     }
@@ -434,7 +436,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
   async function exportUnlocked() {
     if (!slides.length || exporting) return;
     setExportError(null);
-    setExporting("確認中");
+    setExporting(te("checking"));
     const outcome = await postJson<AppSSExportUnlockResponse>("/api/appss/export-unlock", {});
     if (!outcome.ok) {
       setExporting(null);
@@ -452,7 +454,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       <div className="flex h-[70vh] items-center justify-center text-gray-500">
         <div className="flex flex-col items-center gap-2">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          <p className="text-sm">エディタを読み込み中…</p>
+          <p className="text-sm">{te("loadingEditor")}</p>
         </div>
       </div>
     );
@@ -492,14 +494,14 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
         usage={usage}
         isLoggedIn={isLoggedIn}
         onReset={() => {
-          if (window.confirm("編集内容を破棄して初期状態に戻しますか？")) {
+          if (window.confirm(te("resetConfirm"))) {
             reset();
             setSelectedElement(null);
           }
         }}
         onExportProject={() => {
           void exportProjectZip(state).catch(() => {
-            setExportError("プロジェクトの書き出しに失敗しました");
+            setExportError(te("projectExportFailed"));
           });
         }}
         onImportProject={(file) => {
@@ -510,7 +512,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
               setExportError(null);
             })
             .catch((e) => {
-              setExportError(e instanceof Error ? e.message : "プロジェクトの読み込みに失敗しました");
+              setExportError(e instanceof Error ? e.message : te("projectImportFailed"));
             });
         }}
         onToggleCopyAssistant={() => setCopyAssistantOpen((v) => !v)}
