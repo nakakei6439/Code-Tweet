@@ -22,6 +22,7 @@ Code Tweet は、README やプロジェクト説明から次の3つを AI で生
 - README や機能説明の直接入力
 - 口調メモ、投稿に載せる URL、ハッシュタグの任意指定
 - Gemini API `gemini-2.5-flash` による 5 件生成（note Draft は Markdown 1 本）
+- Code Tweet は 8 言語で生成可能。生成結果の下から言語を追加でき、翻訳ではなく同じ README から対象言語で書き直す（言い回しと 280 weighted length を言語ごとに最適化）。1 リクエスト = 1 言語で、クレジットは 4 言語ごとに 1 回分を消費（切り上げ）
 - `twitter-text` による X の 280 weighted length チェックと自動短縮
 - 生成ポストの「Xで投稿」ボタン（X Web Intent / 共有リンク。API・課金不要、ログイン不要）
 
@@ -87,7 +88,7 @@ Code Tweet は、README やプロジェクト説明から次の3つを AI で生
 - 限定のモデル選択。Claude API 対応は効果が見込める場合のみ検討
 - 履歴検索またはお気に入り。需要が見えた場合に片方だけ追加
 - Instagram / Threads 対応や上位プランは課金者 10 人到達後に再検討
-- X ポストと note Draft の生成言語の多言語化（App SS の見出しコピーは対応済み）
+- note Draft の生成言語の多言語化（X ポストと App SS の見出しコピーは対応済み。note.com は日本語プラットフォームのため優先度は低い）
 - App SS の iPad 対応。Apple Design Resources の iPad ベゼル画像の追加と、キャンバス縦横比に依存するレイアウト既定値の作り直しが必要
 - ショート動画生成機能（別途構想中、着手は未定）
 
