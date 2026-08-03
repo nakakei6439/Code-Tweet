@@ -568,7 +568,9 @@
     "applyOneTooltip": "將此標題套用到所選投影片",
     "applyOne": "套用",
     "slideNo": "第 {n} 張",
-    "applyAllNote": "「全部套用」會替換每張投影片的標題、排版、配色與背景（截圖及其位置將保留）"
+    "applyAllNote": "「全部套用」會替換每張投影片的標題、排版、配色與背景（截圖及其位置將保留）",
+    "copyLocale": "文案語言",
+    "copyLocaleHint": "將以該語言產生標題文案，並自動切換為對應字型。"
   },
   "appssInspector": {
     "elementCaption": "標題",

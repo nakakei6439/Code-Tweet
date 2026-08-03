@@ -7,6 +7,8 @@ export interface AppSSCopyRequest {
   features: string[];
   tone?: string;
   slideCount?: number;
+  /** 生成するコピーの言語。省略時は日本語（サーバー側で検証する） */
+  locale?: string;
 }
 
 export interface AppSSCopySlideIdea {

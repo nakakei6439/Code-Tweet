@@ -568,7 +568,9 @@
     "applyOneTooltip": "Appliquer cette accroche à la diapositive sélectionnée",
     "applyOne": "Appliquer",
     "slideNo": "Diapositive {n}",
-    "applyAllNote": "« Tout appliquer » remplace l'accroche, la mise en page, les couleurs et le fond de chaque diapositive — vos captures et leur placement sont conservés"
+    "applyAllNote": "« Tout appliquer » remplace l'accroche, la mise en page, les couleurs et le fond de chaque diapositive — vos captures et leur placement sont conservés",
+    "copyLocale": "Langue des accroches",
+    "copyLocaleHint": "Les accroches sont générées dans cette langue, et la police s'adapte."
   },
   "appssInspector": {
     "elementCaption": "Accroche",

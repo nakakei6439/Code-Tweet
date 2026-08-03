@@ -568,7 +568,9 @@
     "applyOneTooltip": "Aplicar este titular a la diapositiva seleccionada",
     "applyOne": "Aplicar",
     "slideNo": "Diapositiva {n}",
-    "applyAllNote": "«Aplicar todo» reemplaza el titular, la composición, los colores y el fondo de cada diapositiva; tus capturas y su colocación se conservan"
+    "applyAllNote": "«Aplicar todo» reemplaza el titular, la composición, los colores y el fondo de cada diapositiva; tus capturas y su colocación se conservan",
+    "copyLocale": "Idioma de los textos",
+    "copyLocaleHint": "Los titulares se generan en este idioma y la tipografía cambia para adaptarse."
   },
   "appssInspector": {
     "elementCaption": "Titular",

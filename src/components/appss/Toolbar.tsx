@@ -3,7 +3,8 @@
 import { useTranslations } from "next-intl";
 import * as React from "react";
 import type { BackgroundStyle, FontId } from "@/lib/appss/types";
-import { BACKGROUND_STYLES, FONTS, THEMES } from "@/lib/appss/constants";
+import { BACKGROUND_STYLES, FONTS, THEMES, fontIdsForScript } from "@/lib/appss/constants";
+import { LOCALES, type LocaleId } from "@/lib/locales";
 import type { UsageInfo } from "@/types/usage";
 
 type Props = {
@@ -12,6 +13,8 @@ type Props = {
   // AI が都度生成したアプリ専用パレットを現在採用しているか（テーマ選択の表示切り替え用）
   hasCustomTheme?: boolean;
   fontId: FontId;
+  /** デッキの言語。選べるフォントを文字体系で絞るのに使う */
+  locale: LocaleId;
   backgroundStyle: BackgroundStyle;
   savedAt: number | null;
   saveError: string | null;
@@ -36,6 +39,7 @@ export function Toolbar({
   themeId,
   hasCustomTheme,
   fontId,
+  locale,
   backgroundStyle,
   savedAt,
   saveError,
@@ -96,7 +100,8 @@ export function Toolbar({
           onChange={(e) => onFontChange(e.target.value as FontId)}
           className="rounded-md border border-gray-700 bg-gray-900 px-2 py-1.5 text-sm text-gray-100"
         >
-          {(Object.keys(FONTS) as FontId[]).map((id) => (
+          {/* この言語の文字体系を持つフォントだけを出す（他言語のフォントだと豆腐になる） */}
+          {fontIdsForScript(LOCALES[locale].script).map((id) => (
             <option key={id} value={id}>
               {FONTS[id].name}
             </option>

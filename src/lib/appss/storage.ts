@@ -4,7 +4,8 @@
 // 画像本体は IndexedDB(imageStore.ts) に置き、ここには "idb:<id>" 参照のみ保存する。
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
-import { FONTS, PROJECT_SCHEMA_VERSION, STORAGE_KEY, THEMES, isBackgroundStyle, sanitizeTheme } from "./constants";
+import { FONTS, PROJECT_SCHEMA_VERSION, STORAGE_KEY, THEMES, isBackgroundStyle, resolveFontForScript, sanitizeTheme } from "./constants";
+import { LOCALES, toLocaleId } from "@/lib/locales";
 import { makeDefaultProject, nid, type StarterCopy } from "./defaults";
 import { consumeHandoff } from "./handoff";
 import type {
@@ -123,12 +124,18 @@ export function mergeWithDefaults(parsed: unknown, starter?: StarterCopy): AppSS
     ? raw.slides.map(migrateSlide).filter((s): s is AppSSSlide => !!s)
     : [];
   const customTheme = sanitizeTheme(raw.customTheme);
+  // locale を持たない旧データは既定ロケール（日本語）として扱う。
+  const locale = toLocaleId(raw.locale);
+  const savedFont = FONT_IDS.includes(raw.fontId as FontId) ? (raw.fontId as FontId) : defaults.fontId;
   return {
     schemaVersion: PROJECT_SCHEMA_VERSION,
     appName: typeof raw.appName === "string" && raw.appName.trim() ? raw.appName : defaults.appName,
+    locale,
     themeId: typeof raw.themeId === "string" && THEMES[raw.themeId] ? raw.themeId : defaults.themeId,
     ...(customTheme ? { customTheme } : {}),
-    fontId: FONT_IDS.includes(raw.fontId as FontId) ? (raw.fontId as FontId) : defaults.fontId,
+    // 保存フォントがこの言語の文字体系を持たない場合（言語を変えた後など）は
+    // 豆腐を出さないよう既定へ差し替える。
+    fontId: resolveFontForScript(savedFont, LOCALES[locale].script),
     backgroundStyle: isBackgroundStyle(raw.backgroundStyle)
       ? raw.backgroundStyle
       : defaults.backgroundStyle,

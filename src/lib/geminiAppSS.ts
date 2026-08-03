@@ -2,6 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { GEMINI_MODEL, GEMINI_THINKING_OFF, generateContentWithRetry } from "./gemini";
 import { BACKGROUND_STYLES, THEMES, isBackgroundStyle, sanitizeHex } from "./appss/constants";
 import type { AppSSCopySlideIdea, GeneratedPalette } from "@/types/appss";
+import { DEFAULT_LOCALE, LOCALES, type LocaleId } from "@/lib/locales";
 import type { BackgroundStyle, SlideLayout } from "./appss/types";
 
 export const APPSS_MIN_SLIDES = 3;
@@ -43,14 +44,30 @@ const THEME_GUIDE: { id: string; vibe: string }[] = [
   { id: "mocha", vibe: "落ち着いた温もり。カフェ/読書/手帳・ノート/趣味系" },
 ];
 
+// 言語ごとの作文ルール。文字幅が違うので見出しの長さ指定を変える。
+// CJK は 1 行 5〜9 文字が収まりの目安だが、ラテン文字は同じ字数だと短すぎる。
+const COPY_RULES: Record<LocaleId, { market: string; headlineLength: string; labelLength: string }> = {
+  ja: { market: "日本", headlineLength: "1 行 5〜9 文字、最大 2 行", labelLength: "4〜10 文字" },
+  en: { market: "US", headlineLength: "2–5 words per line, at most 2 lines", labelLength: "1–3 words" },
+  es: { market: "スペイン語圏", headlineLength: "2–5 palabras por línea, máximo 2 líneas", labelLength: "1–3 palabras" },
+  "zh-Hans": { market: "中国", headlineLength: "每行 5〜9 个字，最多 2 行", labelLength: "4〜10 个字" },
+  "zh-Hant": { market: "台湾・香港", headlineLength: "每行 5〜9 個字，最多 2 行", labelLength: "4〜10 個字" },
+  fr: { market: "フランス語圏", headlineLength: "2–5 mots par ligne, 2 lignes maximum", labelLength: "1–3 mots" },
+  de: { market: "ドイツ語圏", headlineLength: "2–4 Wörter pro Zeile, höchstens 2 Zeilen", labelLength: "1–3 Wörter" },
+  ko: { market: "韓国", headlineLength: "한 줄에 5〜9자, 최대 2줄", labelLength: "4〜10자" },
+};
+
 export function buildAppSSCopyPrompt(
   appName: string,
   appDescription: string,
   features: string[],
   tone: string,
   slideCount: number,
+  locale: LocaleId = DEFAULT_LOCALE,
 ): string {
-  return `あなたは日本の App Store で上位に入るアプリのスクリーンショット広告文を数多く手がけてきたコピーライターです。
+  const rule = COPY_RULES[locale];
+  const lang = LOCALES[locale].promptName;
+  return `あなたは${rule.market}の App Store で上位に入るアプリのスクリーンショット広告文を数多く手がけてきたコピーライターです。
 以下のアプリの App Store スクリーンショット用キャッチコピーを ${slideCount} スライド分作成してください。
 
 【アプリ名】
@@ -64,11 +81,11 @@ ${tone ? `\n【トーン指示】\n${tone}` : ""}
 【コピーの鉄則】
 - 1スライド1アイデア。「〜と〜」のような複数訴求の同居は禁止
 - 機能名の羅列ではなく、ユーザーが得る変化（ベネフィット）で書く
-- HEADLINE は 1 行 5〜9 文字、最大 2 行。行の区切りは「／」で明示する
-- 改行位置は意味の切れ目に置く。助詞の直後で不自然に切らない
-- 体言止めと「〜できる」「〜しよう」を織り交ぜ、文体は統一する
-- 英語はアプリ名・製品名のみ可。その他は日本語で書く
-- LABEL は 4〜10 文字の短いアイキャッチ（例：かんたん操作、こだわり検索）
+- **LABEL と HEADLINE と EMPHASIS は必ず ${lang} で書く**（アプリ名・製品名だけは原語のままでよい）
+- HEADLINE は ${rule.headlineLength}。行の区切りは「／」で明示する
+- 改行位置は意味の切れ目に置く。単語や助詞の途中で不自然に切らない
+- 文体は ${lang} として自然なものに統一する。直訳調にしない
+- LABEL は ${rule.labelLength} の短いアイキャッチ
 
 【スライド構成（この順で作る）】
 1枚目: つかみ — アプリの核となる価値をひとことで（LAYOUT: hero）
@@ -100,8 +117,8 @@ ${BACKGROUND_STYLES.map((s) => `- ${s.id}: ${BACKGROUND_VIBES[s.id]}`).join("\n"
 
 【強調ワード】
 各スライドで、HEADLINE の中で最も訴求したい語句を1つだけ EMPHASIS に書く。
-- EMPHASIS は HEADLINE に含まれる連続した部分文字列にする（改行「／」をまたがない、1〜6文字程度）
-- アプリの価値が一番伝わるキーワードを選ぶ（例: HEADLINE「毎日が／ラクに」→ EMPHASIS: ラク）
+- EMPHASIS は HEADLINE に含まれる連続した部分文字列にする（改行「／」をまたがない、短い語句）
+- アプリの価値が一番伝わるキーワードを選ぶ（${lang} の HEADLINE から抜き出すこと）
 
 【出力形式】
 説明・前置き・空行は不要。まず基調・背景・パレットを次の3行で出力し、続けて ${slideCount} ブロック出力する：
@@ -203,6 +220,7 @@ export async function generateAppSSCopy(
   features: string[],
   tone: string,
   slideCount: number,
+  locale: LocaleId = DEFAULT_LOCALE,
 ): Promise<AppSSCopyResult> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY が設定されていません。");
@@ -212,7 +230,7 @@ export async function generateAppSSCopy(
     ai,
     {
       model: GEMINI_MODEL,
-      contents: buildAppSSCopyPrompt(appName, appDescription, features, tone, slideCount),
+      contents: buildAppSSCopyPrompt(appName, appDescription, features, tone, slideCount, locale),
       config: {
         thinkingConfig: GEMINI_THINKING_OFF,
         temperature: 0.85,

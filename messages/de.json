@@ -568,7 +568,9 @@
     "applyOneTooltip": "Diese Überschrift auf die ausgewählte Folie anwenden",
     "applyOne": "Übernehmen",
     "slideNo": "Folie {n}",
-    "applyAllNote": "„Alle übernehmen“ ersetzt Überschrift, Layout, Farben und Hintergrund jeder Folie – deine Screenshots und deren Platzierung bleiben erhalten"
+    "applyAllNote": "„Alle übernehmen“ ersetzt Überschrift, Layout, Farben und Hintergrund jeder Folie – deine Screenshots und deren Platzierung bleiben erhalten",
+    "copyLocale": "Sprache der Texte",
+    "copyLocaleHint": "Überschriften werden in dieser Sprache erzeugt, die Schrift wird passend umgestellt."
   },
   "appssInspector": {
     "elementCaption": "Überschrift",

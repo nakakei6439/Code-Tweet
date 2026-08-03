@@ -568,7 +568,9 @@
     "applyOneTooltip": "将此标题应用到所选幻灯片",
     "applyOne": "应用",
     "slideNo": "第 {n} 张",
-    "applyAllNote": "「全部应用」会替换每张幻灯片的标题、排版、配色与背景（截图及其位置将保留）"
+    "applyAllNote": "「全部应用」会替换每张幻灯片的标题、排版、配色与背景（截图及其位置将保留）",
+    "copyLocale": "文案语言",
+    "copyLocaleHint": "将以该语言生成标题文案，并自动切换为对应字体。"
   },
   "appssInspector": {
     "elementCaption": "标题",

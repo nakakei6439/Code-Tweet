@@ -1,6 +1,8 @@
+import type { LocaleId } from "@/lib/locales";
+
 // AppSS — App Store スクリーンショットエディタの型定義。
 // Based on MIT-licensed https://github.com/ParthJadhav/app-store-screenshots
-// (iPhone 縦向き・単一ロケール向けに簡約)
+// (iPhone 縦向き。1 デッキ 1 言語で、言語は project.locale が持つ)
 
 export type SlideLayout =
   | "hero"          // 中央見出し + 下部デバイス
@@ -71,6 +73,7 @@ export type Theme = {
 };
 
 export type FontId =
+  // 日本語
   | "gothic"
   | "maru"
   | "mincho"
@@ -79,7 +82,16 @@ export type FontId =
   | "shippori"
   | "klee"
   | "rocknroll"
-  | "kaku";
+  | "kaku"
+  // 簡体字中国語
+  | "sc-sans"
+  | "sc-serif"
+  // 繁体字中国語
+  | "tc-sans"
+  | "tc-serif"
+  // 韓国語
+  | "kr-sans"
+  | "kr-serif";
 
 // 背景の装飾スタイル（デッキ全体で共通）。全て CSS グラデ/影のみで export 安全
 // （Safari の foreignObject バグ回避のため filter:blur は使わない）。
@@ -88,6 +100,12 @@ export type BackgroundStyle = "soft" | "plain" | "grid" | "spotlight" | "stripes
 export type AppSSProject = {
   schemaVersion: number;
   appName: string;
+  /**
+   * このデッキのコピー言語。AI 生成の出力言語と、使用できるフォントの
+   * 文字体系（日本語フォントで簡体字を組むと豆腐になる）を決める。
+   * 未設定の保存データは既定ロケール扱いにする。
+   */
+  locale?: LocaleId;
   themeId: string;
   // AI が都度生成したアプリ専用パレット。存在する場合は themeId より優先して描画する。
   // プリセットテーマを手動選択すると解除される。

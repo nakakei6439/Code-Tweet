@@ -136,3 +136,36 @@ describe("mergeWithDefaults", () => {
     expect(project.customTheme).toBeUndefined();
   });
 });
+
+describe("mergeWithDefaults — ロケールとフォント", () => {
+  it("locale を持たない旧データは日本語として扱う", () => {
+    const project = mergeWithDefaults({ appName: "旧データ" });
+    expect(project.locale).toBe("ja");
+  });
+
+  it("保存された locale を保持する", () => {
+    const project = mergeWithDefaults({ locale: "ko", slides: [] });
+    expect(project.locale).toBe("ko");
+  });
+
+  it("未知の locale は既定に丸める", () => {
+    const project = mergeWithDefaults({ locale: "pt" });
+    expect(project.locale).toBe("ja");
+  });
+
+  it("言語の文字体系に合わないフォントは既定へ差し替える", () => {
+    // 日本語フォントのまま韓国語に切り替えた保存データ。豆腐を出さないための保険。
+    const project = mergeWithDefaults({ locale: "ko", fontId: "mincho" });
+    expect(project.fontId).toBe("kr-sans");
+  });
+
+  it("文字体系が合っているフォントはそのまま残す", () => {
+    const project = mergeWithDefaults({ locale: "zh-Hans", fontId: "sc-serif" });
+    expect(project.fontId).toBe("sc-serif");
+  });
+
+  it("ラテン圏は日本語フォントをそのまま使える（ラテン字形を持つため）", () => {
+    const project = mergeWithDefaults({ locale: "de", fontId: "maru" });
+    expect(project.fontId).toBe("maru");
+  });
+});

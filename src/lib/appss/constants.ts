@@ -1,6 +1,7 @@
 // AppSS — キャンバス寸法・書き出しサイズ・ベゼル座標・テーマ定義。
 // Based on MIT-licensed https://github.com/ParthJadhav/app-store-screenshots
 
+import type { LocaleScript } from "@/lib/locales";
 import type { BackgroundStyle, FontId, Theme } from "./types";
 
 // 設計キャンバス = App Store 最大要求解像度（iPhone 6.9インチ）
@@ -35,19 +36,50 @@ export function phoneWSmall(cW: number, cH: number) {
   return phoneW(cW, cH, 0.66);
 }
 
-// ---------- 日本語フォント ----------
-export const FONTS: Record<FontId, { name: string; cssVar: string }> = {
-  gothic: { name: "Noto Sans JP", cssVar: "var(--font-appss-gothic)" },
-  maru: { name: "Zen Maru Gothic", cssVar: "var(--font-appss-maru)" },
-  mincho: { name: "Noto Serif JP", cssVar: "var(--font-appss-mincho)" },
-  rounded: { name: "M PLUS Rounded 1c", cssVar: "var(--font-appss-rounded)" },
-  dela: { name: "Dela Gothic One", cssVar: "var(--font-appss-dela)" },
-  shippori: { name: "Shippori Mincho", cssVar: "var(--font-appss-shippori)" },
-  klee: { name: "Klee One", cssVar: "var(--font-appss-klee)" },
-  rocknroll: { name: "RocknRoll One", cssVar: "var(--font-appss-rocknroll)" },
-  kaku: { name: "Zen Kaku Gothic New", cssVar: "var(--font-appss-kaku)" },
+// ---------- フォント ----------
+// script は「そのフォントが本文グリフを持つ文字体系」。日本語フォントで
+// 簡体字を組むと豆腐（□）になるため、UI ではロケールに合うものだけを出す。
+// latin 圏（英・西・仏・独）は日本語フォントでもラテン文字を持つのでそのまま使える。
+export const FONTS: Record<FontId, { name: string; cssVar: string; script: LocaleScript }> = {
+  gothic: { name: "Noto Sans JP", cssVar: "var(--font-appss-gothic)", script: "jp" },
+  maru: { name: "Zen Maru Gothic", cssVar: "var(--font-appss-maru)", script: "jp" },
+  mincho: { name: "Noto Serif JP", cssVar: "var(--font-appss-mincho)", script: "jp" },
+  rounded: { name: "M PLUS Rounded 1c", cssVar: "var(--font-appss-rounded)", script: "jp" },
+  dela: { name: "Dela Gothic One", cssVar: "var(--font-appss-dela)", script: "jp" },
+  shippori: { name: "Shippori Mincho", cssVar: "var(--font-appss-shippori)", script: "jp" },
+  klee: { name: "Klee One", cssVar: "var(--font-appss-klee)", script: "jp" },
+  rocknroll: { name: "RocknRoll One", cssVar: "var(--font-appss-rocknroll)", script: "jp" },
+  kaku: { name: "Zen Kaku Gothic New", cssVar: "var(--font-appss-kaku)", script: "jp" },
+  "sc-sans": { name: "Noto Sans SC", cssVar: "var(--font-appss-sc-sans)", script: "sc" },
+  "sc-serif": { name: "Noto Serif SC", cssVar: "var(--font-appss-sc-serif)", script: "sc" },
+  "tc-sans": { name: "Noto Sans TC", cssVar: "var(--font-appss-tc-sans)", script: "tc" },
+  "tc-serif": { name: "Noto Serif TC", cssVar: "var(--font-appss-tc-serif)", script: "tc" },
+  "kr-sans": { name: "Noto Sans KR", cssVar: "var(--font-appss-kr-sans)", script: "kr" },
+  "kr-serif": { name: "Noto Serif KR", cssVar: "var(--font-appss-kr-serif)", script: "kr" },
 };
 export const DEFAULT_FONT_ID: FontId = "gothic";
+
+/** 文字体系ごとの既定フォント。ロケール切替時のフォールバックに使う。 */
+export const SCRIPT_DEFAULT_FONT: Record<LocaleScript, FontId> = {
+  jp: "gothic",
+  sc: "sc-sans",
+  tc: "tc-sans",
+  kr: "kr-sans",
+  // ラテン文字は日本語フォントでも問題なく出るので既定を共有する。
+  latin: "gothic",
+};
+
+/** そのロケールで選べるフォント一覧。latin は日本語フォント（ラテン字形）を流用する。 */
+export function fontIdsForScript(script: LocaleScript): FontId[] {
+  const target = script === "latin" ? "jp" : script;
+  return (Object.keys(FONTS) as FontId[]).filter((id) => FONTS[id].script === target);
+}
+
+/** フォントがその文字体系のグリフを持つか。持たなければ既定へ差し替える。 */
+export function resolveFontForScript(fontId: FontId, script: LocaleScript): FontId {
+  const target = script === "latin" ? "jp" : script;
+  return FONTS[fontId]?.script === target ? fontId : SCRIPT_DEFAULT_FONT[script];
+}
 
 // ---------- 日本語アプリ向けテーマ ----------
 export const DEFAULT_THEME_ID = "simple-white";

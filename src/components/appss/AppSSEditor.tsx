@@ -2,6 +2,7 @@
 // AppSS — エディタ本体。状態管理・キーボードショートカット・書き出しオーケストレーション。
 // Based on MIT-licensed https://github.com/ParthJadhav/app-store-screenshots
 import { useTranslations } from "next-intl";
+import { DEFAULT_LOCALE, LOCALES, type LocaleId } from "@/lib/locales";
 import { useApiErrorMessage } from "@/lib/useApiErrorMessage";
 import * as React from "react";
 import type {
@@ -20,6 +21,7 @@ import {
   FONTS,
   MAX_SLIDES,
   THEMES,
+  resolveFontForScript,
   buildCustomTheme,
   themeById,
 } from "@/lib/appss/constants";
@@ -82,6 +84,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
 
   // AI が都度生成したパレット（customTheme）があればプリセットより優先して描画する
   const theme = state.customTheme ?? themeById(state.themeId);
+  const projectLocale = state.locale ?? DEFAULT_LOCALE;
   const fontFamily = FONTS[state.fontId].cssVar;
   const backgroundStyle = state.backgroundStyle;
   const slides = state.slides;
@@ -264,7 +267,12 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
     (
       ideas: AppSSCopySlideIdea[],
       mode: "replace" | "append",
-      style?: { themeId?: string; backgroundStyle?: BackgroundStyle; generatedPalette?: GeneratedPalette },
+      style?: {
+        themeId?: string;
+        backgroundStyle?: BackgroundStyle;
+        generatedPalette?: GeneratedPalette;
+        locale?: LocaleId;
+      },
     ) => {
       setState((prev) => {
         if (mode === "replace") {
@@ -292,12 +300,20 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
           const customTheme = style?.generatedPalette
             ? buildCustomTheme(style.generatedPalette, THEMES[themeId]?.fontId)
             : prev.customTheme;
+          // 生成した言語にデッキを合わせる。テーマ推奨フォントがその文字体系を
+          // 持たない場合は既定へ差し替える（日本語フォントのままだと豆腐になる）。
+          const locale = style?.locale ?? prev.locale ?? DEFAULT_LOCALE;
+          const fontId = resolveFontForScript(
+            THEMES[themeId]?.fontId ?? prev.fontId,
+            LOCALES[locale].script,
+          );
           return {
             ...prev,
             slides,
+            locale,
             themeId,
             ...(customTheme ? { customTheme } : { customTheme: undefined }),
-            fontId: THEMES[themeId]?.fontId ?? prev.fontId,
+            fontId,
             backgroundStyle: style?.backgroundStyle ?? prev.backgroundStyle,
           };
         }
@@ -472,6 +488,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
         themeId={state.themeId}
         hasCustomTheme={!!state.customTheme}
         fontId={state.fontId}
+        locale={projectLocale}
         backgroundStyle={backgroundStyle}
         savedAt={savedAt}
         saveError={saveError}
@@ -567,6 +584,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
             initialAppName={state.appName}
             initialAppDescription={copyAssistantSeed?.appDescription ?? ""}
             initialFeatures={copyAssistantSeed?.features ?? []}
+            projectLocale={projectLocale}
             onApplyAll={applyCopyIdeas}
             onApplyOne={applySingleIdea}
             onClose={() => setCopyAssistantOpen(false)}

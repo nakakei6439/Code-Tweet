@@ -568,7 +568,9 @@
     "applyOneTooltip": "Apply this headline to the selected slide",
     "applyOne": "Apply",
     "slideNo": "Slide {n}",
-    "applyAllNote": "\"Apply all\" replaces each slide's headline, layout, colors, and background — your screenshots and their placement are kept"
+    "applyAllNote": "\"Apply all\" replaces each slide's headline, layout, colors, and background — your screenshots and their placement are kept",
+    "copyLocale": "Copy language",
+    "copyLocaleHint": "Headlines are generated in this language, and the font switches to match."
   },
   "appssInspector": {
     "elementCaption": "Headline",

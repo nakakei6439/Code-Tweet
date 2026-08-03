@@ -6,6 +6,7 @@ import { useApiErrorMessage } from "@/lib/useApiErrorMessage";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 import { postJson } from "@/lib/apiClient";
+import { LOCALE_LIST, type LocaleId } from "@/lib/locales";
 import type {
   AppSSCopyRequest,
   AppSSCopyResponse,
@@ -15,12 +16,20 @@ import type {
 import type { UsageInfo } from "@/types/usage";
 import type { BackgroundStyle } from "@/lib/appss/types";
 
-type ApplyStyle = { themeId?: string; backgroundStyle?: BackgroundStyle; generatedPalette?: GeneratedPalette };
+type ApplyStyle = {
+  themeId?: string;
+  backgroundStyle?: BackgroundStyle;
+  generatedPalette?: GeneratedPalette;
+  /** 生成に使った言語。デッキの locale とフォントをこれに揃える */
+  locale?: LocaleId;
+};
 
 type Props = {
   isLoggedIn: boolean;
   initialUsage: UsageInfo | null;
   slideCount: number;
+  /** 現在のデッキの言語。言語セレクタの初期値に使う */
+  projectLocale: LocaleId;
   // トップページの「READMEからスクショを作る」フローで来た場合の初期値。
   // ハンドオフが無い（localStorage再開・リセット直後など）場合は appName のみ
   // state.appName（既定値含む）が渡り、説明・機能は空になる。
@@ -36,6 +45,7 @@ export function CopyAssistant({
   isLoggedIn,
   initialUsage,
   slideCount,
+  projectLocale,
   initialAppName,
   initialAppDescription,
   initialFeatures,
@@ -53,6 +63,8 @@ export function CopyAssistant({
   const [featuresText, setFeaturesText] = React.useState((initialFeatures ?? []).join("\n"));
   const [tone, setTone] = React.useState("");
   const [count, setCount] = React.useState(Math.min(6, Math.max(3, slideCount)));
+  // 生成コピーの言語。適用時にデッキの locale とフォントもこれに合わせる。
+  const [copyLocale, setCopyLocale] = React.useState<LocaleId>(projectLocale);
   const [usage, setUsage] = React.useState<UsageInfo | null>(initialUsage);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -83,6 +95,7 @@ export function CopyAssistant({
           .slice(0, 8),
         tone: tone.trim() || undefined,
         slideCount: count,
+        locale: copyLocale,
       };
       if (!body.appName) {
         setError(tae("field_required", { field: taf("appName") }));
@@ -175,6 +188,21 @@ export function CopyAssistant({
           />
         </label>
         <label className="block text-sm text-gray-400">
+          {tc("copyLocale")}
+          <select
+            value={copyLocale}
+            onChange={(e) => setCopyLocale(e.target.value as LocaleId)}
+            className="mt-1.5 w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-base text-gray-100"
+          >
+            {LOCALE_LIST.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.nativeName}
+              </option>
+            ))}
+          </select>
+          <span className="mt-1 block text-[11px] text-gray-500">{tc("copyLocaleHint")}</span>
+        </label>
+        <label className="block text-sm text-gray-400">
           {tc("slideCount")}
           <select
             value={count}
@@ -212,6 +240,7 @@ export function CopyAssistant({
                     themeId: result.recommendedThemeId,
                     backgroundStyle: result.recommendedBackgroundStyle as BackgroundStyle | undefined,
                     generatedPalette: result.generatedPalette,
+                    locale: copyLocale,
                   })
                 }
                 className="rounded bg-cyan-400/15 px-3 py-1.5 text-sm text-cyan-200 hover:bg-cyan-400/25"

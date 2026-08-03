@@ -6,12 +6,15 @@
 import {
   DEFAULT_BACKGROUND_STYLE,
   DEFAULT_FONT_ID,
+  SCRIPT_DEFAULT_FONT,
+  resolveFontForScript,
   DEFAULT_THEME_ID,
   PROJECT_SCHEMA_VERSION,
   THEMES,
   buildCustomTheme,
   isBackgroundStyle,
 } from "./constants";
+import { DEFAULT_LOCALE, LOCALES, type LocaleId } from "@/lib/locales";
 import type { AppSSProject, AppSSSlide, BackgroundStyle } from "./types";
 import type { AppSSCopySlideIdea, GeneratedPalette } from "@/types/appss";
 
@@ -100,12 +103,14 @@ export function makeStarterSlides(copy?: StarterCopy): AppSSSlide[] {
   ];
 }
 
-export function makeDefaultProject(copy?: StarterCopy): AppSSProject {
+export function makeDefaultProject(copy?: StarterCopy, locale: LocaleId = DEFAULT_LOCALE): AppSSProject {
   return {
     schemaVersion: PROJECT_SCHEMA_VERSION,
     appName: (copy ?? FALLBACK_STARTER).appName,
+    locale,
     themeId: DEFAULT_THEME_ID,
-    fontId: DEFAULT_FONT_ID,
+    // フォントはロケールの文字体系に合わせる（日本語フォントで簡体字は組めない）。
+    fontId: SCRIPT_DEFAULT_FONT[LOCALES[locale].script],
     backgroundStyle: DEFAULT_BACKGROUND_STYLE,
     slides: makeStarterSlides(copy),
   };
@@ -123,6 +128,7 @@ export function projectFromCopy(
   backgroundStyle?: string,
   screenshotRefs?: string[],
   generatedPalette?: GeneratedPalette,
+  locale: LocaleId = DEFAULT_LOCALE,
 ): AppSSProject {
   // 事前登録したスクショを、デバイスを持つスライドへ登録順に割り当てる。
   // no-device のスライドは画像を持たないためスキップ。2枚デバイスのレイアウトは余りがあれば
@@ -159,9 +165,11 @@ export function projectFromCopy(
   return {
     schemaVersion: PROJECT_SCHEMA_VERSION,
     appName: appName.trim() || FALLBACK_STARTER.appName,
+    locale,
     themeId: theme ? theme.id : DEFAULT_THEME_ID,
     ...(customTheme ? { customTheme } : {}),
-    fontId: theme?.fontId ?? DEFAULT_FONT_ID,
+    // テーマ推奨フォントがこの言語の文字体系を持たなければ既定へ差し替える。
+    fontId: resolveFontForScript(theme?.fontId ?? DEFAULT_FONT_ID, LOCALES[locale].script),
     backgroundStyle: bg,
     slides: slides.length > 0 ? slides : makeStarterSlides(),
   };

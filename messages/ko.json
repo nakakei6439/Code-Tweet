@@ -568,7 +568,9 @@
     "applyOneTooltip": "선택 중인 슬라이드에 이 헤드라인을 적용",
     "applyOne": "적용",
     "slideNo": "{n}번째",
-    "applyAllNote": "'전체 적용'은 각 슬라이드의 헤드라인·레이아웃·배색·배경을 교체합니다(스크린샷 이미지·배치는 유지)"
+    "applyAllNote": "'전체 적용'은 각 슬라이드의 헤드라인·레이아웃·배색·배경을 교체합니다(스크린샷 이미지·배치는 유지)",
+    "copyLocale": "카피 언어",
+    "copyLocaleHint": "이 언어로 헤드라인을 생성하고, 대응하는 폰트로 전환합니다."
   },
   "appssInspector": {
     "elementCaption": "헤드라인",

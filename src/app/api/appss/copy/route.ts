@@ -5,6 +5,7 @@ import {
   generateAppSSCopy,
 } from "@/lib/geminiAppSS";
 import { apiError } from "@/lib/apiErrors";
+import { toLocaleId } from "@/lib/locales";
 import { mapGeminiError } from "@/lib/geminiErrors";
 import { isSameOriginRequest } from "@/lib/origin";
 import { createClient } from "@/lib/supabase/server";
@@ -119,6 +120,8 @@ export async function POST(request: Request): Promise<Response> {
   const validationError = validateRequest(body);
   if (validationError) return validationError;
 
+  // クライアント申告の locale は信用せず既知のロケールに丸める。
+  const locale = toLocaleId(body.locale);
   const slideCount = Math.min(
     APPSS_MAX_SLIDES,
     Math.max(APPSS_MIN_SLIDES, Math.trunc(body.slideCount ?? APPSS_DEFAULT_SLIDES)),
@@ -131,6 +134,7 @@ export async function POST(request: Request): Promise<Response> {
       (body.features ?? []).map((f) => f.trim()).filter(Boolean),
       (body.tone ?? "").trim(),
       slideCount,
+      locale,
     );
     if (user) {
       await recordUserUsage(supabase, user.id);
