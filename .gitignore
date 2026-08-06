@@ -40,3 +40,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ai agent tooling (ローカル設定・プラグインが自動生成するもの)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/skills/
+.agents/
+skills-lock.json
