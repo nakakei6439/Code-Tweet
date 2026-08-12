@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1,
+    "weighted": 279,
+    "wrong": false,
+    "when": {
+      "label": "Thu, Aug 13 10:00",
+      "reason": "New product launch"
+    },
+    "text": "Tired of manual marketing posts? Code Tweet uses AI to analyze your README and instantly generate 5 X posts, a note.com Markdown draft, or App Store screenshots! Multi-language support included.\n\nDiscover more →\nhttps://www.producthunt.com/products/code-tweet?launch=code-tweet\n\n#CodeTweet #AI #OpenSource"
+  },
+  {
+    "id": 2,
+    "weighted": 269,
+    "wrong": false,
+    "when": {
+      "label": "Fri, Aug 14 14:30",
+      "reason": "Mid-day engagement"
+    },
+    "text": "Ready to boost your project's visibility? Code Tweet makes it easy. Just paste your GitHub repo URL (public or private), and let AI do the heavy lifting. Get started in seconds and generate your first marketing assets for free!\n\nGive it a try →\nhttps://www.producthunt.com/products/code-tweet?launch=code-tweet"
+  },
+  {
+    "id": 3,
+    "weighted": 270,
+    "wrong": false,
+    "when": {
+      "label": "Sat, Aug 15 11:45",
+      "reason": "Weekend peak time"
+    },
+    "text": "Imagine launching your new app and having professional App Store screenshots and engaging X posts ready in minutes. Code Tweet turns your README into polished marketing content, saving you hours of design and copywriting.\n\nExplore the features →\nhttps://www.producthunt.com/products/code-tweet?launch=code-tweet"
+  },
+  {
+    "id": 4,
+    "weighted": 267,
+    "wrong": false,
+    "when": {
+      "label": "Sun, Aug 16 16:00",
+      "reason": "Sunday afternoon"
+    },
+    "text": "As indie devs, we often struggle with marketing. Code Tweet was built to solve that! Focus on coding, and let our AI handle the promotions. From posts to app screenshots, it's your all-in-one marketing assistant.\n\nSee how it works →\nhttps://www.producthunt.com/products/code-tweet?launch=code-tweet\n\n#DevLife"
+  },
+  {
+    "id": 5,
+    "weighted": 279,
+    "wrong": false,
+    "when": {
+      "label": "Mon, Aug 17 09:15",
+      "reason": "Monday morning boost"
+    },
+    "text": "Stop procrastinating on marketing! Code Tweet is here to simplify your life. Generate compelling X posts, note.com drafts, and App Store screenshots from your README in minutes. Try it for free and see the difference!\n\nStart creating now →\nhttps://www.producthunt.com/products/code-tweet?launch=code-tweet"
+  }
+]

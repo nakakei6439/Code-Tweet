@@ -2,6 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import type { GenerateContentParameters, GenerateContentResponse } from "@google/genai";
 import twitterText from "twitter-text";
 import { DEFAULT_LOCALE, LOCALES, type LocaleId } from "@/lib/locales";
+import { isWrongLanguage } from "@/lib/outputLanguage";
 import type { Tweet } from "@/types/tweet";
 
 function escapeRegExp(value: string): string {
@@ -14,6 +15,10 @@ export const GEMINI_MODEL = "gemini-2.5-flash";
 // gemini-2.5-flash は thinking がデフォルト有効で 1 回の応答が遅く、Hobby プランの
 // 60 秒関数上限を超えて 504 になりやすい。thinkingBudget: 0 で無効化してレイテンシを抑える。
 export const GEMINI_THINKING_OFF = { thinkingBudget: 0 } as const;
+
+// 指示追従が効かないと困る短い補正呼び出しにだけ使う控えめな thinking 予算。
+// 本生成に使うと 60 秒上限に当たるので、リトライ系の 1 往復に限って有効化する。
+export const GEMINI_THINKING_LIGHT = { thinkingBudget: 512 } as const;
 
 // gemini-2.5-flash は無料枠で 503(UNAVAILABLE「high demand」)や 429 を一時的に返すことが多い。
 // これらの一過性エラーは指数バックオフで自動リトライし、ユーザーに即エラーを返さない。
@@ -60,6 +65,14 @@ export function formatScheduleLabel(
   return `${formatted} ${timeStr}`;
 }
 const MAX_REGENERATE_ATTEMPTS = 4;
+
+// 言語違いの書き直し試行回数。短縮（最大 4 回）より少なくしているのは、
+// 書き直しは 1 回で直るか直らないかがはっきりしており、Hobby の 60 秒上限に効くため。
+const MAX_RELANGUAGE_ATTEMPTS = 2;
+
+// 5 件まるごと別言語で返ってきたときの作り直し回数。1 回の作り直しは丸ごと 1 生成ぶん
+// 遅くなるので、Hobby の 60 秒上限を考えて 2 回（初回 + 作り直し 1 回）までにする。
+const MAX_BATCH_ATTEMPTS = 2;
 // 日本語タグは 1 文字 2 ウェイトあり、5 個並べると 280 の 3 割前後を食う。
 // 本文の余裕を確保するため合計 3 個までに絞る（ユーザー指定タグは個数超過でも残す）。
 const MAX_HASHTAGS = 3;
@@ -447,7 +460,23 @@ SCHEDULE: YYYY-MM-DD HH:MM / 理由
 SCHEDULE: YYYY-MM-DD HH:MM / 理由
 5. [ポスト本文]
 #tag1 #tag2 #tag3
-SCHEDULE: YYYY-MM-DD HH:MM / 理由`;
+SCHEDULE: YYYY-MM-DD HH:MM / 理由${buildLanguageFooter(locale)}`;
+}
+
+// 指示文そのものが日本語なので、日本語 README を渡すとモデルは何もかも日本語で返しがちになる。
+// 最後の指示ほど効くので、日本語以外を狙うときだけ英語の言語指定を末尾に足す。
+// （実測: これが無いと日本語 README → 英語生成で 5 件中 3〜4 件が日本語のまま返っていた）
+function buildLanguageFooter(locale: LocaleId): string {
+  if (locale === DEFAULT_LOCALE) return "";
+  const lang = LOCALES[locale].promptName;
+  return `
+
+CRITICAL — OUTPUT LANGUAGE
+Write EVERY post body, lead line, hashtag and SCHEDULE reason in ${lang}.
+The project description above may be written in another language. Do NOT mirror
+its language: translate the meaning and write only in ${lang}. Product names,
+service names and personal names may stay in their original script.
+Only the keys "SCHEDULE:" and the numbering stay as shown above.`;
 }
 
 function buildShortenPrompt(
@@ -456,9 +485,14 @@ function buildShortenPrompt(
   projectText: string,
   toneMemo: string,
   url: string,
-  hashtags: string
+  hashtags: string,
+  locale: LocaleId,
 ): string {
   return `以下のポストは X の weighted length が ${currentWeight} で、上限 280 ウェイトを超過しています。文意・トーン・ハッシュタグを保ったまま、260 ウェイト以内に収まるように短縮してください。
+
+【出力言語（最重要）】
+短縮後も元のポストと同じ ${LOCALES[locale].promptName} のままにする。
+参考として渡すプロジェクト説明が別の言語でも、その言語に引きずられてはいけない。
 
 【プロジェクト説明（参考）】
 ${projectText}
@@ -485,11 +519,12 @@ async function regenerateOne(
   toneMemo: string,
   url: string,
   hashtags: string,
-  ai: GoogleGenAI
+  ai: GoogleGenAI,
+  locale: LocaleId,
 ): Promise<string> {
   const result = await generateContentWithRetry(ai, {
     model: GEMINI_MODEL,
-    contents: buildShortenPrompt(originalText, currentWeight, projectText, toneMemo, url, hashtags),
+    contents: buildShortenPrompt(originalText, currentWeight, projectText, toneMemo, url, hashtags, locale),
     config: {
       thinkingConfig: GEMINI_THINKING_OFF,
       temperature: 0.7,
@@ -497,6 +532,68 @@ async function regenerateOne(
     },
   }, 1);
   return (result.text ?? "").trim().replace(/^["「『]|["」』]$/g, "").trim();
+}
+
+// 言語違いのポストを目標言語に置き換える。
+// 「書き直して」と頼むと元の draft に引きずられて同じ言語のまま返ってくるため、
+// 翻訳タスクとして指示する。固有名詞の扱いだけ例外として明示する。
+function buildRelanguagePrompt(draft: string, url: string, hashtags: string, locale: LocaleId): string {
+  const lang = LOCALES[locale].promptName;
+  return `次の X 向けポストを ${lang} に翻訳してください。原文の言語が何であっても、出力は ${lang} だけにします。
+
+【厳守】
+- 本文・リード文・ハッシュタグを 1 文字残らず ${lang} にする。原文の言語の単語・文・記号を残さない。
+- 例外は製品名・サービス名・人名のみ。これらは原語のままでよい。
+- リード文は 1 つだけにする。原文に複数あればまとめる。
+- 出力は翻訳後のポスト本文のみ。前置き・解説・引用符・原文の再掲は付けない。
+${url ? `- 次の URL を必ず単独行で含める（省略・変形は不可）：${url}` : ""}
+${hashtags ? `- 次のハッシュタグを必ず含める：${hashtags}` : ""}
+
+【原文】
+${draft}`;
+}
+
+async function relanguageOne(
+  draft: string,
+  url: string,
+  hashtags: string,
+  ai: GoogleGenAI,
+  locale: LocaleId,
+): Promise<string> {
+  const result = await generateContentWithRetry(ai, {
+    model: GEMINI_MODEL,
+    contents: buildRelanguagePrompt(draft, url, hashtags, locale),
+    config: {
+      // ここだけ thinking を有効にする。thinking 無効だと原文の言語に引きずられて
+      // 「翻訳して」を無視することがあり、実測で 5 件中 1 件が日本語のまま返っていた。
+      // 走るのは言語違いだったポストだけ・並列なので、60 秒上限への影響は限定的。
+      thinkingConfig: GEMINI_THINKING_LIGHT,
+      temperature: 0.2,
+      maxOutputTokens: 1024,
+    },
+  }, 1);
+  return (result.text ?? "").trim().replace(/^["「『]|["」』]$/g, "").trim();
+}
+
+// 目標言語で書かれていなければ書き直させる。改善しなければ元の draft を返す
+// （生成そのものを失敗させるより、混在していても何か返すほうが実害が小さい）。
+async function fixLanguage(
+  draft: string,
+  url: string,
+  hashtags: string,
+  ai: GoogleGenAI,
+  locale: LocaleId,
+): Promise<string> {
+  if (!isWrongLanguage(draft, locale)) return draft;
+  for (let attempt = 0; attempt < MAX_RELANGUAGE_ATTEMPTS; attempt++) {
+    try {
+      const rewritten = await relanguageOne(draft, url, hashtags, ai, locale);
+      if (rewritten.length > 0 && !isWrongLanguage(rewritten, locale)) return rewritten;
+    } catch {
+      break;
+    }
+  }
+  return draft;
 }
 
 // 1 ツイートを上限内に収まるまで最大 MAX_REGENERATE_ATTEMPTS 回まで逐次短縮する。
@@ -519,13 +616,16 @@ async function shortenWithinLimit(
     try {
       const shortened = dropTagsToFit(
         reformatTweet(
-          await regenerateOne(current, weight, projectText, toneMemo, url, hashtags, ai),
+          await regenerateOne(current, weight, projectText, toneMemo, url, hashtags, ai, locale),
           hashtags,
           url,
           locale,
         ),
         hashtags,
       );
+      // 短縮プロンプトは日本語で、参考として日本語の README も渡している。
+      // 短縮のはずみで別言語に化けた結果を採用してはいけない。
+      if (isWrongLanguage(shortened, locale)) continue;
       const shortenedWeight = countWeighted(shortened);
       if (shortenedWeight <= TWEET_LIMIT && shortened.length > 0) {
         return shortened;
@@ -555,26 +655,41 @@ export async function generateTweets(
   const today = new Date();
   const todayStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
 
-  const result = await generateContentWithRetry(ai, {
-    model: GEMINI_MODEL,
-    contents: buildPrompt(projectText, toneMemo, url, hashtags, todayStr, locale),
-    config: {
-      thinkingConfig: GEMINI_THINKING_OFF,
-      temperature: 0.9,
-      maxOutputTokens: 2048,
-    },
-  }, 3);
-  const text = result.text;
-  if (!text) {
-    throw new Error("Gemini API から本文が返りませんでした。もう一度お試しください。");
+  // 出力言語の指示を丸ごと無視して、README の言語で 5 件とも返ってくることがある。
+  // その場合は 1 件ずつ翻訳させても直らない（元の言語に引きずられ続ける）ので、
+  // バッチ単位で判定して生成し直す。少数の混在だけなら後段の fixLanguage に任せる。
+  let drafts: string[] = [];
+  let schedules: Tweet["recommendedTime"][] = [];
+  for (let attempt = 0; attempt < MAX_BATCH_ATTEMPTS; attempt++) {
+    const result = await generateContentWithRetry(ai, {
+      model: GEMINI_MODEL,
+      contents: buildPrompt(projectText, toneMemo, url, hashtags, todayStr, locale),
+      config: {
+        // 作り直しのときだけ thinking を入れる。初回から入れると毎回遅くなり、
+        // Hobby の 60 秒上限に当たる。
+        thinkingConfig: attempt === 0 ? GEMINI_THINKING_OFF : GEMINI_THINKING_LIGHT,
+        temperature: 0.9,
+        maxOutputTokens: 2048,
+      },
+    }, 3);
+    const text = result.text;
+    if (!text) {
+      throw new Error("Gemini API から本文が返りませんでした。もう一度お試しください。");
+    }
+
+    ({ drafts, schedules } = parseGeneratedTweets(text, locale));
+
+    const wrong = drafts.filter((d) => isWrongLanguage(d, locale)).length;
+    if (wrong * 2 <= drafts.length) break;
   }
 
-  const { drafts, schedules } = parseGeneratedTweets(text, locale);
-
-  // 5 件の短縮は相互に独立なので並列実行する（逐次だと Hobby の 60 秒上限を超えやすい）。
-  // 1 ツイート内の短縮試行は前の結果に依存するため逐次のまま。
+  // 5 件の処理は相互に独立なので並列実行する（逐次だと Hobby の 60 秒上限を超えやすい）。
+  // 1 ツイート内では、言語を直してから長さを詰める。逆順だと書き直しで再び超過しうる。
   const finalDrafts = await Promise.all(
-    drafts.map((draft) => shortenWithinLimit(draft, projectText, toneMemo, url, hashtags, ai, locale)),
+    drafts.map(async (draft) => {
+      const inLanguage = await fixLanguage(draft, url, hashtags, ai, locale);
+      return shortenWithinLimit(inLanguage, projectText, toneMemo, url, hashtags, ai, locale);
+    }),
   );
 
   return finalDrafts.map((text, i) => {

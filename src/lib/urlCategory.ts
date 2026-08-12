@@ -64,3 +64,23 @@ export function detectReadmeUrls(text: string): Partial<Record<UrlCategory, stri
   }
   return detected;
 }
+
+/**
+ * 告知に載せる URL としての優先順位。
+ *
+ * 読み手に踏んでほしいのは「使える場所」であって、ソースコードではない。
+ * iOS アプリがあればストア、次に Google Play、次に Web アプリ、
+ * GitHub は他に行き先が無いときの最終手段にする。
+ * UI のボタン並びもこの順に揃えること（順序が食い違うと既定値が説明できなくなる）。
+ */
+export const URL_CATEGORY_PRIORITY: UrlCategory[] = ["appstore", "googleplay", "web", "github"];
+
+/** README 本文から、告知向きの URL を優先順位に従って 1 件選ぶ。無ければ undefined。 */
+export function pickPreferredUrl(text: string): string | undefined {
+  const detected = detectReadmeUrls(text);
+  for (const cat of URL_CATEGORY_PRIORITY) {
+    const hit = detected[cat];
+    if (hit) return hit;
+  }
+  return undefined;
+}

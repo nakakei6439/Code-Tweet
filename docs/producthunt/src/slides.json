@@ -1,0 +1,97 @@
+{
+  "canvas": {
+    "w": 2540,
+    "h": 1520
+  },
+  "slides": [
+    {
+      "file": "01-the-gap",
+      "layout": "full",
+      "eyebrow": "FOR INDIE DEVELOPERS",
+      "headline": [
+        "Your code ships.",
+        "Your launch post <em>doesn't.</em>"
+      ],
+      "sub": "The build is finished. Then you sit in front of an empty compose box, and the release goes out to nobody."
+    },
+    {
+      "file": "02-one-input",
+      "layout": "split",
+      "eyebrow": "ONE INPUT",
+      "headline": [
+        "Paste a GitHub URL.",
+        "That's the <em>whole</em> input."
+      ],
+      "sub": "Code Tweet fetches the README itself. No copying it out, no prompt to write, no account needed to try it.",
+      "image": "home.png",
+      "crop": [
+        560,
+        300,
+        2320,
+        1330
+      ],
+      "chipTop": "No sign-in to try",
+      "chipBottom": "README fetched for you"
+    },
+    {
+      "file": "03-five-angles",
+      "layout": "split",
+      "eyebrow": "WHAT COMES BACK",
+      "headline": [
+        "Five posts. Five angles.",
+        "<em>One paste.</em>"
+      ],
+      "sub": "Intro, how-to, use case, relatable, CTA — each with a weekday and time to post it, and the reason why. Weighted length is checked against X's 280 limit as you go.",
+      "cards": [
+        {
+          "when": "Thu, Aug 13 10:00",
+          "reason": "New product launch",
+          "weighted": 279,
+          "text": "Tired of manual marketing posts? Code Tweet uses AI to analyze your README and instantly generate 5 X posts, a note.com Markdown draft, or App Store screenshots! Multi-language su…"
+        },
+        {
+          "when": "Fri, Aug 14 14:30",
+          "reason": "Mid-day engagement",
+          "weighted": 269,
+          "text": "Ready to boost your project's visibility? Code Tweet makes it easy. Just paste your GitHub repo URL (public or private), and let AI do the heavy lifting. Get started in seconds an…"
+        },
+        {
+          "when": "Sat, Aug 15 11:45",
+          "reason": "Weekend peak time",
+          "weighted": 270,
+          "text": "Imagine launching your new app and having professional App Store screenshots and engaging X posts ready in minutes. Code Tweet turns your README into polished marketing content, s…"
+        }
+      ]
+    },
+    {
+      "file": "04-same-readme",
+      "layout": "split",
+      "eyebrow": "THE SAME README",
+      "headline": [
+        "It also writes your",
+        "<em>App Store screenshots.</em>"
+      ],
+      "sub": "Posts, a note.com article draft, and export-ready store screenshots — one README, three outputs, eight languages.",
+      "image": "appss.png",
+      "crop": null,
+      "chipTop": "8 languages",
+      "chipBottom": "Exports 6.9 – 6.1 inch"
+    },
+    {
+      "file": "05-pricing",
+      "layout": "closer",
+      "eyebrow": "PRICING",
+      "headline": [
+        "No subscription.",
+        "Top up <em>only what you use.</em>"
+      ],
+      "proof": [
+        "3 generations free every month",
+        "Credit packs from ¥100 — credits never expire",
+        "Try it as a guest, no account required",
+        "UI and output in 8 languages",
+        "Imported screenshots never leave your browser"
+      ]
+    }
+  ]
+}
