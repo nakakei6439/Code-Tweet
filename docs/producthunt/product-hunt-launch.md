@@ -1,16 +1,28 @@
 # Product Hunt ローンチ — Code Tweet
 
-- **ローンチ予定日**: 2026-08-26（PH は太平洋時間 00:01 公開 = **JST 8/26 16:01**）。ランキング窓は JST 8/27 16:01 まで
+- **状態: 予約済み（Scheduled）**。2026-08-13 に PH 上で確定
+- **ローンチ日時**: September 5th, 2026 12:01 AM PDT = **JST 9/5 16:01**（PH の画面表記で確認）。ランキング窓は JST 9/6 16:01 まで
+- **日付も内容も後から変更できる**（PH のダイアログに "you're not locked in – you can change the date whenever you like"）。公開後は取り消せない
 - **製品 URL**: https://code-tweet.vercel.app/
-- **想定ローンチ URL**: `https://www.producthunt.com/products/code-tweet?launch=code-tweet`（PH は製品名を slug 化する。**予約後に実物を確認すること**）
+- **ローンチ URL（実物を確認済み・2026-08-13）**: https://www.producthunt.com/products/code-tweet?launch=code-tweet
+  下書き作成時にこの URL が払い出された。X 告知ドラフトが使っている URL と一致している
+- **編集ページ**: https://www.producthunt.com/posts/code-tweet/edit
 - **投稿アカウント**: Product Hunt は Keita Nakagawa（個人アカウント。company アカウントでは投稿できない）
 - **ギャラリー**: `docs/producthunt/en/01〜05.png`（2540×1520）+ `thumbnail.png`（240×240）
 
-### なぜ 8/26 なのか
+### 日付と配布方針（2026-08-12 決定）
 
-Focus Gym が 8/12、TabeMemo が 8/19 に予約済み。自分のプロダクトを近い日に並べると票が割れる。
-KondateCart（8/5 ローンチ）は **3 points・デイリー圏外**で終わっており、その敗因は素材ではなく**配布先**だった
-（X 告知3本の合計インプレッションが 7）。今回は素材と同じ優先度で配布先を用意する。詳細は末尾の「配布先」節。
+- **9/5（土）** に決定
+- **⚠️ 他 2 本の予定が変わっている**（2026-08-13 に PH で確認）: TabeMemo が **9/2**、Focus Gym が **9/11** に再設定済み。
+  Code Tweet 9/5 は **TabeMemo のわずか 3 日後**で、launch-kit が推奨する「自分のプロダクト同士は 1 週間空ける」を満たしていない。
+  ランキング窓は重ならないが、票を入れうる同じ相手に 3 日で 2 回頼むことになる
+- **土曜ローンチ**である点は認識しておく。PH は週末のトラフィックが平日より少ない代わりに、競合するローンチも少ない
+- **配布先は Product Hunt のみ**とする。Reddit / Hacker News / Indie Hackers / AlternativeTo には出さない
+
+⚠️ **この配布方針は KondateCart の教訓と逆を行っている。** KondateCart（8/5 ローンチ）は
+**3 points・デイリー圏外**で終わり、敗因は素材ではなく配布先だった（X 告知3本の合計インプレッションが 7）。
+PH 単独だと、票を入れる相手がいないという条件は今回も同じ。素材は前回より揃っているが、
+順位が動かない可能性は高いと見ておくこと。
 
 ---
 
@@ -62,7 +74,7 @@ Code Tweet turns a GitHub README into the launch material you never get around t
 ### Link
 
 ```
-https://code-tweet.vercel.app/?utm_source=producthunt&utm_medium=launch&utm_campaign=ph2026-08-26
+https://code-tweet.vercel.app/?utm_source=producthunt&utm_medium=launch&utm_campaign=ph2026-09-05
 ```
 
 KondateCart ではキャンペーンリンクを用意せず、フォールバック URL のまま公開したため**流入計測ができなかった**。
@@ -133,16 +145,15 @@ feedback I can actually act on.
 
 | 時刻 | やること |
 |---|---|
-| 8/26 15:30 | PH の予約状態を確認。ローンチ URL の実物を控える |
-| 8/26 16:01 | 公開。ギャラリーの並び順と Description の表示を実機で確認 |
-| 8/26 16:06 | JA-1 投稿（@CodeTweet_app） |
-| 8/26 16:11 | EN-1 投稿（@nakakei6439） |
-| 8/26 16:20 | 配布先へ展開（Reddit / Show HN / Indie Hackers / 掲載済みディレクトリ） |
-| 8/26 21:00 | JA-2 投稿（@nakakei6439）。ここまでの points を記録 |
-| 8/27 00:00 | EN-2 投稿（@CodeTweet_app） |
-| 8/27 08:00 | EN-3 投稿（@CodeTweet_app） |
-| 8/27 12:00 | JA-3 投稿（@nakakei6439）。窓終了4時間前のラストコール |
-| 8/27 16:01 | 窓終了。points / 順位 / コメント / X インプレッションをこのファイルに追記 |
+| 9/5 15:30 | PH の予約状態を確認。ローンチ URL の実物を控える |
+| 9/5 16:01 | 公開。ギャラリーの並び順と Description の表示を実機で確認 |
+| 9/5 16:06 | JA-1 投稿（@CodeTweet_app） |
+| 9/5 16:11 | EN-1 投稿（@nakakei6439） |
+| 9/5 21:00 | JA-2 投稿（@nakakei6439）。ここまでの points を記録 |
+| 9/6 00:00 | EN-2 投稿（@CodeTweet_app） |
+| 9/6 08:00 | EN-3 投稿（@CodeTweet_app） |
+| 9/6 12:00 | JA-3 投稿（@nakakei6439）。窓終了4時間前のラストコール |
+| 9/6 16:01 | 窓終了。points / 順位 / コメント / X インプレッションをこのファイルに追記 |
 
 コメントが付いたら**その日のうちに全部返す**。PH はメーカーの応答をランキングに反映する。
 
@@ -156,16 +167,16 @@ feedback I can actually act on.
 
 | 順 | 案 | 相対 | JST | アカウント | weighted |
 |---|---|---|---|---|---|
-| 1 | JA-1 | +5分 | 8/26 16:06 | @CodeTweet_app | 252 / 280 |
-| 2 | EN-1 | +10分 | 8/26 16:11 | @nakakei6439 | 266 / 280 |
-| 3 | JA-2 | +5時間 | 8/26 21:00 | @nakakei6439 | 262 / 280 |
-| 4 | EN-2 | +8時間 | 8/27 00:00 | @CodeTweet_app | 243 / 280 |
-| 5 | EN-3 | +16時間 | 8/27 08:00 | @CodeTweet_app | 256 / 280 |
-| 6 | JA-3 | +20時間 | 8/27 12:00 | @nakakei6439 | 231 / 280 |
+| 1 | JA-1 | +5分 | 9/5 16:06 | @CodeTweet_app | 252 / 280 |
+| 2 | EN-1 | +10分 | 9/5 16:11 | @nakakei6439 | 266 / 280 |
+| 3 | JA-2 | +5時間 | 9/5 21:00 | @nakakei6439 | 262 / 280 |
+| 4 | EN-2 | +8時間 | 9/6 00:00 | @CodeTweet_app | 243 / 280 |
+| 5 | EN-3 | +16時間 | 9/6 08:00 | @CodeTweet_app | 256 / 280 |
+| 6 | JA-3 | +20時間 | 9/6 12:00 | @nakakei6439 | 231 / 280 |
 
 同じ文面を両アカウントから流さない。@CodeTweet_app は製品の一人称、@nakakei6439 は開発者の一人称で書き分けている。
 
-### JA-1 (@CodeTweet_app / 8-26 16:06)
+### JA-1 (@CodeTweet_app / 9-05 16:06)
 
 ```
 Code Tweet を Product Hunt に出しました🚀
@@ -177,7 +188,7 @@ GitHub の README を貼るだけで、X 向けポスト5件・note 記事の下
 https://www.producthunt.com/products/code-tweet?launch=code-tweet
 ```
 
-### EN-1 (@nakakei6439 / 8-26 16:11)
+### EN-1 (@nakakei6439 / 9-05 16:11)
 
 ```
 Code Tweet is live on Product Hunt 🚀
@@ -189,7 +200,7 @@ I built it because my code kept shipping and my launch posts never did.
 https://www.producthunt.com/products/code-tweet?launch=code-tweet
 ```
 
-### JA-2 (@nakakei6439 / 8-26 21:00)
+### JA-2 (@nakakei6439 / 9-05 21:00)
 
 ```
 個人開発で一番続かなかったのが「作ったあとの宣伝」でした。
@@ -201,7 +212,7 @@ https://www.producthunt.com/products/code-tweet?launch=code-tweet
 https://www.producthunt.com/products/code-tweet?launch=code-tweet
 ```
 
-### EN-2 (@CodeTweet_app / 8-27 00:00)
+### EN-2 (@CodeTweet_app / 9-06 00:00)
 
 ```
 Every post Code Tweet writes comes with a weekday and a time to post it — and the reason it picked that slot.
@@ -212,7 +223,7 @@ On Product Hunt today 👇
 https://www.producthunt.com/products/code-tweet?launch=code-tweet
 ```
 
-### EN-3 (@CodeTweet_app / 8-27 08:00)
+### EN-3 (@CodeTweet_app / 9-06 08:00)
 
 ```
 The part people don't expect: the same README also builds your App Store screenshots.
@@ -222,7 +233,7 @@ Headline copy, accent color, layout, device frame — generated, then editable i
 https://www.producthunt.com/products/code-tweet?launch=code-tweet
 ```
 
-### JA-3 (@nakakei6439 / 8-27 12:00)
+### JA-3 (@nakakei6439 / 9-06 12:00)
 
 ```
 Product Hunt のランキング窓、残り4時間です。
@@ -259,34 +270,19 @@ https://www.producthunt.com/products/code-tweet?launch=code-tweet
 
 ---
 
-## 5. 配布先（**素材と同じ優先度**）
+## 5. 配布先 — Product Hunt のみ（2026-08-12 決定）
 
-KondateCart の敗因はここ。ローンチ日までに、票と反応を出せる相手を用意する。
+**今回は Product Hunt 単独で出す。** Reddit / Hacker News / Indie Hackers / AlternativeTo /
+Quora / V2EX / GeekNews には出さない。既に掲載済みの Solomaker / Tsukutta / izanami / 個人dev にも
+ローンチ告知は出さない。
 
-### 既にログイン済み・即使える
+告知経路は **X の 2 アカウントのみ**（@CodeTweet_app / @nakakei6439）。
+両アカウントともフォロワーはごく少数なので、初動の票は期待できない前提で臨む。
 
-| 先 | 動き |
-|---|---|
-| Solomaker | 記事投稿（`/articles/new`）でローンチ告知 |
-| Tsukutta | 記事投稿（`/mypage/stories/new`）。Code Tweet のアプリページに紐付け |
-| izanami | 記事投稿（`/mypage/new`）。要約 100〜140 字必須 |
-| 個人dev | アプリページ（`/application/132`）の開発報告 |
-
-### 未ログイン — **ユーザーがログインを済ませる必要がある**（アカウント作成とパスワード入力は代行できない）
-
-Code Tweet は開発者向け Web アプリなので、KondateCart より相性が良い先が多い。
-
-| 先 | 出し方 |
-|---|---|
-| Hacker News | Show HN 形式 |
-| Reddit r/SideProject | 体験談形式。ローンチ告知そのものは嫌われる |
-| Reddit r/webdev | 同上 |
-| Indie Hackers | ローンチ投稿 |
-| AlternativeTo | 簡潔な製品説明 |
-
-**ログインさえ済めば、以降の投稿操作は代行できる。**
-
----
+方針を変えるなら、未ログインの投稿先を開通させるところから（アカウント作成とパスワード入力は
+ユーザー本人が行う必要がある。ログインさえ済めば以降の投稿操作は代行できる）。
+Code Tweet は開発者向け Web アプリなので、KondateCart より **Hacker News (Show HN)・
+r/SideProject・r/webdev・Indie Hackers** との相性は良い。
 
 ## 6. 未着手・ブロック中
 
@@ -295,7 +291,10 @@ Code Tweet は開発者向け Web アプリなので、KondateCart より相性�
 - [x] 言語混在の修正（実モデル 14 回試行で 13 回クリーン）
 - [ ] **ギャラリー 03 を本物の生成結果画面に差し替える**（任意・サインインが必要）
 - [ ] 配布先のログイン開通（上表）
-- [ ] PH フォーム入力 → 8/26 で予約（**送信前に必ずユーザー確認**）
+- [x] PH フォーム入力（2026-08-13 完了）。**Required 100% Complete**・下書きとして保存済み
+- [x] **9/5 で予約済み**（2026-08-13）
+- [ ] Shoutouts を入れるか判断する（未入力。PH は shoutouts のあるローンチのほうが Featured されやすいとしている）
+- [ ] TabeMemo 9/2 との 3 日差をこのままにするか判断する（変更可能）
 - [ ] 変更一式の commit / push（デプロイ前に必須。README は更新済み）
 
 ## 7. ⚠️ ローンチ前に判断が要る問題 — 英語生成に日本語が混ざる
