@@ -1,0 +1,2 @@
+# build.py が生成する中間HTML。slides.json と raw/ から再生成できるので追跡しない。
+build/

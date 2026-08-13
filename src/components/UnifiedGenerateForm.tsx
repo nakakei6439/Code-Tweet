@@ -28,6 +28,7 @@ import {
 } from "@/lib/noteLengthPresets";
 import { postJson } from "@/lib/apiClient";
 import { parseGitHubRepoUrl } from "@/lib/githubReadme";
+import { pickPreferredUrl } from "@/lib/urlCategory";
 import { LOCALES, LOCALE_LIST, localePath, type LocaleId } from "@/lib/locales";
 import { writeHandoff } from "@/lib/appss/handoff";
 import { DEFAULT_THEME_ID, THEMES } from "@/lib/appss/constants";
@@ -387,9 +388,15 @@ function Hero({ activeTab }: { activeTab: GenerateTabKey }) {
       <h1 className="text-center text-6xl font-medium tracking-tight text-white sm:text-8xl">
         {title}
       </h1>
-      <p className="mx-auto mt-5 mb-10 max-w-xl text-center text-sm leading-6 text-gray-300">
-        {subtitle}
-      </p>
+      <div className="mt-5 mb-10">
+        <p className="mx-auto max-w-xl text-center text-sm leading-6 text-gray-300">{subtitle}</p>
+        {/* 他の 2 タブは 8 言語で生成できるので、note だけ日本語固定であることを言わないと誤解される。 */}
+        {activeTab === "note" ? (
+          <p className="mx-auto mt-3 max-w-xl text-center text-xs leading-5 text-gray-500">
+            {t("noteJapaneseOnly")}
+          </p>
+        ) : null}
+      </div>
     </>
   );
 }
@@ -572,13 +579,19 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
     return result.data.content;
   }
 
-  async function loadReadmeIntoProjectText(targetUrl: string) {
+  // autofillUrl: URL 欄が空なら告知用 URL を埋める。リポジトリ選択から来たときだけ true。
+  // 「README を読み込む」だけの操作で URL 欄が勝手に埋まらないよう、既定は false のまま。
+  async function loadReadmeIntoProjectText(targetUrl: string, autofillUrl = false) {
     clearErrorState();
     setIsFetchingReadme(true);
     try {
       const content = await fetchReadmeContent(targetUrl);
       if (!content) return;
       setProjectText(content);
+      if (autofillUrl && !url.trim()) {
+        // GitHub リポジトリではなく「使える場所」を優先する。
+        setUrl(pickPreferredUrl(content) ?? targetUrl);
+      }
       if (content.length > projectTextLimit) {
         setValidationError(
           "projectText",
@@ -846,13 +859,17 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
       );
       return;
     }
+    // 告知に載せる URL は「使える場所」を優先する。README に App Store / Google Play /
+    // Web アプリの URL があればそれを採り、GitHub リポジトリは他に行き先が無いときだけ。
+    const preferred = pickPreferredUrl(content) ?? trimmedUrl;
+    const effectiveUrl = url.trim() || preferred;
     if (!url.trim()) {
-      setUrl(trimmedUrl);
+      setUrl(preferred);
     }
     if (activeTab === "tweet") {
-      await generateTweets(content, url.trim() || trimmedUrl);
+      await generateTweets(content, effectiveUrl);
     } else {
-      await generateNote(content, url.trim() || trimmedUrl);
+      await generateNote(content, effectiveUrl);
     }
   }
 
@@ -1226,18 +1243,13 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
         onClose={() => setIsRepoModalOpen(false)}
         onSelect={(htmlUrl) => {
           setGithubUrl(htmlUrl);
-          // AppSS でも README を「プロジェクト説明」欄に読み込む（生成は別ボタン）
-          if (activeTab !== "appss" && !url.trim()) {
-            setUrl(htmlUrl);
-          }
-          void loadReadmeIntoProjectText(htmlUrl);
+          // AppSS でも README を「プロジェクト説明」欄に読み込む（生成は別ボタン）。
+          // URL 欄の自動入力は README を読んでから決めるので loadReadme 側に任せる。
+          void loadReadmeIntoProjectText(htmlUrl, activeTab !== "appss");
         }}
         onRepoUrlSubmit={(htmlUrl) => {
           setGithubUrl(htmlUrl);
-          if (activeTab !== "appss" && !url.trim()) {
-            setUrl(htmlUrl);
-          }
-          void loadReadmeIntoProjectText(htmlUrl);
+          void loadReadmeIntoProjectText(htmlUrl, activeTab !== "appss");
         }}
       />
     </>

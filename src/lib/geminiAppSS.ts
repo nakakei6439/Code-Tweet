@@ -3,7 +3,11 @@ import { GEMINI_MODEL, GEMINI_THINKING_OFF, generateContentWithRetry } from "./g
 import { BACKGROUND_STYLES, THEMES, isBackgroundStyle, sanitizeHex } from "./appss/constants";
 import type { AppSSCopySlideIdea, GeneratedPalette } from "@/types/appss";
 import { DEFAULT_LOCALE, LOCALES, type LocaleId } from "@/lib/locales";
+import { isWrongLanguage } from "@/lib/outputLanguage";
 import type { BackgroundStyle, SlideLayout } from "./appss/types";
+
+// 見出しコピーの生成試行回数。言語違いだったときの作り直しを 1 回だけ許す。
+const MAX_COPY_ATTEMPTS = 2;
 
 export const APPSS_MIN_SLIDES = 3;
 export const APPSS_MAX_SLIDES = 6;
@@ -138,7 +142,24 @@ LABEL: [ラベル]
 HEADLINE: [1行目]／[2行目]
 EMPHASIS: [強調ワード]
 
-（以下同様に SLIDE: ${slideCount} まで）`;
+（以下同様に SLIDE: ${slideCount} まで）${buildLanguageFooter(locale)}`;
+}
+
+// 指示文そのものが日本語なので、日本語 README 由来の説明を渡すとモデルは日本語で返しがちになる。
+// 最後の指示ほど効くため、日本語以外を狙うときだけ英語の言語指定を末尾に足す。
+// X ポスト側（gemini.ts の buildLanguageFooter）と同じ対処。
+function buildLanguageFooter(locale: LocaleId): string {
+  if (locale === DEFAULT_LOCALE) return "";
+  const lang = LOCALES[locale].promptName;
+  return `
+
+CRITICAL — OUTPUT LANGUAGE
+Write every LABEL, HEADLINE and EMPHASIS in ${lang}.
+The app description above may be written in another language. Do NOT mirror its
+language: translate the meaning and write only in ${lang}. App names and product
+names may stay in their original script.
+The keys THEME / BG / PALETTE / SLIDE / LAYOUT / LABEL / HEADLINE / EMPHASIS and
+the id values stay exactly as shown above.`;
 }
 
 // 出力から推奨テーマ id を取り出す。未検出/不正なら undefined。
@@ -226,30 +247,41 @@ export async function generateAppSSCopy(
   if (!apiKey) throw new Error("GEMINI_API_KEY が設定されていません。");
   const ai = new GoogleGenAI({ apiKey });
 
-  const result = await generateContentWithRetry(
-    ai,
-    {
-      model: GEMINI_MODEL,
-      contents: buildAppSSCopyPrompt(appName, appDescription, features, tone, slideCount, locale),
-      config: {
-        thinkingConfig: GEMINI_THINKING_OFF,
-        temperature: 0.85,
-        maxOutputTokens: 1024,
+  // 見出しコピーは 1 本が短すぎて単体では言語判定できないため、全スライド分をまとめて判定する。
+  // 言語違いなら丸ごと生成し直す（X ポストと違い、1 行だけ書き直しても他の行が残るため）。
+  let last: AppSSCopyResult | undefined;
+  for (let attempt = 0; attempt < MAX_COPY_ATTEMPTS; attempt++) {
+    const result = await generateContentWithRetry(
+      ai,
+      {
+        model: GEMINI_MODEL,
+        contents: buildAppSSCopyPrompt(appName, appDescription, features, tone, slideCount, locale),
+        config: {
+          thinkingConfig: GEMINI_THINKING_OFF,
+          temperature: 0.85,
+          maxOutputTokens: 1024,
+        },
       },
-    },
-    3,
-  );
+      3,
+    );
 
-  const text = result.text;
-  if (!text) {
-    throw new Error("Gemini API から本文が返りませんでした。もう一度お試しください。");
+    const text = result.text;
+    if (!text) {
+      throw new Error("Gemini API から本文が返りませんでした。もう一度お試しください。");
+    }
+    const parsed: AppSSCopyResult = {
+      slides: parseAppSSCopy(text, slideCount),
+      recommendedThemeId: parseRecommendedTheme(text),
+      recommendedBackgroundStyle: parseRecommendedBackground(text),
+      generatedPalette: parseGeneratedPalette(text),
+    };
+
+    const combined = parsed.slides.map((s) => `${s.label} ${s.headline}`).join(" ");
+    if (!isWrongLanguage(combined, locale)) return parsed;
+    last = parsed;
   }
-  return {
-    slides: parseAppSSCopy(text, slideCount),
-    recommendedThemeId: parseRecommendedTheme(text),
-    recommendedBackgroundStyle: parseRecommendedBackground(text),
-    generatedPalette: parseGeneratedPalette(text),
-  };
+  // 直らなかった場合は最後の結果を返す。エディタ上でユーザーが直せるので、失敗させるより実害が小さい。
+  return last!;
 }
 
 // ---------- トップページ「READMEからスクショを作る」フォーム用：軽量アプリ情報推定 ----------

@@ -7,15 +7,16 @@ import {
   MAX_TONE_MEMO_LENGTH,
   MAX_URL_LENGTH,
 } from "@/lib/generateLimits";
-import { detectReadmeUrls, type UrlCategory } from "@/lib/urlCategory";
+import { detectReadmeUrls, URL_CATEGORY_PRIORITY, type UrlCategory } from "@/lib/urlCategory";
 import type { GenerateErrorField } from "@/types/tweet";
 
-const URL_CATEGORY_BUTTONS: { cat: UrlCategory; label: string }[] = [
-  { cat: "appstore", label: "App Store" },
-  { cat: "googleplay", label: "Google Play" },
-  { cat: "github", label: "GitHub" },
-  { cat: "web", label: "Web" },
-];
+// 並びは URL_CATEGORY_PRIORITY と揃える（自動入力の優先順位がそのまま見た目になる）。
+const URL_CATEGORY_LABELS: Record<UrlCategory, string> = {
+  appstore: "App Store",
+  googleplay: "Google Play",
+  web: "Web",
+  github: "GitHub",
+};
 
 const STATIC_FIELD_LIMITS_BY_FIELD = {
   toneMemo: MAX_TONE_MEMO_LENGTH,
@@ -295,7 +296,8 @@ export default function GenerateInputs({
                 className={inputClass("url", "focus:ring-fuchsia-500", "resize-none [overflow-wrap:anywhere]")}
               />
               <div className="mt-2 flex flex-wrap gap-2">
-                {URL_CATEGORY_BUTTONS.map(({ cat, label }) => {
+                {URL_CATEGORY_PRIORITY.map((cat) => {
+                  const label = URL_CATEGORY_LABELS[cat];
                   const hit = detectedUrls[cat];
                   const isActive = !!hit && !formDisabled;
                   const isSelected = !!hit && url === hit;

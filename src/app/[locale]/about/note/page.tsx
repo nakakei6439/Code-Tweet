@@ -37,6 +37,11 @@ export default async function NoteAboutPage({ params }: Props) {
         </h1>
         <p className="mt-6 text-base leading-7 text-gray-400">{t("lead")}</p>
 
+        {/* Code Tweet・App SS は 8 言語で生成できるため、note だけ日本語固定である理由まで書く。 */}
+        <p className="mt-4 rounded-lg border border-gray-800 bg-gray-900/50 px-4 py-3 text-sm leading-6 text-gray-400">
+          {t("japaneseOnly")}
+        </p>
+
         <div className="mt-10 flex flex-wrap gap-3">
           <Link
             href="/?tab=note"

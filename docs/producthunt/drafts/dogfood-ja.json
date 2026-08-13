@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1,
+    "weighted": 273,
+    "wrong": false,
+    "when": {
+      "label": "8月13日（木）10:00",
+      "reason": "発表直後で注目度UP"
+    },
+    "text": "個人開発者の皆さん！READMEからX投稿、note記事、App StoreスクリーンショットをAIが自動生成する「Code Tweet」が本番稼働しました。\n\nもう宣伝に悩まない。開発に集中して、アウトプットはAIに任せましょう！\n\n詳しくはこちら →\nhttps://www.producthunt.com/products/code-tweet?launch=code-tweet\n\n#個人開発 #Webサービス #AIツール"
+  },
+  {
+    "id": 2,
+    "weighted": 277,
+    "wrong": false,
+    "when": {
+      "label": "8月14日（金）14:30",
+      "reason": "週末に向けて認知拡大"
+    },
+    "text": "Code TweetはGitHub OAuthでログイン後、リポジトリを選ぶだけ。READMEをAIが解析し、Xポスト5件、note記事下書き、App Store SSをタブで切り替えて生成できます。\n\n口調やURLも任意指定可能。すぐ試せます！\n\nまずは試してみる →\nhttps://www.producthunt.com/products/code-tweet?launch=code-tweet\n\n#開発者向け #マーケティング #時間短縮"
+  },
+  {
+    "id": 3,
+    "weighted": 271,
+    "wrong": false,
+    "when": {
+      "label": "8月15日（土）11:00",
+      "reason": "具体的な活用例を提示"
+    },
+    "text": "リリースしたアプリをApp Storeで宣伝したいけど、スクリーンショット作成が面倒…そんな時もCode Tweetにお任せ！\n\n見出しコピー、強調ワード、テーマ配色までAIが提案。透かしなし書き出しも可能です。\n\nもっと詳しく見る →\nhttps://www.producthunt.com/products/code-tweet?launch=code-tweet\n\n#AppStore #スクリーンショット #宣伝"
+  },
+  {
+    "id": 4,
+    "weighted": 272,
+    "wrong": false,
+    "when": {
+      "label": "8月17日（月）17:00",
+      "reason": "仕事終わりに共感を呼ぶ"
+    },
+    "text": "「開発は好きだけど、宣伝は苦手…」そんな個人開発者の皆さんの声、Code Tweetはしっかり受け止めます！\n\nマーケティングにかける時間を大幅に削減し、もっと開発に打ち込めるようにサポートします。\n\n今すぐ始める →\nhttps://www.producthunt.com/products/code-tweet?launch=code-tweet\n\n#開発者あるある #AIアシスタント #作業効率化"
+  },
+  {
+    "id": 5,
+    "weighted": 271,
+    "wrong": false,
+    "when": {
+      "label": "8月18日（火）12:00",
+      "reason": "最後のひと押しで行動を促す"
+    },
+    "text": "READMEからX投稿、note記事、App Store SSを爆速生成！Code Tweetであなたのプロジェクトを世界に届けませんか？\n\n今すぐアクセスして、AIによる新しいマーケティング体験をぜひお試しください！\n\n今すぐ体験する →\nhttps://www.producthunt.com/products/code-tweet?launch=code-tweet\n\n#個人開発者向け #AIツール #プロダクトローンチ"
+  }
+]
