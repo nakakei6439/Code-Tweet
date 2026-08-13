@@ -53,6 +53,8 @@
     "guestNote": "ログインなしは3回まで、GitHubログインなら月3回まで使えます。ポストとnote Draftで合算カウントされます。",
     "memberNote": "月の生成回数はポストとnote Draftで合算カウントされます（README上限 {limit} 文字）。",
     "articleLength": "記事の長さ",
+    "outputLocale": "ポストの言語",
+    "outputLocaleHint": "画面の表示言語とは別に選べます。既定は表示言語です。",
     "optional": "（任意）",
     "approxChars": "約 {min}〜{max}字",
     "heroLead": "GitHubリポジトリURLを貼るだけで、",

@@ -53,6 +53,8 @@
     "guestNote": "未登录可使用 3 次，使用 GitHub 登录后每月 3 次。推文与 note 草稿共用同一计数。",
     "memberNote": "推文与 note 草稿共用每月生成次数（README 上限 {limit} 字）。",
     "articleLength": "文章长度",
+    "outputLocale": "帖子的语言",
+    "outputLocaleHint": "与界面语言相互独立。默认使用当前界面语言。",
     "optional": "（选填）",
     "approxChars": "约 {min}–{max} 字",
     "heroLead": "只需粘贴 GitHub 仓库 URL，",

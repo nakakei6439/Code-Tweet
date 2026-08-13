@@ -115,6 +115,13 @@ async function enforceAdminGate(request: NextRequest, path: string): Promise<Nex
 export const config = {
   matcher: [
     // API・auth コールバックはロケールを持たないので除外する。
-    "/((?!api/|auth/|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // public/ 直下の検証ファイル（Google Search Console の google*.html など）や
+    // robots.txt / sitemap.xml もロケールを持たない。ここで除外しないと
+    // next-intl が /ja/... へ書き換えて 404 になり、所有権確認が静かに外れる。
+    //
+    // Next.js は matcher に静的な文字列リテラルしか許さないため定数に切り出せない。
+    // 代わりに proxyMatcher.test.ts がこのファイルを読んでパターンを取り出し、
+    // 境界を固定している。ここを変えたらテストも通るか確認すること。
+    "/((?!api/|auth/|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|html|txt|xml|ico|webmanifest)$).*)",
   ],
 };

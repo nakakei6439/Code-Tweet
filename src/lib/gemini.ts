@@ -73,6 +73,10 @@ const MAX_RELANGUAGE_ATTEMPTS = 2;
 // 5 件まるごと別言語で返ってきたときの作り直し回数。1 回の作り直しは丸ごと 1 生成ぶん
 // 遅くなるので、Hobby の 60 秒上限を考えて 2 回（初回 + 作り直し 1 回）までにする。
 const MAX_BATCH_ATTEMPTS = 2;
+
+// 短縮のやり直しが別言語で返ってきたときに許す回数。短縮の予算とは別枠にして
+// 短縮の機会を潰さないようにするが、無限ループは避けるため上限を設ける。
+const MAX_SHORTEN_LANGUAGE_FAILURES = 2;
 // 日本語タグは 1 文字 2 ウェイトあり、5 個並べると 280 の 3 割前後を食う。
 // 本文の余裕を確保するため合計 3 個までに絞る（ユーザー指定タグは個数超過でも残す）。
 const MAX_HASHTAGS = 3;
@@ -611,8 +615,8 @@ async function shortenWithinLimit(
   let current = dropTagsToFit(reformatTweet(draft, hashtags, url, locale), hashtags);
   let weight = countWeighted(current);
   let attempts = 0;
+  let languageFailures = 0;
   while (weight > TWEET_LIMIT && attempts < MAX_REGENERATE_ATTEMPTS) {
-    attempts++;
     try {
       const shortened = dropTagsToFit(
         reformatTweet(
@@ -625,7 +629,14 @@ async function shortenWithinLimit(
       );
       // 短縮プロンプトは日本語で、参考として日本語の README も渡している。
       // 短縮のはずみで別言語に化けた結果を採用してはいけない。
-      if (isWrongLanguage(shortened, locale)) continue;
+      // ただしこれは「短縮の失敗」ではないので、短縮の試行回数からは外す。
+      // 数えてしまうと言語事故のぶんだけ短縮の機会が減り、上限超過のまま返りやすくなる。
+      if (isWrongLanguage(shortened, locale)) {
+        languageFailures++;
+        if (languageFailures >= MAX_SHORTEN_LANGUAGE_FAILURES) break;
+        continue;
+      }
+      attempts++;
       const shortenedWeight = countWeighted(shortened);
       if (shortenedWeight <= TWEET_LIMIT && shortened.length > 0) {
         return shortened;
