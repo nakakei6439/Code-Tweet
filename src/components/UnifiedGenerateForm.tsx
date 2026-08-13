@@ -195,6 +195,41 @@ function UsageBadge({ usage }: { usage: UsageInfo }) {
   );
 }
 
+// ポストを書く言語を選ぶ。画面の表示言語（ヘッダーの切替）とは独立している。
+// 既定は表示言語なので、触らなければ従来どおり。
+function OutputLocaleSelector({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: LocaleId;
+  onChange: (next: LocaleId) => void;
+  disabled: boolean;
+}) {
+  const t = useTranslations("generateForm");
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-300 mb-3" htmlFor="output-locale">
+        {t("outputLocale")} <span className="text-gray-500 font-normal">{t("optional")}</span>
+      </label>
+      <select
+        id="output-locale"
+        value={value}
+        onChange={(e) => onChange(e.target.value as LocaleId)}
+        disabled={disabled}
+        className="w-full rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3 text-sm text-gray-100 transition-colors hover:border-gray-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {LOCALE_LIST.map((l) => (
+          <option key={l.id} value={l.id}>
+            {l.nativeName}
+          </option>
+        ))}
+      </select>
+      <p className="mt-1.5 text-xs text-gray-400">{t("outputLocaleHint")}</p>
+    </div>
+  );
+}
+
 function LengthPresetSelector({
   value,
   onChange,
@@ -447,6 +482,11 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
   const [localizedTweets, setLocalizedTweets] = useState<{ locale: LocaleId; tweets: Tweet[] }[]>([]);
   // 「他の言語でも作る」で選択中の言語（既定ロケールは元の生成で作るので除く）。
   const [extraLocales, setExtraLocales] = useState<LocaleId[]>([]);
+  // ポストを書く言語。画面の表示言語とは別物。
+  // 既定は表示言語なので、何も触らなければ従来どおりの挙動になる。
+  // これが無いと「日本語の画面のまま英語のポストを作る」ができず、
+  // 一度日本語で生成してから追加生成する（＝クレジット 2 回分）しかなかった。
+  const [outputLocale, setOutputLocale] = useState<LocaleId>(locale);
   const [isLocalizing, setIsLocalizing] = useState(false);
   // 追加生成に使った入力。結果を見てから作るので、生成時の入力を覚えておく。
   const lastGenerateInputRef = useRef<{ projectText: string; url: string } | null>(null);
@@ -665,7 +705,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
     setExtraLocales([]);
     try {
       const result = await postJson<GenerateResponse>("/api/generate", {
-        projectText: textToGenerate, toneMemo, url: urlToGenerate, hashtags, locale,
+        projectText: textToGenerate, toneMemo, url: urlToGenerate, hashtags, locale: outputLocale,
       } satisfies GenerateRequest);
       if (!result.ok) {
         setApiError(result.error);
@@ -1164,6 +1204,13 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
               onChange={setLengthPreset}
               disabled={formDisabled}
             />
+          ) : activeTab === "tweet" ? (
+            // note Draft は日本語固定、App SS はエディタ側に同じ選択肢があるので tweet だけ。
+            <OutputLocaleSelector
+              value={outputLocale}
+              onChange={setOutputLocale}
+              disabled={formDisabled}
+            />
           ) : undefined
         }
         />
@@ -1203,7 +1250,7 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
                 prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
               )
             }
-            baseLocale={locale}
+            baseLocale={outputLocale}
             done={localizedTweets.map((r) => r.locale)}
             usage={usage}
             isLoading={isLocalizing}

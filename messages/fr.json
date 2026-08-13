@@ -53,6 +53,8 @@
     "guestNote": "3 générations sans connexion, et 3 par mois avec une connexion GitHub. Les posts et les brouillons note partagent le même compteur.",
     "memberNote": "Les posts et les brouillons note partagent votre quota mensuel (limite du README : {limit} caractères).",
     "articleLength": "Longueur de l'article",
+    "outputLocale": "Langue des posts",
+    "outputLocaleHint": "Indépendant de la langue de l'interface. Par défaut, celle que vous utilisez.",
     "optional": "(facultatif)",
     "approxChars": "~{min}–{max} caractères",
     "heroLead": "Collez simplement l'URL d'un dépôt GitHub et",

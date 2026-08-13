@@ -51,6 +51,7 @@ npm run dev
 - 生成回数は Code Tweet・note Draft・App SS（コピー生成・透かし解除書き出し）で合算カウントされます。
 - 画面表示は 8 言語に対応しています。日本語は従来どおり接頭辞なし（`/pricing`）、他言語は `/en/pricing` のようにパスが付きます。
 - X ポストと App SS の見出しコピーは 8 言語で生成できます。X ポストは生成後に「この内容を他の言語でも作る」から言語を追加できます（翻訳ではなく、同じ README からその言語で書き直します）。クレジットは 4 言語ごとに 1 回分を消費します。
+- **ポストを書く言語は、画面の表示言語とは別に選べます**（Code Tweet タブの「ポストの言語」。既定は表示言語）。日本語の画面のまま英語のポストを作れるので、一度日本語で生成してから追加生成する（＝クレジット 2 回分）必要がありません。App SS はエディタ側に同じ選択肢があります。ログイン時の任意指定欄に表示されます。
 - **note Draft の生成言語は日本語のみです**（note.com が日本語圏のサービスであるため）。この制約は note タブのヒーロー直下と「note Draft とは」ページに 8 言語すべてで明記しています。
 - 日本語以外を指定したときは、生成結果が本当にその言語で書かれているかを文字体系の比率で検査します（`src/lib/outputLanguage.ts`）。プロンプト末尾の英語による言語指定、過半数が別言語なら丸ごと再生成、残った1件は翻訳し直し、短縮時の言語逆戻り防止の4段構えです。日本語 README から英語で生成させると日本語が混ざる事象への対処で、実測 5 件中 3 件混在 → 14 回中 13 回クリーンまで改善しています。
 
@@ -90,6 +91,7 @@ npm run dev
 - Gemini API `gemini-2.5-flash`
 - Stripe Checkout / Webhook / Customer Portal
 - Vercel Analytics、Speed Insights、Microsoft Clarity
+- Google Search Console（所有権確認は `public/google56bb80f617a5907b.html`。**削除すると確認が外れます**。`src/proxy.ts` の matcher が `.html` を除外していないと next-intl に書き換えられて 404 になるため、境界を `src/lib/__tests__/proxyMatcher.test.ts` で固定しています）
 
 主な環境変数は `GEMINI_API_KEY`、`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY`、`GITHUB_PAT_ENCRYPTION_KEY`、`STRIPE_SECRET_KEY`、`STRIPE_WEBHOOK_SECRET`、`STRIPE_PRICE_ID`、`NEXT_PUBLIC_APP_URL`、`NEXT_PUBLIC_CLARITY_PROJECT_ID`、管理画面用の `ADMIN_*` です。
 

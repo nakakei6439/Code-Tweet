@@ -53,6 +53,8 @@
     "guestNote": "Sin iniciar sesión dispones de 3 generaciones; con GitHub, 3 al mes. Las publicaciones y los borradores comparten el mismo contador.",
     "memberNote": "Las publicaciones y los borradores comparten tu cuota mensual (límite de README: {limit} caracteres).",
     "articleLength": "Longitud del artículo",
+    "outputLocale": "Idioma de las publicaciones",
+    "outputLocaleHint": "Independiente del idioma de la interfaz. Por defecto, el idioma que estás viendo.",
     "optional": "(opcional)",
     "approxChars": "~{min}–{max} caracteres",
     "heroLead": "Solo pega la URL de un repositorio de GitHub y",

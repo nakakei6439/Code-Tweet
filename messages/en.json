@@ -53,6 +53,8 @@
     "guestNote": "You get 3 generations without signing in, and 3 per month with GitHub sign-in. Posts and note Drafts share the same count.",
     "memberNote": "Posts and note Drafts share your monthly generation count (README limit: {limit} characters).",
     "articleLength": "Article length",
+    "outputLocale": "Language of the posts",
+    "outputLocaleHint": "Independent of the display language. Defaults to the language you're viewing in.",
     "optional": "(optional)",
     "approxChars": "~{min}–{max} chars",
     "heroLead": "Just paste a GitHub repository URL and",

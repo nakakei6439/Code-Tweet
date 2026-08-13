@@ -53,6 +53,8 @@
     "guestNote": "Ohne Anmeldung 3 Generierungen, mit GitHub-Anmeldung 3 pro Monat. Posts und note-Entwürfe teilen sich dasselbe Kontingent.",
     "memberNote": "Posts und note-Entwürfe teilen sich dein monatliches Kontingent (README-Limit: {limit} Zeichen).",
     "articleLength": "Artikellänge",
+    "outputLocale": "Sprache der Posts",
+    "outputLocaleHint": "Unabhängig von der Anzeigesprache. Standard ist die Sprache, in der du die Seite siehst.",
     "optional": "(optional)",
     "approxChars": "ca. {min}–{max} Zeichen",
     "heroLead": "Füge einfach eine GitHub-Repository-URL ein und",

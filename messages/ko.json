@@ -53,6 +53,8 @@
     "guestNote": "로그인 없이 3회, GitHub 로그인 시 매월 3회 사용할 수 있습니다. 포스트와 note 초안은 합산되어 계산됩니다.",
     "memberNote": "포스트와 note 초안은 월 생성 횟수를 합산합니다(README 상한 {limit}자).",
     "articleLength": "글 길이",
+    "outputLocale": "게시물 언어",
+    "outputLocaleHint": "화면 표시 언어와는 별개로 고를 수 있습니다. 기본값은 표시 언어입니다.",
     "optional": "(선택)",
     "approxChars": "약 {min}~{max}자",
     "heroLead": "GitHub 저장소 URL을 붙여넣기만 하면",
