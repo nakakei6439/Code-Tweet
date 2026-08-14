@@ -1,6 +1,6 @@
 {
   "meta": {
-    "description": "面向独立开发者的 AI 工具，可将 README 或 GitHub 仓库转换为 X 营销推文、文章草稿和 App Store 提交用截图。"
+    "description": "面向独立开发者的工具，把你拍好的截图变成 App Store 上架图：标题由 README 生成，支持八种语言，导出所有必需尺寸。同时还能生成 X 帖子和 note.com 草稿。"
   },
   "nav": {
     "aboutCodeTweet": "什么是 Code Tweet",
@@ -31,8 +31,8 @@
     "description": "根据 GitHub 仓库或项目说明，生成可直接复制粘贴到 note.com 的介绍文章草稿。"
   },
   "homePage": {
-    "title": "把 README 变成推文和文章草稿",
-    "description": "在一个页面内，从 GitHub 仓库或项目说明生成 X 推文和 note.com 介绍文章草稿。"
+    "title": "把你的截图变成 App Store 上架图",
+    "description": "为你拍好的截图加上标题和设备边框，导出所有必需尺寸的 App Store 上架图。标题由你的 README 生成，支持八种语言。同一份 README 还能生成 X 帖子和 note.com 草稿。"
   },
   "tabs": {
     "ariaLabel": "生成模式"
@@ -61,7 +61,7 @@
     "heroTweet": "即可从 README 生成一周份的 5 条推文。",
     "heroNote": "即可生成一篇可直接粘贴到 note.com 的 Markdown 草稿。",
     "noteJapaneseOnly": "note Draft 仅支持生成日语内容。需要其他语言时，请使用 Code Tweet 或 App SS。",
-    "heroAppss": "由 AI 为你构思 App Store 截图的标题文案。",
+    "heroAppss": "把你拍好的截图变成 App Store 上架图——加标题、加边框，导出所有必需尺寸。",
     "errorFetchFailed": "获取失败。",
     "errorNetwork": "发生网络错误。",
     "errorGeneric": "发生错误。",

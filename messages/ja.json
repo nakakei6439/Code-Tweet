@@ -1,6 +1,6 @@
 {
   "meta": {
-    "description": "READMEやGitHubリポジトリから、X向けマーケティングポスト・note記事の下書き・App Store提出用スクリーンショットを生成する個人開発者向けAIツール"
+    "description": "撮ったスクショを App Store の掲載画像に変える個人開発者向けツール。見出しは README から8言語で生成し、必要な全サイズを書き出します。X 向けポストと note の下書きも同じ README から。"
   },
   "nav": {
     "aboutCodeTweet": "Code Tweetとは",
@@ -31,8 +31,8 @@
     "description": "GitHubリポジトリやプロジェクト説明から、note.com にコピー＆ペーストできる紹介記事の Draft を生成します。"
   },
   "homePage": {
-    "title": "READMEをポスト / note Draftに変換",
-    "description": "GitHubリポジトリやプロジェクト説明から、Xのポストとnote.comの紹介記事Draftを1ページで生成できます。"
+    "title": "撮ったスクショを App Store の掲載画像に",
+    "description": "撮った画面に見出しと枠を付けて、App Store の掲載画像を全サイズ書き出します。見出しは README から8言語で生成。同じ README から X 向けポストと note の下書きも作れます。"
   },
   "tabs": {
     "ariaLabel": "生成モード"
@@ -61,7 +61,7 @@
     "heroTweet": "READMEから1週間分のポストを5件作成します。",
     "heroNote": "note.com に貼り付けられるMarkdown Draftを1本生成します。",
     "noteJapaneseOnly": "note Draft の生成は日本語のみです。他の言語で作るときは Code Tweet か App SS をお使いください。",
-    "heroAppss": "App Store用スクショの見出しをAIが考えます。",
+    "heroAppss": "撮ったスクショに見出しと枠を付けて、App Store の掲載画像にします。全サイズ書き出し。",
     "errorFetchFailed": "取得に失敗しました。",
     "errorNetwork": "ネットワークエラーが発生しました。",
     "errorGeneric": "エラーが発生しました。",

@@ -1,6 +1,6 @@
 {
   "meta": {
-    "description": "Un outil d'IA pour les développeurs indépendants qui transforme un README ou un dépôt GitHub en posts marketing pour X, brouillons d'articles et captures d'écran pour l'App Store."
+    "description": "Un outil pour développeurs indépendants qui transforme vos captures en visuels de fiche App Store : titres rédigés à partir de votre README en huit langues, export dans toutes les tailles requises. Génère aussi des posts pour X et des brouillons note.com."
   },
   "nav": {
     "aboutCodeTweet": "Qu'est-ce que Code Tweet ?",
@@ -31,8 +31,8 @@
     "description": "Générez un brouillon d'article à copier-coller dans note.com, à partir d'un dépôt GitHub ou d'une description de projet."
   },
   "homePage": {
-    "title": "Transformez un README en posts et brouillons d'articles",
-    "description": "Générez des posts X et des brouillons d'articles note.com depuis un dépôt GitHub ou une description de projet, sur une seule page."
+    "title": "Transformez vos captures en visuels de fiche App Store",
+    "description": "Ajoutez un titre et un cadre d'appareil aux écrans que vous avez capturés, puis exportez les visuels de votre fiche App Store dans toutes les tailles requises. Les titres sont rédigés à partir de votre README, en huit langues. Ce même README produit aussi des posts pour X et des brouillons pour note.com."
   },
   "tabs": {
     "ariaLabel": "Mode de génération"
@@ -61,7 +61,7 @@
     "heroTweet": "obtenez 5 posts — de quoi tenir une semaine — depuis votre README.",
     "heroNote": "obtenez un brouillon Markdown prêt à coller dans note.com.",
     "noteJapaneseOnly": "Les brouillons note sont générés uniquement en japonais. Pour les autres langues, utilisez Code Tweet ou App SS.",
-    "heroAppss": "laissez l'IA rédiger les accroches de vos captures App Store.",
+    "heroAppss": "transformez les captures que vous avez prises en visuels de fiche App Store — titre, cadre et toutes les tailles requises.",
     "errorFetchFailed": "Échec du chargement.",
     "errorNetwork": "Une erreur réseau s'est produite.",
     "errorGeneric": "Une erreur s'est produite.",

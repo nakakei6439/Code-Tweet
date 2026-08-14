@@ -1,6 +1,6 @@
 {
   "meta": {
-    "description": "Ein KI-Tool für Indie-Entwickler, das aus einer README oder einem GitHub-Repository X-Marketing-Posts, Artikelentwürfe und App-Store-Screenshots erzeugt."
+    "description": "Ein Werkzeug für Indie-Entwickler, das deine eigenen Screenshots in App-Store-Bilder verwandelt – Überschriften aus deiner README in acht Sprachen, Export in allen erforderlichen Größen. Erzeugt außerdem Posts für X und note.com-Entwürfe."
   },
   "nav": {
     "aboutCodeTweet": "Was ist Code Tweet?",
@@ -31,8 +31,8 @@
     "description": "Erzeuge aus einem GitHub-Repository oder einer Projektbeschreibung einen Artikelentwurf zum Kopieren in note.com."
   },
   "homePage": {
-    "title": "Aus einer README Posts und Artikelentwürfe machen",
-    "description": "Erzeuge auf einer Seite X-Posts und note.com-Artikelentwürfe aus einem GitHub-Repository oder einer Projektbeschreibung."
+    "title": "Verwandle deine Screenshots in App-Store-Bilder",
+    "description": "Versieh deine eigenen Screenshots mit Überschrift und Geräterahmen und exportiere die Bilder für deinen App-Store-Eintrag in allen erforderlichen Größen. Die Überschriften entstehen aus deiner README, in acht Sprachen. Dieselbe README liefert außerdem Posts für X und Entwürfe für note.com."
   },
   "tabs": {
     "ariaLabel": "Generierungsmodus"
@@ -61,7 +61,7 @@
     "heroTweet": "erhalte 5 Posts – genug für eine Woche – aus deiner README.",
     "heroNote": "erhalte einen Markdown-Entwurf zum Einfügen in note.com.",
     "noteJapaneseOnly": "note-Entwürfe werden ausschließlich auf Japanisch erstellt. Für andere Sprachen nutze Code Tweet oder App SS.",
-    "heroAppss": "lass die KI die Überschriften für deine App-Store-Screenshots schreiben.",
+    "heroAppss": "verwandle deine eigenen Screenshots in App-Store-Bilder – mit Überschrift, Rahmen und allen erforderlichen Größen.",
     "errorFetchFailed": "Laden fehlgeschlagen.",
     "errorNetwork": "Ein Netzwerkfehler ist aufgetreten.",
     "errorGeneric": "Ein Fehler ist aufgetreten.",

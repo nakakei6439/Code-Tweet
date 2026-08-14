@@ -1,6 +1,6 @@
 {
   "meta": {
-    "description": "An AI tool for indie developers that turns a README or GitHub repository into X marketing posts, article drafts, and App Store screenshots."
+    "description": "A tool for indie developers that turns the screenshots you captured into App Store listing images — headlines written from your README in eight languages, exported at every required size. Also produces X posts and note.com drafts."
   },
   "nav": {
     "aboutCodeTweet": "What is Code Tweet?",
@@ -31,8 +31,8 @@
     "description": "Generate an article draft you can copy and paste into note.com, from a GitHub repository or project description."
   },
   "homePage": {
-    "title": "Turn a README into posts and article drafts",
-    "description": "Generate X posts and note.com article drafts from a GitHub repository or project description, all on one page."
+    "title": "Turn your screenshots into App Store listing images",
+    "description": "Add a headline and a device frame to the screens you captured, and export App Store listing images at every required size. Headlines are written from your README in eight languages. The same README also produces X posts and note.com drafts."
   },
   "tabs": {
     "ariaLabel": "Generation mode"
@@ -61,7 +61,7 @@
     "heroTweet": "get 5 posts — a week's worth — from your README.",
     "heroNote": "get one Markdown draft ready to paste into note.com.",
     "noteJapaneseOnly": "note Drafts are generated in Japanese only. For other languages, use Code Tweet or App SS.",
-    "heroAppss": "let AI write the headlines for your App Store screenshots.",
+    "heroAppss": "turn the screenshots you captured into App Store listing images — headline, frame, every required size.",
     "errorFetchFailed": "Failed to load.",
     "errorNetwork": "A network error occurred.",
     "errorGeneric": "Something went wrong.",
