@@ -1,11 +1,10 @@
 "use client";
 
 import { useApiErrorMessage } from "@/lib/useApiErrorMessage";
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
-import { useSearchParams } from "next/navigation";
-import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 import GenerateInputs from "@/components/GenerateInputs";
 import GenerateTabs, { type GenerateTabKey } from "@/components/GenerateTabs";
@@ -444,12 +443,11 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
   const locale = useLocale() as LocaleId;
   const formatCount = useFormatCount();
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
 
-  const tabParam = searchParams?.get("tab");
-  const activeTab: GenerateTabKey =
-    tabParam === "note" ? "note" : tabParam === "tweet" ? "tweet" : initialTab;
+  // タブ状態は URL に書き戻さない（cf5f04e の URL 哲学に揃える）。
+  // 初期表示だけはサーバ側で URL の `?tab=` から解決された `initialTab` を使い、
+  // 以降の切替はクライアント state だけで完結する。
+  const [activeTab, setActiveTab] = useState<GenerateTabKey>(initialTab);
 
   // 共通入力
   const [projectText, setProjectText] = useState("");
@@ -528,26 +526,10 @@ export default function UnifiedGenerateForm({ initialUsage, initialTab }: Props)
   const formDisabled = isLoading || isFetchingReadme;
   const isDisabled = formDisabled || projectText.trim() === "";
 
-  const syncTabToUrl = useCallback(
-    (next: GenerateTabKey) => {
-      const params = new URLSearchParams(searchParams?.toString() ?? "");
-      if (next === "note") {
-        params.set("tab", "note");
-      } else if (next === "appss") {
-        params.set("tab", "appss");
-      } else {
-        params.delete("tab");
-      }
-      const query = params.toString();
-      const target = query ? `${pathname}?${query}` : pathname;
-      router.replace(target, { scroll: false });
-    },
-    [pathname, router, searchParams],
-  );
-
+  // タブ切替はメモリ内 state の更新だけ。URL は触らない（cf5f04e 哲学）。
+  // 直リンク `?tab=tweet` などの「初期表示の指定」はサーバ側で `initialTab` に解決済み。
   function handleTabChange(next: GenerateTabKey) {
-    if (next === activeTab) return;
-    syncTabToUrl(next);
+    setActiveTab(next);
   }
 
   async function handleOpenRepoModal() {
