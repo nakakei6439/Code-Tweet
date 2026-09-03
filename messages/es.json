@@ -1,6 +1,6 @@
 {
   "meta": {
-    "description": "Una herramienta para desarrolladores independientes que convierte tus capturas en imágenes para la ficha de App Store: titulares escritos a partir de tu README en ocho idiomas y exportación en todos los tamaños necesarios. También genera publicaciones para X y borradores para note.com."
+    "description": "Una herramienta de IA para desarrolladores independientes que convierte un README o repositorio de GitHub en publicaciones de marketing para X, borradores de artículos y capturas de pantalla para la App Store."
   },
   "nav": {
     "aboutCodeTweet": "¿Qué es Code Tweet?",
@@ -31,8 +31,8 @@
     "description": "Genera un borrador de artículo listo para copiar y pegar en note.com, a partir de un repositorio de GitHub o la descripción de tu proyecto."
   },
   "homePage": {
-    "title": "Convierte tus capturas en imágenes para la App Store",
-    "description": "Añade un titular y un marco de dispositivo a las capturas que hiciste y exporta las imágenes de tu ficha de App Store en todos los tamaños necesarios. Los titulares se escriben a partir de tu README en ocho idiomas. Ese mismo README también genera publicaciones para X y borradores para note.com."
+    "title": "Convierte un README en publicaciones y borradores",
+    "description": "Genera publicaciones para X y borradores de artículos para note.com desde un repositorio de GitHub o la descripción de tu proyecto, todo en una página."
   },
   "tabs": {
     "ariaLabel": "Modo de generación"

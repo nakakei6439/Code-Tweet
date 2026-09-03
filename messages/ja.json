@@ -1,6 +1,6 @@
 {
   "meta": {
-    "description": "撮ったスクショを App Store の掲載画像に変える個人開発者向けツール。見出しは README から8言語で生成し、必要な全サイズを書き出します。X 向けポストと note の下書きも同じ README から。"
+    "description": "READMEやGitHubリポジトリから、X向けマーケティングポスト・note記事の下書き・App Store提出用スクリーンショットを生成する個人開発者向けAIツール"
   },
   "nav": {
     "aboutCodeTweet": "Code Tweetとは",
@@ -31,8 +31,8 @@
     "description": "GitHubリポジトリやプロジェクト説明から、note.com にコピー＆ペーストできる紹介記事の Draft を生成します。"
   },
   "homePage": {
-    "title": "撮ったスクショを App Store の掲載画像に",
-    "description": "撮った画面に見出しと枠を付けて、App Store の掲載画像を全サイズ書き出します。見出しは README から8言語で生成。同じ README から X 向けポストと note の下書きも作れます。"
+    "title": "READMEをポスト / note Draftに変換",
+    "description": "GitHubリポジトリやプロジェクト説明から、Xのポストとnote.comの紹介記事Draftを1ページで生成できます。"
   },
   "tabs": {
     "ariaLabel": "生成モード"

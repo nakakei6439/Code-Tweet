@@ -1,6 +1,6 @@
 {
   "meta": {
-    "description": "Ein Werkzeug für Indie-Entwickler, das deine eigenen Screenshots in App-Store-Bilder verwandelt – Überschriften aus deiner README in acht Sprachen, Export in allen erforderlichen Größen. Erzeugt außerdem Posts für X und note.com-Entwürfe."
+    "description": "Ein KI-Tool für Indie-Entwickler, das aus einer README oder einem GitHub-Repository X-Marketing-Posts, Artikelentwürfe und App-Store-Screenshots erzeugt."
   },
   "nav": {
     "aboutCodeTweet": "Was ist Code Tweet?",
@@ -31,8 +31,8 @@
     "description": "Erzeuge aus einem GitHub-Repository oder einer Projektbeschreibung einen Artikelentwurf zum Kopieren in note.com."
   },
   "homePage": {
-    "title": "Verwandle deine Screenshots in App-Store-Bilder",
-    "description": "Versieh deine eigenen Screenshots mit Überschrift und Geräterahmen und exportiere die Bilder für deinen App-Store-Eintrag in allen erforderlichen Größen. Die Überschriften entstehen aus deiner README, in acht Sprachen. Dieselbe README liefert außerdem Posts für X und Entwürfe für note.com."
+    "title": "Aus einer README Posts und Artikelentwürfe machen",
+    "description": "Erzeuge auf einer Seite X-Posts und note.com-Artikelentwürfe aus einem GitHub-Repository oder einer Projektbeschreibung."
   },
   "tabs": {
     "ariaLabel": "Generierungsmodus"
