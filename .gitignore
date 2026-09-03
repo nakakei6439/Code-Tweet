@@ -47,3 +47,6 @@ next-env.d.ts
 .claude/skills/
 .agents/
 skills-lock.json
+
+# generator/evaluator ハーネスの作業ファイル（履歴は docs/history.md に残す）
+.product/

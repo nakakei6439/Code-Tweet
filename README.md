@@ -1,6 +1,6 @@
 # Code Tweet
 
-自分で撮ったスクリーンショットに見出しと枠を付けて、App Store の掲載画像を必要な全サイズで書き出す個人開発者向け Web アプリ。見出しは README から 8 言語で生成します。同じ README から X 向けのマーケティングポスト 5 件と、note.com に貼り付けられる Markdown Draft 1 本も作れます。
+README やプロジェクト説明を AI が分析し、X（旧 Twitter）向けのマーケティングポスト 5 件、note.com に貼り付けられる Markdown Draft 1 本、または App Store 提出用スクリーンショット（App SS）を生成する個人開発者向け Web アプリ。
 
 - 本番 URL: https://code-tweet.vercel.app/
 - ドキュメント索引: [docs/index.md](./docs/index.md)
@@ -11,9 +11,11 @@
 
 ## 現在の状態
 
-本番稼働中。GitHub OAuth、README 取得、App SS / Code Tweet / note Draft のタブ式生成、利用制限、Stripe 課金、管理画面、Pro 向け生成履歴まで実装済みです。
+本番稼働中。GitHub OAuth、README 取得、Code Tweet / note Draft / App SS のタブ式生成、利用制限、Stripe 課金、管理画面、Pro 向け生成履歴まで実装済みです。
 
 **2026-08-14: プロダクトの軸を App SS に寄せました。**トップページの既定タブを App SS に変更し（`src/app/[locale]/page.tsx`）、ヒーローコピー・`homePage.title` / `description`・`meta.description` を 8 言語すべて書き換えています。理由は、X 向けポスト生成が汎用チャット AI で代替可能なのに対し、**「撮ったスクショを掲載画像に変える」部分は代替コストが高く、ここが本当の差分だと判断したため**です。
+
+**2026-09-03: 既定タブに加えて 8 言語のヒーロー/メタ文言・`homePage.title` / `description` も Code Tweet 先頭に戻しました。**トップページの既定タブを App SS から Code Tweet に戻し（`src/app/[locale]/page.tsx`）、タブバーの並びを `note Draft` / `Code Tweet` / `App SS` に変更しています（`src/components/GenerateTabs.tsx`）。さらに、cf5f04e「Lead with App SS」で App SS 先頭に書き換えていた 8 言語の `homePage.title` / `description`・`meta.description` と README のヒーロー文を、cf5f04e 直前の Code Tweet 先頭版へ復元しました（`messages/*.json` 8 ファイル + `README.md`）。一方、App SS タブ固有の説明である `generateForm.heroAppss` だけは、今回 App SS の出力内容を正確に説明する現行版（cf5f04e の文）を**そのまま維持**しています。
 
 UI は 8 言語（日本語 / 英語 / スペイン語 / 簡体字中国語 / 繁体字中国語 / フランス語 / ドイツ語 / 韓国語）に対応しています。
 
@@ -34,9 +36,9 @@ npm run dev
 
 | モード | 出力 | 主な用途 |
 |---|---|---|
-| **App SS**（既定タブ） | App Store 掲載画像の PNG 一括書き出し | 自分で撮ったスクショを、見出し・枠付きの掲載画像に変える |
-| Code Tweet | X 向けポスト 5 件 | README から 1 週間分の告知ポストを作る |
 | note Draft | note.com 向け Markdown Draft 1 本 | プロダクト紹介記事の下書きを作る |
+| **Code Tweet**（既定タブ） | X 向けポスト 5 件 | README から 1 週間分の告知ポストを作る |
+| App SS | App Store 掲載画像の PNG 一括書き出し | 自分で撮ったスクショを、見出し・枠付きの掲載画像に変える |
 
 > **App SS はスクリーンショットを撮る機能ではありません。**撮影は利用者が行い、App SS はその画像を
 > App Store の掲載画像（＝広告）に変えます。生のシミュレータ画像とストア掲載画像を分けているのは

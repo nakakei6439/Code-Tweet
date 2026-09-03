@@ -27,20 +27,20 @@ export default function GenerateTabs({ activeTab, onChange }: Props) {
         <button
           type="button"
           role="tab"
-          aria-selected={activeTab === "tweet"}
-          onClick={() => onChange("tweet")}
-          className={`px-5 py-2 text-sm font-semibold rounded-full transition-all cursor-pointer ${pillClass(activeTab === "tweet")}`}
-        >
-          Code Tweet
-        </button>
-        <button
-          type="button"
-          role="tab"
           aria-selected={activeTab === "note"}
           onClick={() => onChange("note")}
           className={`px-5 py-2 text-sm font-semibold rounded-full transition-all cursor-pointer ${pillClass(activeTab === "note")}`}
         >
           note Draft
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "tweet"}
+          onClick={() => onChange("tweet")}
+          className={`px-5 py-2 text-sm font-semibold rounded-full transition-all cursor-pointer ${pillClass(activeTab === "tweet")}`}
+        >
+          Code Tweet
         </button>
         <button
           type="button"

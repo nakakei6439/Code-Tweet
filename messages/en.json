@@ -1,6 +1,6 @@
 {
   "meta": {
-    "description": "A tool for indie developers that turns the screenshots you captured into App Store listing images — headlines written from your README in eight languages, exported at every required size. Also produces X posts and note.com drafts."
+    "description": "An AI tool for indie developers that turns a README or GitHub repository into X marketing posts, article drafts, and App Store screenshots."
   },
   "nav": {
     "aboutCodeTweet": "What is Code Tweet?",
@@ -31,8 +31,8 @@
     "description": "Generate an article draft you can copy and paste into note.com, from a GitHub repository or project description."
   },
   "homePage": {
-    "title": "Turn your screenshots into App Store listing images",
-    "description": "Add a headline and a device frame to the screens you captured, and export App Store listing images at every required size. Headlines are written from your README in eight languages. The same README also produces X posts and note.com drafts."
+    "title": "Turn a README into posts and article drafts",
+    "description": "Generate X posts and note.com article drafts from a GitHub repository or project description, all on one page."
   },
   "tabs": {
     "ariaLabel": "Generation mode"

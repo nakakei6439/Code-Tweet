@@ -23,6 +23,8 @@
 | UI 多言語化（2026-08-03） | next-intl を `localePrefix: "as-needed"` で導入し、UI・LP・法務ページを 8 言語対応に。サーバー側のエラー文言はコード化してクライアントで解決する方式へ移行。`npm run check:i18n` で未訳と翻訳キー欠落を検出する |
 | App SS 多言語コピー（2026-08-03） | 見出しコピーの生成言語を 8 言語から選べるようにし、簡体字・繁体字・韓国語の Noto Sans/Serif を追加。`AppSSProject.locale` を新設し、言語の文字体系に合わないフォントは既定へ差し替える |
 | X ポスト多言語生成（2026-08-03） | 生成結果から言語を追加できるようにし、`gemini.ts` の日本語ハードコード（曜日配列・CTA 正規表現・パースマーカー・URL リード文）を解体。1 リクエスト = 1 言語に分割し、クレジットは 4 言語ごとに 1 消費 |
+| 既定タブを Code Tweet に戻し、Code Tweet を中央に配置（2026-09-03） | トップページの既定タブを App SS から Code Tweet に戻し、タブバーの並びを `note Draft` / `Code Tweet` / `App SS` に変更 |
+| 前面コピーを Code Tweet 先頭に戻す（2026-09-03） | cf5f04e「Lead with App SS」で App SS 先頭に書き換えていた 8 言語の `homePage.title` / `description`・`meta.description`・README を cf5f04e^ の Code Tweet 先頭版へ復元。`heroAppss` は App SS タブ固有の説明として現行版を維持 |
 | 現在 | 管理画面、規約、プライバシーポリシー、問い合わせ導線、ゲスト利用回数リセット、管理画面ログインロックまで実装済み |
 
 ## 重要な設計判断
