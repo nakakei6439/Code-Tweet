@@ -15,6 +15,8 @@
 
 **2026-08-14: プロダクトの軸を App SS に寄せました。**トップページの既定タブを App SS に変更し（`src/app/[locale]/page.tsx`）、ヒーローコピー・`homePage.title` / `description`・`meta.description` を 8 言語すべて書き換えています。理由は、X 向けポスト生成が汎用チャット AI で代替可能なのに対し、**「撮ったスクショを掲載画像に変える」部分は代替コストが高く、ここが本当の差分だと判断したため**です。
 
+**2026-09-03: 既定タブを Code Tweet に戻し、タブの真ん中に配置しました。**トップページの既定タブを App SS から Code Tweet に戻し（`src/app/[locale]/page.tsx`）、タブバーの並びを `note Draft` / `Code Tweet` / `App SS` に変更しています（`src/components/GenerateTabs.tsx`）。一方、8 言語のヒーローコピー・`homePage.title` / `description`・`meta.description` は App SS 寄りのままとし、今回の変更範囲は既定タブとタブ並び順のみに留めています。
+
 UI は 8 言語（日本語 / 英語 / スペイン語 / 簡体字中国語 / 繁体字中国語 / フランス語 / ドイツ語 / 韓国語）に対応しています。
 
 短期では新機能追加より、Pro 課金者数の増加、計測、軽微な導線改善を優先します。
@@ -34,9 +36,9 @@ npm run dev
 
 | モード | 出力 | 主な用途 |
 |---|---|---|
-| **App SS**（既定タブ） | App Store 掲載画像の PNG 一括書き出し | 自分で撮ったスクショを、見出し・枠付きの掲載画像に変える |
-| Code Tweet | X 向けポスト 5 件 | README から 1 週間分の告知ポストを作る |
 | note Draft | note.com 向け Markdown Draft 1 本 | プロダクト紹介記事の下書きを作る |
+| **Code Tweet**（既定タブ） | X 向けポスト 5 件 | README から 1 週間分の告知ポストを作る |
+| App SS | App Store 掲載画像の PNG 一括書き出し | 自分で撮ったスクショを、見出し・枠付きの掲載画像に変える |
 
 > **App SS はスクリーンショットを撮る機能ではありません。**撮影は利用者が行い、App SS はその画像を
 > App Store の掲載画像（＝広告）に変えます。生のシミュレータ画像とストア掲載画像を分けているのは
