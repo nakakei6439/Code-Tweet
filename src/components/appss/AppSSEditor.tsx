@@ -16,9 +16,9 @@ import type {
 } from "@/lib/appss/types";
 import {
   BEZEL,
-  CANVAS,
   EXPORT_SIZES,
   FONTS,
+  IPAD_EXPORT_SIZE,
   MAX_SLIDES,
   THEMES,
   canvasFor,
@@ -414,13 +414,25 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       const fontEmbedCSS = await computeFontEmbedCSS(el);
       await warmupCapture(el, fontEmbedCSS);
 
+      // デバイス別の書き出し設定を確定する。iPhone は 4 サイズ、iPad は 2064×2752 のみ。
+      // フォルダ名は iPad のとき "ipad-2064x2752/" プレフィックスを付けて、iPhone の
+      // "1320x2868/" 等のフォルダ名と一目で区別できるようにする。
+      const exportCanvas = canvasFor(deviceKind);
+      const sizes =
+        deviceKind === "ipad"
+          ? [IPAD_EXPORT_SIZE]
+          : EXPORT_SIZES;
+      const folderName = (size: { w: number; h: number }) =>
+        deviceKind === "ipad" ? `ipad-${size.w}x${size.h}` : `${size.w}x${size.h}`;
+      const zipDeviceSuffix = deviceKind === "ipad" ? "-ipad" : "";
+
       const zip = createZip();
-      const total = EXPORT_SIZES.length * slides.length;
+      const total = sizes.length * slides.length;
       let unit = 0;
       let okCount = 0;
       const errors: string[] = [];
 
-      for (const size of EXPORT_SIZES) {
+      for (const size of sizes) {
         for (let i = 0; i < slides.length; i++) {
           unit += 1;
           setExporting(`${unit}/${total}`);
@@ -432,10 +444,17 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
             continue;
           }
           try {
-            const dataUrl = await captureSlide(node, CANVAS.w, CANVAS.h, size.w, size.h, fontEmbedCSS);
+            const dataUrl = await captureSlide(
+              node,
+              exportCanvas.w,
+              exportCanvas.h,
+              size.w,
+              size.h,
+              fontEmbedCSS,
+            );
             const base64 = dataUrl.split(",")[1] || "";
             const filename = `${String(i + 1).padStart(2, "0")}-${slides[i].layout}.png`;
-            zip.file(`${size.w}x${size.h}/${filename}`, base64, { base64: true });
+            zip.file(`${folderName(size)}/${filename}`, base64, { base64: true });
             okCount += 1;
           } catch (e) {
             const msg = e instanceof Error ? e.message : String(e);
@@ -445,8 +464,12 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       }
 
       if (okCount > 0) {
-        // 言語を名前に入れる。複数言語を書き出したとき、どの zip が何語か分かるようにする。
-        await downloadZip(zip, `${slugify(state.appName)}-${projectLocale}-appstore-${stamp()}.zip`);
+        // 言語と（iPad のとき）デバイス種別のサフィックスを zip 名に含める。複数言語・
+        // 複数デバイスを書き出したときに取り違えないようにする。
+        await downloadZip(
+          zip,
+          `${slugify(state.appName)}-${projectLocale}-appstore${zipDeviceSuffix}-${stamp()}.zip`,
+        );
       }
       if (errors.length > 0) {
         setExportError(
@@ -627,32 +650,35 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
         )}
       </div>
 
-      {/* 書き出し用オフスクリーンキャンバス（実寸）。スプリント 01 では iPhone 寸法で固定。
-          iPad での 2064×2752 書き出しはスプリント 03 で対応。 */}
-      {exportSlide && (
-        <div
-          ref={exportRef}
-          aria-hidden
-          style={{
-            position: "absolute",
-            left: -99999,
-            top: 0,
-            width: CANVAS.w,
-            height: CANVAS.h,
-            fontFamily,
-            pointerEvents: "none",
-          }}
-        >
-          <SlideCanvas
-            slide={exportSlide}
-            theme={theme}
-            backgroundStyle={backgroundStyle}
-            hideEmpty
-            watermark={exportWatermark}
-            device="iphone"
-          />
-        </div>
-      )}
+      {/* 書き出し用オフスクリーンキャンバス（実寸）。選択中のデバイス種別のキャンバス寸法で
+          描画する（iPhone 1320×2868 / iPad 2064×2752）。スプリント 03 で iPad 対応。 */}
+      {exportSlide && (() => {
+        const offscreen = canvasFor(deviceKind);
+        return (
+          <div
+            ref={exportRef}
+            aria-hidden
+            style={{
+              position: "absolute",
+              left: -99999,
+              top: 0,
+              width: offscreen.w,
+              height: offscreen.h,
+              fontFamily,
+              pointerEvents: "none",
+            }}
+          >
+            <SlideCanvas
+              slide={exportSlide}
+              theme={theme}
+              backgroundStyle={backgroundStyle}
+              hideEmpty
+              watermark={exportWatermark}
+              device={deviceKind}
+            />
+          </div>
+        );
+      })()}
     </div>
   );
 }
