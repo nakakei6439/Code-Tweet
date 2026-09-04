@@ -378,6 +378,11 @@ type LayoutRects = {
 };
 
 function getDefaultRects(layout: AppSSSlide["layout"], kind: DeviceKind = "iphone"): LayoutRects {
+  // iPad (kind === "ipad") はスプリント 02 で 7 レイアウトすべてが成立するように専用 rect を返す。
+  // iPhone 分岐はスプリント 01 以前と完全に同値（既存テスト・既存見た目を 1px も変えない）。
+  if (kind === "ipad") {
+    return getIPadDefaultRects(layout);
+  }
   const canvas = canvasFor(kind);
   const cW = canvas.w;
   const cH = canvas.h;
@@ -496,6 +501,144 @@ function getDefaultRects(layout: AppSSSlide["layout"], kind: DeviceKind = "iphon
     case "no-device":
       return {
         caption: { x: cW * 0.1, y: cH * 0.35, width: cW * 0.8, height: cH * 0.3, align: "center" },
+      };
+    default:
+      return {};
+  }
+}
+
+// iPad (2064×2752, ratio 0.75) 用のレイアウト既定 rect。
+// iPhone より「横に広く縦が短い」比率に合わせて、caption の縦位置・高さ、デバイスの
+// 大きさ・配置を再設計している。受け入れ条件:
+//   - 7 レイアウトすべてキャンバス内に収まる（デバイスは cW / cH 内に収まるか、
+//     上下端から少量のはみ出しに留める）
+//   - 見出しとデバイスが（collage 系を除き）重ならない
+//   - no-device の見出しは cW × 0.84（キャンバス幅の 84%）で常に 3 割を超す
+function getIPadDefaultRects(layout: AppSSSlide["layout"]): LayoutRects {
+  const canvas = canvasFor("ipad");
+  const cW = canvas.w; // 2064
+  const cH = canvas.h; // 2752
+  const ratio = bezelRatioFor("ipad"); // 0.75
+  const deviceW = phoneW(cW, cH, 0.84, "ipad") * cW; // 0.72 * 2064 = 1486
+  const deviceH = deviceW / ratio; // 1981
+  const smallW = phoneWSmall(cW, cH, "ipad") * cW; // 0.66 * 2064 = 1362
+  const smallH = smallW / ratio; // 1816
+  const capW = cW * 0.88; // 1816
+
+  switch (layout) {
+    case "hero":
+      // キャプションは上、デバイスは中央〜下。下端から少しはみ出る量で iPhone と同じ「画面下に置く」印象を保つ。
+      return {
+        caption: { x: cW * 0.06, y: cH * 0.06, width: capW, height: cH * 0.24, align: "center" },
+        device: {
+          x: (cW - deviceW) / 2,
+          y: cH * 0.32,
+          width: deviceW,
+          height: deviceH,
+        },
+      };
+    case "device-bottom":
+      // キャプションは上、デバイスは画面下。縦が短い iPad ではデバイス底辺を cH 少し手前に。
+      return {
+        caption: { x: cW * 0.06, y: cH * 0.06, width: capW, height: cH * 0.22, align: "center" },
+        device: {
+          x: (cW - deviceW) / 2,
+          y: cH - deviceH - cH * 0.02,
+          width: deviceW,
+          height: deviceH,
+        },
+      };
+    case "device-top":
+      // デバイスは画面上端から少しはみ出る形に。キャプションは下半分に大きく。
+      return {
+        caption: { x: cW * 0.06, y: cH * 0.68, width: capW, height: cH * 0.26, align: "center" },
+        device: {
+          x: (cW - deviceW) / 2,
+          y: -cH * 0.06,
+          width: deviceW,
+          height: deviceH,
+        },
+      };
+    case "two-devices":
+      // 2台を左右に並べる。iPad は横広なので deviceW*0.85 を前後 2 台で重ねず左右に振り、
+      // caption 底辺と device 上端が重ならないよう y を cH*0.30 以降から開始。
+      return {
+        caption: { x: cW * 0.06, y: cH * 0.06, width: capW, height: cH * 0.22, align: "center" },
+        deviceSecondary: {
+          x: cW * 0.02,
+          y: cH * 0.32,
+          width: smallW,
+          height: smallH,
+        },
+        device: {
+          x: cW - deviceW * 0.85,
+          y: cH * 0.30,
+          width: deviceW * 0.85,
+          height: (deviceW * 0.85) / ratio,
+        },
+      };
+    case "collage-duo": {
+      // 2台を大胆に反対向きへ傾けて重ねる。iPhone と同じ duoW=0.6, 回転 -10/+9, zIndex 2/3。
+      const duoW = phoneW(cW, cH, 0.6, "ipad") * cW;
+      const duoH = duoW / ratio;
+      return {
+        caption: { x: cW * 0.06, y: cH * 0.05, width: cW * 0.88, height: cH * 0.20, align: "center" },
+        deviceSecondary: {
+          x: cW * 0.04,
+          y: cH * 0.3,
+          width: duoW,
+          height: duoH,
+          rotation: -10,
+          zIndex: 2,
+        },
+        device: {
+          x: cW - duoW - cW * 0.04,
+          y: cH * 0.34,
+          width: duoW,
+          height: duoH,
+          rotation: 9,
+          zIndex: 3,
+        },
+      };
+    }
+    case "collage-trio": {
+      // 3台を扇状に配置。iPhone と同じ sideW=0.42 / centerW=0.5, 回転 -14/0/14, zIndex 1/3/2。
+      const centerW = phoneW(cW, cH, 0.5, "ipad") * cW;
+      const centerH = centerW / ratio;
+      const sideW = phoneW(cW, cH, 0.42, "ipad") * cW;
+      const sideH = sideW / ratio;
+      return {
+        caption: { x: cW * 0.06, y: cH * 0.05, width: cW * 0.88, height: cH * 0.20, align: "center" },
+        deviceSecondary: {
+          x: cW * 0.04,
+          y: cH * 0.32,
+          width: sideW,
+          height: sideH,
+          rotation: -14,
+          zIndex: 1,
+        },
+        deviceTertiary: {
+          x: cW - sideW - cW * 0.04,
+          y: cH * 0.32,
+          width: sideW,
+          height: sideH,
+          rotation: 14,
+          zIndex: 2,
+        },
+        device: {
+          x: (cW - centerW) / 2,
+          y: cH * 0.42,
+          width: centerW,
+          height: centerH,
+          zIndex: 3,
+        },
+      };
+    }
+    case "no-device":
+      // キャンバス幅の 84% × 高さ 44% で中央に大きく。fontSize 比率（unit=min(cW,cH)）から
+      // 計算される文字サイズ（unit*0.088 = 182px）に合う高さを確保。
+      return {
+        caption: { x: cW * 0.08, y: cH * 0.28, width: cW * 0.84, height: cH * 0.44, align: "center" },
       };
     default:
       return {};

@@ -21,6 +21,7 @@ import {
   FONTS,
   MAX_SLIDES,
   THEMES,
+  canvasFor,
   resolveFontForScript,
   buildCustomTheme,
   themeById,
@@ -167,14 +168,17 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
   const addTextElement = React.useCallback(
     (slideId: string) => {
       const id = nid();
+      // 初期座標は選択中のデバイス種別のキャンバス寸法を基準にする（iPad モードでも
+      // iPhone 座標で左上に小さく出てしまう問題を修正）。
+      const canvas = canvasFor(deviceKind);
       const element: TextElement = {
         id,
         text: te("textElement"),
         transform: {
-          x: CANVAS.w * 0.2,
-          y: CANVAS.h * 0.42,
-          width: CANVAS.w * 0.6,
-          height: CANVAS.h * 0.08,
+          x: canvas.w * 0.2,
+          y: canvas.h * 0.42,
+          width: canvas.w * 0.6,
+          height: canvas.h * 0.08,
         },
       };
       updateSlide(slideId, (s) => ({
@@ -183,7 +187,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       }));
       setSelectedElement({ slideId, elementId: `text:${id}` });
     },
-    [updateSlide, te],
+    [updateSlide, te, deviceKind],
   );
 
   const deleteTextElement = React.useCallback(
