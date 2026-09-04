@@ -3,11 +3,10 @@
 import { useTranslations } from "next-intl";
 import * as React from "react";
 import type { AppSSSlide, BackgroundStyle, Theme } from "@/lib/appss/types";
-import { CANVAS, MAX_SLIDES } from "@/lib/appss/constants";
+import { MAX_SLIDES, canvasFor, type DeviceKind } from "@/lib/appss/constants";
 import { SlideCanvas } from "./SlideCanvas";
 
 const THUMB_W = 84;
-const THUMB_SCALE = THUMB_W / CANVAS.w;
 
 type Props = {
   slides: AppSSSlide[];
@@ -15,6 +14,7 @@ type Props = {
   theme: Theme;
   backgroundStyle: BackgroundStyle;
   fontFamily: string;
+  device?: DeviceKind;
   onSelect: (id: string) => void;
   onAdd: () => void;
   onDuplicate: (id: string) => void;
@@ -28,6 +28,7 @@ export function Sidebar({
   theme,
   backgroundStyle,
   fontFamily,
+  device = "iphone",
   onSelect,
   onAdd,
   onDuplicate,
@@ -36,6 +37,8 @@ export function Sidebar({
 }: Props) {
   const t = useTranslations("appssSidebar");
   const atMax = slides.length >= MAX_SLIDES;
+  const canvas = canvasFor(device);
+  const thumbScale = THUMB_W / canvas.w;
   return (
     <div className="flex h-full w-40 flex-col border-r border-gray-800 bg-gray-950/60">
       <div className="flex items-center justify-between px-3 py-2 text-xs text-gray-400">
@@ -64,21 +67,21 @@ export function Sidebar({
                 className={`relative block w-full overflow-hidden rounded-md border ${
                   active ? "border-cyan-400" : "border-gray-800 hover:border-gray-600"
                 }`}
-                style={{ height: CANVAS.h * THUMB_SCALE }}
+                style={{ height: canvas.h * thumbScale }}
                 title={t("selectSlide", { n: index + 1 })}
               >
                 <div
                   aria-hidden
                   className="pointer-events-none"
                   style={{
-                    width: CANVAS.w,
-                    height: CANVAS.h,
-                    transform: `scale(${THUMB_SCALE})`,
+                    width: canvas.w,
+                    height: canvas.h,
+                    transform: `scale(${thumbScale})`,
                     transformOrigin: "top left",
                     fontFamily,
                   }}
                 >
-                  <SlideCanvas slide={slide} theme={theme} backgroundStyle={backgroundStyle} />
+                  <SlideCanvas slide={slide} theme={theme} backgroundStyle={backgroundStyle} device={device} />
                 </div>
                 <span className="absolute left-1 top-1 rounded bg-gray-950/80 px-1 text-[10px] text-gray-300">
                   {index + 1}

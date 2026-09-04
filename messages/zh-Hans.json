@@ -628,7 +628,10 @@
     "summary": "{count} 张 × {w}×{h}",
     "zoomOut": "缩小",
     "zoomIn": "放大",
-    "fit": "适应窗口"
+    "fit": "适应窗口",
+    "iphone": "iPhone",
+    "ipad": "iPad",
+    "deviceGroup": "设备"
   },
   "appssPicker": {
     "clear": "清除",

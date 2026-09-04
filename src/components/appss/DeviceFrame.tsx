@@ -1,11 +1,13 @@
 "use client";
-// AppSS — iPhone デバイスフレーム。
-// Apple Design Resources 公式 Product Bezel (iPhone 16 Pro Max) を使用。
+// AppSS — デバイスフレーム。
+// iPhone は Apple Design Resources 公式 Product Bezel (iPhone 16 Pro Max) を使用。
+// iPad はスプリント 01 では実機ベゼル画像が無いので暫定の角丸枠で描いている。
+// スプリント 04 で iPad 実機ベゼルへ差し替える。
 // https://developer.apple.com/design/resources/ — App Store Marketing Artwork
 // License Agreement に基づき、ベゼル画像は改変せず画面領域に実アプリのスクショを表示する。
 import { useTranslations } from "next-intl";
 import * as React from "react";
-import { BEZEL } from "@/lib/appss/constants";
+import { BEZEL, type DeviceKind, bezelRatioFor } from "@/lib/appss/constants";
 import { img } from "@/lib/appss/imageCache";
 
 type FrameProps = {
@@ -14,6 +16,7 @@ type FrameProps = {
   style?: React.CSSProperties;
   // 書き出し時にプレースホルダを焼き込まないための抑止フラグ
   hideEmpty?: boolean;
+  device?: DeviceKind;
 };
 
 const S = BEZEL.screen;
@@ -55,6 +58,58 @@ export function Phone({ src, alt = "", style, hideEmpty }: FrameProps) {
       />
     </div>
   );
+}
+
+// iPad の暫定デバイスフレーム。スプリント 01〜03 で使い、スプリント 04 で実機ベゼルに
+// 差し替える。外形は iPad Pro 13インチに近い縦横比（0.75）、黒い画面領域 + 角丸の枠。
+// スクショは画面領域に object-fit:cover で収まる（枠外にはみ出さない）。
+const TABLET_INSET_PCT = 0.025; // 外枠に対する画面領域の上下左右マージン（暫定）
+const TABLET_RADIUS_PCT = 3.2; // 外枠サイズに対する画面領域の角丸（暫定）
+
+export function Tablet({ src, alt = "", style, hideEmpty }: FrameProps) {
+  const resolved = img(src);
+  const ratio = bezelRatioFor("ipad");
+  // aspectRatio は width / height。iPad 13インチは 2064:2752 ≒ 0.75。
+  // CSS は `width / height` のフォーマットなので ratio をそのまま渡す。
+  return (
+    <div
+      style={{
+        position: "relative",
+        aspectRatio: `${ratio}`,
+        background: "#0b0f17",
+        borderRadius: "5%",
+        boxShadow: "inset 0 0 0 2px rgba(148, 163, 184, 0.35)",
+        ...style,
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          inset: `${TABLET_INSET_PCT * 100}%`,
+          overflow: "hidden",
+          borderRadius: `${TABLET_RADIUS_PCT}%`,
+          background: "#111",
+        }}
+      >
+        {resolved ? (
+          <img
+            src={resolved}
+            alt={alt}
+            style={{ display: "block", width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
+            draggable={false}
+          />
+        ) : hideEmpty ? null : (
+          <EmptySlot />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// 共通エントリ。device prop で iPhone / iPad を切り替える。
+export function DeviceFrame(props: FrameProps) {
+  if (props.device === "ipad") return <Tablet {...props} />;
+  return <Phone {...props} />;
 }
 
 function EmptySlot() {

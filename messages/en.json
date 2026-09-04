@@ -628,7 +628,10 @@
     "summary": "{count} slides × {w}×{h}",
     "zoomOut": "Zoom out",
     "zoomIn": "Zoom in",
-    "fit": "Fit to view"
+    "fit": "Fit to view",
+    "iphone": "iPhone",
+    "ipad": "iPad",
+    "deviceGroup": "Device"
   },
   "appssPicker": {
     "clear": "Clear",

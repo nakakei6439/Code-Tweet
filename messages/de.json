@@ -628,7 +628,10 @@
     "summary": "{count} Folien × {w}×{h}",
     "zoomOut": "Verkleinern",
     "zoomIn": "Vergrößern",
-    "fit": "Einpassen"
+    "fit": "Einpassen",
+    "iphone": "iPhone",
+    "ipad": "iPad",
+    "deviceGroup": "Gerät"
   },
   "appssPicker": {
     "clear": "Leeren",

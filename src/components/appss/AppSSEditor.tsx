@@ -24,6 +24,7 @@ import {
   resolveFontForScript,
   buildCustomTheme,
   themeById,
+  type DeviceKind,
 } from "@/lib/appss/constants";
 import { isTextElementId, textElementKey } from "@/lib/appss/elements";
 import { preloadImages } from "@/lib/appss/imageCache";
@@ -69,6 +70,9 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
   // 現在実行中の書き出しに透かしを焼き込むか（無料=true、透かし解除=false）
   const [exportWatermark, setExportWatermark] = React.useState(true);
   const [copyAssistantOpen, setCopyAssistantOpen] = React.useState(false);
+  // デバイス種別（iPhone / iPad）。プレビュー・書き出しの両方で参照する。
+  // 仕様（spec.md 置いた前提3）に従いリロードで iPhone へ戻るため、永続化しない。
+  const [deviceKind, setDeviceKind] = React.useState<DeviceKind>("iphone");
   const [usage, setUsage] = React.useState<UsageInfo | null>(initialUsage);
   const [, forceRender] = React.useReducer((n: number) => n + 1, 0);
   const exportRef = React.useRef<HTMLDivElement | null>(null);
@@ -556,6 +560,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
           theme={theme}
           backgroundStyle={backgroundStyle}
           fontFamily={fontFamily}
+          device={deviceKind}
           onSelect={(id) => {
             setActiveSlideId(id);
             setSelectedElement(null);
@@ -574,6 +579,8 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
             backgroundStyle={backgroundStyle}
             fontFamily={fontFamily}
             selectedElement={selectedElement}
+            device={deviceKind}
+            onDeviceChange={setDeviceKind}
             onActiveSlideChange={setActiveSlideId}
             onLabelChange={(slideId, v) => updateSlide(slideId, { label: v })}
             onHeadlineChange={(slideId, v) => updateSlide(slideId, { headline: v })}
@@ -602,6 +609,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
           <Inspector
             slide={activeSlide}
             selectedElementId={selectedElementId}
+            device={deviceKind}
             onUpdateSlide={(patch) => updateSlide(activeSlide.id, patch)}
             onElementChange={(id, t) => handleElementChange(activeSlide.id, id, t)}
             onResetElement={(id) => handleResetElement(activeSlide.id, id)}
@@ -615,7 +623,8 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
         )}
       </div>
 
-      {/* 書き出し用オフスクリーンキャンバス（実寸） */}
+      {/* 書き出し用オフスクリーンキャンバス（実寸）。スプリント 01 では iPhone 寸法で固定。
+          iPad での 2064×2752 書き出しはスプリント 03 で対応。 */}
       {exportSlide && (
         <div
           ref={exportRef}
@@ -636,6 +645,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
             backgroundStyle={backgroundStyle}
             hideEmpty
             watermark={exportWatermark}
+            device="iphone"
           />
         </div>
       )}

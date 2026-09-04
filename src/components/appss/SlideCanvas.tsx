@@ -16,14 +16,15 @@ import type {
   Theme,
 } from "@/lib/appss/types";
 import {
-  BEZEL_RATIO,
-  CANVAS,
   DEFAULT_BACKGROUND_STYLE,
+  bezelRatioFor,
+  canvasFor,
   phoneW,
   phoneWSmall,
+  type DeviceKind,
 } from "@/lib/appss/constants";
 import { toTextElementId } from "@/lib/appss/elements";
-import { Phone } from "./DeviceFrame";
+import { DeviceFrame } from "./DeviceFrame";
 
 type EditHandlers = {
   onLabelChange?: (v: string) => void;
@@ -376,13 +377,15 @@ type LayoutRects = {
   deviceTertiary?: Rect;
 };
 
-function getDefaultRects(layout: AppSSSlide["layout"]): LayoutRects {
-  const cW = CANVAS.w;
-  const cH = CANVAS.h;
-  const deviceW = phoneW(cW, cH) * cW;
-  const deviceH = deviceW / BEZEL_RATIO;
-  const smallW = phoneWSmall(cW, cH) * cW;
-  const smallH = smallW / BEZEL_RATIO;
+function getDefaultRects(layout: AppSSSlide["layout"], kind: DeviceKind = "iphone"): LayoutRects {
+  const canvas = canvasFor(kind);
+  const cW = canvas.w;
+  const cH = canvas.h;
+  const ratio = bezelRatioFor(kind);
+  const deviceW = phoneW(cW, cH, 0.84, kind) * cW;
+  const deviceH = deviceW / ratio;
+  const smallW = phoneWSmall(cW, cH, kind) * cW;
+  const smallH = smallW / ratio;
   const capW = cW * 0.84;
   const capH = cH * 0.28;
 
@@ -430,13 +433,13 @@ function getDefaultRects(layout: AppSSSlide["layout"]): LayoutRects {
           x: cW - deviceW * 0.9 + cW * 0.06,
           y: cH - deviceH * 0.9 - cH * 0.02,
           width: deviceW * 0.9,
-          height: (deviceW * 0.9) / BEZEL_RATIO,
+          height: (deviceW * 0.9) / ratio,
         },
       };
     case "collage-duo": {
       // 2台を大胆に反対向きへ傾けて重ねる。見出しは上部で両画面をまたぐ。
-      const duoW = phoneW(cW, cH, 0.6) * cW;
-      const duoH = duoW / BEZEL_RATIO;
+      const duoW = phoneW(cW, cH, 0.6, kind) * cW;
+      const duoH = duoW / ratio;
       return {
         caption: { x: cW * 0.06, y: cH * 0.06, width: cW * 0.88, height: cH * 0.18, align: "center" },
         deviceSecondary: {
@@ -459,10 +462,10 @@ function getDefaultRects(layout: AppSSSlide["layout"]): LayoutRects {
     }
     case "collage-trio": {
       // 3台を扇状に配置。中央は正立・大きめ・最前面、左右は傾けて背面に。
-      const centerW = phoneW(cW, cH, 0.5) * cW;
-      const centerH = centerW / BEZEL_RATIO;
-      const sideW = phoneW(cW, cH, 0.42) * cW;
-      const sideH = sideW / BEZEL_RATIO;
+      const centerW = phoneW(cW, cH, 0.5, kind) * cW;
+      const centerH = centerW / ratio;
+      const sideW = phoneW(cW, cH, 0.42, kind) * cW;
+      const sideH = sideW / ratio;
       return {
         caption: { x: cW * 0.06, y: cH * 0.06, width: cW * 0.88, height: cH * 0.18, align: "center" },
         deviceSecondary: {
@@ -522,12 +525,16 @@ function rectFor(
 }
 
 // Inspector から現在の transform を参照するためのヘルパー
-export function getElementTransform(slide: AppSSSlide, id: ElementId): ElementTransform | undefined {
+export function getElementTransform(
+  slide: AppSSSlide,
+  id: ElementId,
+  kind: DeviceKind = "iphone",
+): ElementTransform | undefined {
   if (id.startsWith("text:")) {
     const textId = id.slice("text:".length);
     return slide.textElements?.find((element) => element.id === textId)?.transform;
   }
-  const defaults = getDefaultRects(slide.layout);
+  const defaults = getDefaultRects(slide.layout, kind);
   const rect = rectFor(id as BuiltInElementId, slide, defaults);
   if (!rect) return undefined;
   const saved = slide.transforms?.[id as BuiltInElementId];
@@ -552,9 +559,10 @@ function defaultElementZ(id: BuiltInElementId): number {
 // 課金の壁: 無料の書き出しには常にこの帯を焼き込む。透かし解除（有料）時は watermark=false で
 // レンダーしないだけ（描画パイプライン自体は変わらないため export の安全性に影響しない）。
 // filter:blur 等は使わず単色 rgba 背景のみで Safari の foreignObject バグを回避する。
-function Watermark() {
-  const cW = CANVAS.w;
-  const cH = CANVAS.h;
+function Watermark({ kind }: { kind: DeviceKind }) {
+  const canvas = canvasFor(kind);
+  const cW = canvas.w;
+  const cH = canvas.h;
   return (
     <div
       aria-hidden
@@ -595,6 +603,8 @@ type Props = {
   hideEmpty?: boolean;
   // true の場合、下部に透かし帯を焼き込む（無料書き出し用）
   watermark?: boolean;
+  // デバイス種別（既定 iPhone）。切替で iPad のキャンバス寸法・デバイス枠比を切り替える。
+  device?: DeviceKind;
 };
 
 export function SlideCanvas({
@@ -607,6 +617,7 @@ export function SlideCanvas({
   previewScale = 1,
   hideEmpty,
   watermark,
+  device = "iphone",
 }: Props) {
   const handleBackgroundMouseDown = editable
     ? (e: React.MouseEvent<HTMLDivElement>) => {
@@ -628,8 +639,9 @@ export function SlideCanvas({
         selectedElementId={selectedElementId}
         previewScale={previewScale}
         hideEmpty={hideEmpty}
+        device={device}
       />
-      {watermark && <Watermark />}
+      {watermark && <Watermark kind={device} />}
     </div>
   );
 }
@@ -647,6 +659,7 @@ export function DeckStrip({
   previewScale = 1,
   hideEmpty,
   showGuides = false,
+  device = "iphone",
 }: {
   slides: AppSSSlide[];
   theme: Theme;
@@ -658,9 +671,11 @@ export function DeckStrip({
   previewScale?: number;
   hideEmpty?: boolean;
   showGuides?: boolean;
+  device?: DeviceKind;
 }) {
-  const cW = CANVAS.w;
-  const cH = CANVAS.h;
+  const canvas = canvasFor(device);
+  const cW = canvas.w;
+  const cH = canvas.h;
   const totalW = Math.max(1, slides.length) * cW;
 
   return (
@@ -707,6 +722,7 @@ export function DeckStrip({
               selectedElementId={selectedElementId}
               previewScale={previewScale}
               hideEmpty={hideEmpty}
+              device={device}
             />
             {showGuides && <ScreenGuide cW={cW} cH={cH} index={index} active={active} />}
           </div>
@@ -771,6 +787,7 @@ function SlideElements({
   selectedElementId,
   previewScale,
   hideEmpty,
+  device = "iphone",
 }: {
   slide: AppSSSlide;
   theme: Theme;
@@ -779,12 +796,14 @@ function SlideElements({
   selectedElementId: ElementId | null;
   previewScale: number;
   hideEmpty?: boolean;
+  device?: DeviceKind;
 }) {
   const tcv = useTranslations("appssCanvas");
-  const cW = CANVAS.w;
-  const cH = CANVAS.h;
+  const canvas = canvasFor(device);
+  const cW = canvas.w;
+  const cH = canvas.h;
   const inverted = !!slide.inverted;
-  const defaults = getDefaultRects(slide.layout);
+  const defaults = getDefaultRects(slide.layout, device);
   const captionRect = rectFor("caption", slide, defaults);
   const deviceRect = rectFor("device", slide, defaults);
   const secondaryRect = rectFor("deviceSecondary", slide, defaults);
@@ -855,13 +874,18 @@ function SlideElements({
             zIndex: t.zIndex ?? zIndex,
           })
         }
-        lockAspectRatio={BEZEL_RATIO}
+        lockAspectRatio={bezelRatioFor(device)}
         zIndex={zIndex}
         allowOverflow
         selected={selectedElementId === id}
         onSelect={() => edit?.onSelectElement?.(id)}
       >
-        <Phone src={src} hideEmpty={hideEmpty} style={{ width: "100%", height: "100%", ...extraStyle }} />
+        <DeviceFrame
+          device={device}
+          src={src}
+          hideEmpty={hideEmpty}
+          style={{ width: "100%", height: "100%", ...extraStyle }}
+        />
       </Movable>
     );
   }
