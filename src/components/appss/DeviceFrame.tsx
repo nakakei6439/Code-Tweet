@@ -1,13 +1,12 @@
 "use client";
 // AppSS — デバイスフレーム。
-// iPhone は Apple Design Resources 公式 Product Bezel (iPhone 16 Pro Max) を使用。
-// iPad はスプリント 01 では実機ベゼル画像が無いので暫定の角丸枠で描いている。
-// スプリント 04 で iPad 実機ベゼルへ差し替える。
-// https://developer.apple.com/design/resources/ — App Store Marketing Artwork
-// License Agreement に基づき、ベゼル画像は改変せず画面領域に実アプリのスクショを表示する。
+// 2026-09-05 スプリント 04 方針転換: Apple Design Resources 公式 Product Bezel
+// (iPhone 16 Pro Max) と、iPad 用の暫定角丸枠は廃止し、iPhone / iPad とも
+// 同じ汎用フレーム（角丸の黒枠 + 内側に画面領域）で描く。外形比は
+// bezelRatioFor(device) で取得し、aspectRatio にのみ使う。
 import { useTranslations } from "next-intl";
 import * as React from "react";
-import { BEZEL, type DeviceKind, bezelRatioFor } from "@/lib/appss/constants";
+import { type DeviceKind, bezelRatioFor } from "@/lib/appss/constants";
 import { img } from "@/lib/appss/imageCache";
 
 type FrameProps = {
@@ -19,58 +18,17 @@ type FrameProps = {
   device?: DeviceKind;
 };
 
-const S = BEZEL.screen;
-const pct = (n: number, base: number) => `${(n / base) * 100}%`;
+// 外枠に対する画面領域の上下左右マージン（暫定）
+const INSET_PCT = 0.025;
+// 外枠サイズに対する画面領域の角丸（暫定）
+const RADIUS_PCT = 3.2;
 
-export function Phone({ src, alt = "", style, hideEmpty }: FrameProps) {
+// iPhone / iPad で共有する汎用フレーム。
+// 黒色の角丸外枠 + 内側に少し余白を取って画面領域を置き、スクショを
+// object-fit:cover で枠内に収める（枠外にはみ出さない）。
+function GenericFrame({ src, alt = "", style, hideEmpty, ratio }: FrameProps & { ratio: number }) {
   const resolved = img(src);
-  return (
-    <div style={{ position: "relative", aspectRatio: `${BEZEL.w} / ${BEZEL.h}`, ...style }}>
-      {/* 画面（ベゼルの下層に敷く。Dynamic Island はベゼル側に描画済み） */}
-      <div
-        style={{
-          position: "absolute",
-          overflow: "hidden",
-          left: pct(S.x, BEZEL.w),
-          top: pct(S.y, BEZEL.h),
-          width: pct(S.w, BEZEL.w),
-          height: pct(S.h, BEZEL.h),
-          borderRadius: `${(S.radius / S.w) * 100}% / ${(S.radius / S.h) * 100}%`,
-          background: "#111",
-        }}
-      >
-        {resolved ? (
-          <img
-            src={resolved}
-            alt={alt}
-            style={{ display: "block", width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
-            draggable={false}
-          />
-        ) : hideEmpty ? null : (
-          <EmptySlot />
-        )}
-      </div>
-      <img
-        src={img(BEZEL.src)}
-        alt=""
-        style={{ position: "absolute", inset: 0, display: "block", width: "100%", height: "100%", zIndex: 10, pointerEvents: "none" }}
-        draggable={false}
-      />
-    </div>
-  );
-}
-
-// iPad の暫定デバイスフレーム。スプリント 01〜03 で使い、スプリント 04 で実機ベゼルに
-// 差し替える。外形は iPad Pro 13インチに近い縦横比（0.75）、黒い画面領域 + 角丸の枠。
-// スクショは画面領域に object-fit:cover で収まる（枠外にはみ出さない）。
-const TABLET_INSET_PCT = 0.025; // 外枠に対する画面領域の上下左右マージン（暫定）
-const TABLET_RADIUS_PCT = 3.2; // 外枠サイズに対する画面領域の角丸（暫定）
-
-export function Tablet({ src, alt = "", style, hideEmpty }: FrameProps) {
-  const resolved = img(src);
-  const ratio = bezelRatioFor("ipad");
-  // aspectRatio は width / height。iPad 13インチは 2064:2752 ≒ 0.75。
-  // CSS は `width / height` のフォーマットなので ratio をそのまま渡す。
+  // aspectRatio は width / height。CSS は `width / height` のフォーマットなので ratio をそのまま渡す。
   return (
     <div
       style={{
@@ -85,9 +43,9 @@ export function Tablet({ src, alt = "", style, hideEmpty }: FrameProps) {
       <div
         style={{
           position: "absolute",
-          inset: `${TABLET_INSET_PCT * 100}%`,
+          inset: `${INSET_PCT * 100}%`,
           overflow: "hidden",
-          borderRadius: `${TABLET_RADIUS_PCT}%`,
+          borderRadius: `${RADIUS_PCT}%`,
           background: "#111",
         }}
       >
@@ -106,10 +64,40 @@ export function Tablet({ src, alt = "", style, hideEmpty }: FrameProps) {
   );
 }
 
-// 共通エントリ。device prop で iPhone / iPad を切り替える。
+// 後方互換のために残している iPhone 向けエクスポート。device prop が未指定
+// の場合に既定の iPhone として扱う呼び出し側（古い import）に備える。
+export function Phone({ src, alt = "", style, hideEmpty, device = "iphone" }: FrameProps) {
+  return (
+    <GenericFrame
+      src={src}
+      alt={alt}
+      style={style}
+      hideEmpty={hideEmpty}
+      device={device}
+      ratio={bezelRatioFor(device)}
+    />
+  );
+}
+
+// 後方互換のために残している iPad 向けエクスポート。device prop が未指定でも
+// iPad として描画する。
+export function Tablet({ src, alt = "", style, hideEmpty, device = "ipad" }: FrameProps) {
+  return (
+    <GenericFrame
+      src={src}
+      alt={alt}
+      style={style}
+      hideEmpty={hideEmpty}
+      device={device}
+      ratio={bezelRatioFor(device)}
+    />
+  );
+}
+
+// 共通エントリ。device prop で iPhone / iPad を切り替える。デフォルトは iPhone。
 export function DeviceFrame(props: FrameProps) {
-  if (props.device === "ipad") return <Tablet {...props} />;
-  return <Phone {...props} />;
+  const kind: DeviceKind = props.device ?? "iphone";
+  return <GenericFrame {...props} ratio={bezelRatioFor(kind)} />;
 }
 
 function EmptySlot() {

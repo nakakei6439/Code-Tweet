@@ -266,8 +266,8 @@
     "sectionCredits": "Credits and attribution",
     "creditsBody1Before": "App SS's editor design and export pipeline were rebuilt from the MIT-licensed",
     "creditsBody1After": "project, adapted for Japanese text and AI copy generation. Many thanks to the original project.",
-    "creditsBody2Before": "The device frame (iPhone bezel) comes from",
-    "creditsBody2After": "' official Product Bezels, used in line with Apple's marketing guidelines. Japanese fonts include Noto Sans JP, Zen Maru Gothic, and Noto Serif JP (SIL Open Font License).",
+    "creditsBody2Before": "Japanese fonts include Noto Sans JP, Zen Maru Gothic, and Noto Serif JP",
+    "creditsBody2After": " (SIL Open Font License).",
     "quotaBody": "AI copy generation shares its quota with Code Tweet and note Draft. After signing in with GitHub, it's free for 3 generations a month; top up with a credit pack (from 10 generations for ¥100) if you need more. Editing and exporting in the editor are free and unlimited — only a watermark-free export costs one generation."
   },
   "termsPage": {

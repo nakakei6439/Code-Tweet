@@ -266,8 +266,8 @@
     "sectionCredits": "參考來源與致謝",
     "creditsBody1Before": "App SS 的編輯器設計與匯出機制，參考了以 MIT 授權發布的",
     "creditsBody1After": "專案，並針對日文與 AI 文案產生重新構建。感謝這個出色的原始專案。",
-    "creditsBody2Before": "裝置外框（iPhone 外框）取自",
-    "creditsBody2After": "的官方 Product Bezels，並遵循 Apple 的行銷使用指南。日文字體包括 Noto Sans JP / Zen Maru Gothic / Noto Serif JP 等（SIL Open Font License）。",
+    "creditsBody2Before": "日文字體包括 Noto Sans JP / Zen Maru Gothic / Noto Serif JP 等",
+    "creditsBody2After": "（SIL Open Font License）。",
     "quotaBody": "AI 文案產生與 Code Tweet / note Draft 共用使用額度。使用 GitHub 登入後每月可免費使用 3 次，不夠時可購買點數包補充（10 次 ¥100 起）。在編輯器中編輯與匯出本身免費且無限制，只有去除浮水印的匯出會消耗 1 次。"
   },
   "termsPage": {

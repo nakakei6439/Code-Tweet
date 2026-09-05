@@ -32,7 +32,9 @@ describe("proxy の matcher", () => {
       "/sitemap.xml",
       "/favicon.ico",
       "/site.webmanifest",
-      "/appss/bezel-iphone.png",
+      // スプリント 04 で Apple 公式ベゼル画像は廃止。代わりにデモ用画像を
+      // .jpg 除外パスの代表として検証する（公開ディレクトリ配下にある実在ファイル）。
+      "/appss/demo/01.jpg",
     ]) {
       expect(re.test(path), path).toBe(false);
     }

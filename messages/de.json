@@ -266,8 +266,8 @@
     "sectionCredits": "Quellen und Danksagungen",
     "creditsBody1Before": "Editor-Design und Export-Pipeline von App SS wurden auf Basis des MIT-lizenzierten Projekts",
     "creditsBody1After": " neu aufgebaut – angepasst an japanischen Text und KI-Texterzeugung. Vielen Dank an das ursprüngliche Projekt.",
-    "creditsBody2Before": "Der Geräterahmen (iPhone-Bezel) stammt aus den",
-    "creditsBody2After": " – den offiziellen Product Bezels, verwendet gemäß Apples Marketing-Richtlinien. Zu den japanischen Schriften zählen Noto Sans JP, Zen Maru Gothic und Noto Serif JP (SIL Open Font License).",
+    "creditsBody2Before": "Zu den japanischen Schriften zählen Noto Sans JP, Zen Maru Gothic und Noto Serif JP",
+    "creditsBody2After": " (SIL Open Font License).",
     "quotaBody": "Die KI-Texterzeugung teilt sich das Kontingent mit Code Tweet und note Draft. Nach der GitHub-Anmeldung sind 3 Generierungen pro Monat kostenlos; bei Bedarf lädst du ein Credit-Paket auf (ab 10 Generierungen für 100 ¥). Bearbeiten und Exportieren im Editor sind kostenlos und unbegrenzt – nur ein Export ohne Wasserzeichen kostet eine Generierung."
   },
   "termsPage": {

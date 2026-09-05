@@ -161,16 +161,7 @@ export default async function AppSSAboutPage({ params }: Props) {
             {t("creditsBody1After")}
           </p>
           <p className="mt-3 text-sm leading-7 text-gray-400">
-            {t("creditsBody2Before")}{" "}
-            <a
-              href="https://developer.apple.com/design/resources/"
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium text-cyan-300 underline decoration-cyan-500/40 underline-offset-2 hover:text-cyan-200"
-            >
-              Apple Design Resources
-            </a>{" "}
-            {t("creditsBody2After")}
+            {t("creditsBody2Before")} {t("creditsBody2After")}
           </p>
         </section>
 
