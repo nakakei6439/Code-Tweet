@@ -266,8 +266,8 @@
     "sectionCredits": "Crédits et attributions",
     "creditsBody1Before": "La conception de l'éditeur et le pipeline d'export d'App SS ont été reconstruits à partir du projet sous licence MIT",
     "creditsBody1After": ", adapté au texte japonais et à la génération d'accroches par IA. Merci au projet d'origine.",
-    "creditsBody2Before": "Le cadre d'appareil (contour d'iPhone) provient des",
-    "creditsBody2After": ", à savoir les Product Bezels officiels, utilisés conformément aux directives marketing d'Apple. Les polices japonaises comprennent Noto Sans JP, Zen Maru Gothic et Noto Serif JP (SIL Open Font License).",
+    "creditsBody2Before": "Les polices japonaises comprennent Noto Sans JP, Zen Maru Gothic et Noto Serif JP",
+    "creditsBody2After": " (SIL Open Font License).",
     "quotaBody": "La génération d'accroches par IA partage son quota avec Code Tweet et note Draft. Après connexion avec GitHub, c'est gratuit pour 3 générations par mois ; rechargez avec un pack de crédits (à partir de 10 générations pour 100 ¥) si besoin. L'édition et l'export dans l'éditeur sont gratuits et illimités — seul un export sans filigrane consomme une génération."
   },
   "termsPage": {

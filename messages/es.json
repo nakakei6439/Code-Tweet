@@ -266,8 +266,8 @@
     "sectionCredits": "Créditos y atribución",
     "creditsBody1Before": "El diseño del editor y el sistema de exportación de App SS se reconstruyeron a partir del proyecto con licencia MIT",
     "creditsBody1After": ", adaptado para texto en japonés y generación de textos con IA. Gracias al proyecto original.",
-    "creditsBody2Before": "El marco del dispositivo (bisel de iPhone) proviene de",
-    "creditsBody2After": ", usando los Product Bezels oficiales conforme a las directrices de marketing de Apple. Las tipografías japonesas incluyen Noto Sans JP, Zen Maru Gothic y Noto Serif JP (SIL Open Font License).",
+    "creditsBody2Before": "Las tipografías japonesas incluyen Noto Sans JP, Zen Maru Gothic y Noto Serif JP",
+    "creditsBody2After": " (SIL Open Font License).",
     "quotaBody": "La generación de textos con IA comparte cuota con Code Tweet y note Draft. Tras iniciar sesión con GitHub, es gratis para 3 generaciones al mes; recarga con un pack de créditos (desde 10 generaciones por ¥100) si necesitas más. Editar y exportar en el editor es gratis e ilimitado: solo la exportación sin marca de agua consume una generación."
   },
   "termsPage": {

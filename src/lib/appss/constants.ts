@@ -8,8 +8,12 @@ import type { BackgroundStyle, FontId, Theme } from "./types";
 export const CANVAS = { w: 1320, h: 2868 };
 
 // ---------- デバイス種別（iPhone / iPad） ----------
-// 2026-09-04 スプリント 01 で導入。スプリント 04 で iPad の実機ベゼル画像へ差し替える前提の
-// 暫定フレーム（角丸枠 + 黒い画面領域）のみ定義。export サイズはスプリント 03 で追加する。
+// 2026-09-04 スプリント 01 で導入。2026-09-05 スプリント 04 で方針を転換し、
+// iPhone / iPad とも Apple Design Resources 由来の実機ベゼル画像は使わず、
+// どちらも汎用フレーム（角丸枠 + 内側の画面領域）で描くことにした。
+// 設計キャンバス寸法は App Store 必須サイズをそのまま採用し、その縦横比を
+// フレーム外形のアスペクト比として使う（Apple 公式ベゼルの 1470:3000 ≒ 0.49
+// に依存しない）。
 export type DeviceKind = "iphone" | "ipad";
 
 // iPad 13インチの必須サイズ（App Store Connect）。スプリント 03 で export に使う。
@@ -17,15 +21,15 @@ export const IPAD_EXPORT_SIZE = { w: 2064, h: 2752 };
 
 export const DEVICE_PROFILES: Record<DeviceKind, { canvas: { w: number; h: number }; bezelRatio: number }> = {
   iphone: {
-    // Apple Design Resources 公式 Product Bezel (iPhone 16 Pro Max, Portrait)。
-    // public/appss/bezel-iphone.png : 1470×3000、画面開口部は実測値。
-    // 画面領域はネイティブ解像度 1320×2868 と 1:1 で一致する。
-    canvas: { w: 1320, h: 2868 },
-    bezelRatio: 1470 / 3000,
+    // スプリント 04 方針転換: Apple Design Resources 公式 Product Bezel ではなく、
+    // 設計キャンバス (1320×2868) そのものを外形比に使う（= 1320/2868 ≈ 0.46）。
+    // 汎用フレームの縦横比としてのみ参照する。
+    canvas: CANVAS,
+    bezelRatio: CANVAS.w / CANVAS.h,
   },
   ipad: {
-    // スプリント 01 では実機ベゼル画像が無いので、暫定比は iPad 13インチの外形に近い 0.75 を採用。
-    // スプリント 04 で実機ベゼルへ差し替える際に、ここの比を実測値に更新する。
+    // iPad 13インチの外形比 2064/2752 ≈ 0.75（App Store Connect 必須サイズ）。
+    // 汎用フレームの縦横比としてのみ参照する。
     canvas: IPAD_EXPORT_SIZE,
     bezelRatio: IPAD_EXPORT_SIZE.w / IPAD_EXPORT_SIZE.h,
   },
@@ -36,7 +40,7 @@ export function canvasFor(kind: DeviceKind): { w: number; h: number } {
   return DEVICE_PROFILES[kind].canvas;
 }
 
-/** 指定したデバイスの外形の縦横比（ベゼル画像、または暫定フレームの aspectRatio に使う）。 */
+/** 指定したデバイスの外形の縦横比（汎用フレームの aspectRatio に使う）。 */
 export function bezelRatioFor(kind: DeviceKind): number {
   return DEVICE_PROFILES[kind].bezelRatio;
 }
@@ -50,17 +54,6 @@ export const EXPORT_SIZES: ExportSize[] = [
   { inches: "6.3", w: 1206, h: 2622 },
   { inches: "6.1", w: 1125, h: 2436 },
 ];
-
-// Apple Design Resources 公式 Product Bezel (iPhone 16 Pro Max, Portrait)。
-// public/appss/bezel-iphone.png : 1470×3000、画面開口部は実測値。
-// 画面領域はネイティブ解像度 1320×2868 と 1:1 で一致する。
-export const BEZEL = {
-  src: "/appss/bezel-iphone.png",
-  w: 1470,
-  h: 3000,
-  screen: { x: 75, y: 66, w: 1320, h: 2868, radius: 180 },
-};
-export const BEZEL_RATIO = BEZEL.w / BEZEL.h;
 
 // レイアウト内でのデバイス幅（キャンバス幅比）
 export function phoneW(cW: number, cH: number, clamp = 0.84, kind: DeviceKind = "iphone") {

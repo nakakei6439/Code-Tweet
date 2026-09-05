@@ -15,7 +15,6 @@ import type {
   TextElement,
 } from "@/lib/appss/types";
 import {
-  BEZEL,
   EXPORT_SIZES,
   FONTS,
   IPAD_EXPORT_SIZE,
@@ -96,9 +95,10 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
   // activeSlideId が削除済みスライドを指していても先頭へフォールバックする（補正 effect は不要）
   const activeSlide = slides.find((s) => s.id === activeSlideId) || slides[0] || null;
 
-  // ベゼルと全スクショ参照をプリロード（解決後に再描画）
+  // 全スクショ参照をプリロード（解決後に再描画）。スプリント 04 で Apple 公式ベゼル
+  // 画像は廃止したので、ベゼル URL はプリロード対象に含めない。
   const assetRefs = React.useMemo(() => {
-    const refs = new Set<string>([BEZEL.src]);
+    const refs = new Set<string>();
     for (const slide of slides) {
       if (slide.screenshotRef) refs.add(slide.screenshotRef);
       if (slide.screenshotSecondaryRef) refs.add(slide.screenshotSecondaryRef);

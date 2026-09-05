@@ -266,8 +266,8 @@
     "sectionCredits": "参考元・クレジット",
     "creditsBody1Before": "App SS のエディタ設計・書き出しの仕組みは、MIT ライセンスで公開されている",
     "creditsBody1After": "を参考に、日本語・AIコピー生成向けに再構築したものです。素晴らしい元プロジェクトに感謝します。",
-    "creditsBody2Before": "デバイスフレーム（iPhone ベゼル）は",
-    "creditsBody2After": "の公式 Product Bezels を、Apple のマーケティング利用ガイドラインに従って使用しています。日本語フォントは Noto Sans JP / Zen Maru Gothic / Noto Serif JP など（SIL Open Font License）です。",
+    "creditsBody2Before": "日本語フォントは Noto Sans JP / Zen Maru Gothic / Noto Serif JP など",
+    "creditsBody2After": "（SIL Open Font License）を使用しています。",
     "quotaBody": "AI コピー生成は Code Tweet / note Draft と利用枠を共有しています。GitHub ログイン後、月 3 回まで無料で使えます。足りない分はクレジットパック（10回 ¥100〜）を買い足して使えます。エディタでの編集・書き出し自体は無料・無制限です。透かしを外した書き出しのみ1回分を消費します。"
   },
   "termsPage": {
