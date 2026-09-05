@@ -628,7 +628,10 @@
     "summary": "{count} diapositives × {w}×{h}",
     "zoomOut": "Dézoomer",
     "zoomIn": "Zoomer",
-    "fit": "Ajuster à la vue"
+    "fit": "Ajuster à la vue",
+    "iphone": "iPhone",
+    "ipad": "iPad",
+    "deviceGroup": "Appareil"
   },
   "appssPicker": {
     "clear": "Effacer",

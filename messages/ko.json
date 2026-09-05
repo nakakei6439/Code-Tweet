@@ -628,7 +628,10 @@
     "summary": "{count}장 × {w}×{h}",
     "zoomOut": "축소",
     "zoomIn": "확대",
-    "fit": "전체 보기"
+    "fit": "전체 보기",
+    "iphone": "iPhone",
+    "ipad": "iPad",
+    "deviceGroup": "기기"
   },
   "appssPicker": {
     "clear": "지우기",

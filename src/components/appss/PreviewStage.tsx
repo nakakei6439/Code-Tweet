@@ -10,7 +10,7 @@ import type {
   SelectedElement,
   Theme,
 } from "@/lib/appss/types";
-import { CANVAS } from "@/lib/appss/constants";
+import { canvasFor, type DeviceKind } from "@/lib/appss/constants";
 import { DeckStrip } from "./SlideCanvas";
 
 type Props = {
@@ -20,6 +20,8 @@ type Props = {
   backgroundStyle: BackgroundStyle;
   fontFamily: string;
   selectedElement: SelectedElement | null;
+  device: DeviceKind;
+  onDeviceChange: (kind: DeviceKind) => void;
   onActiveSlideChange: (id: string) => void;
   onLabelChange: (slideId: string, v: string) => void;
   onHeadlineChange: (slideId: string, v: string) => void;
@@ -35,6 +37,8 @@ export function PreviewStage({
   backgroundStyle,
   fontFamily,
   selectedElement,
+  device,
+  onDeviceChange,
   onActiveSlideChange,
   onLabelChange,
   onHeadlineChange,
@@ -49,8 +53,9 @@ export function PreviewStage({
   const suppressNextPanRef = React.useRef(false);
   const [fitScale, setFitScale] = React.useState(0.2);
   const [zoom, setZoom] = React.useState(1);
-  const cW = CANVAS.w;
-  const cH = CANVAS.h;
+  const canvas = canvasFor(device);
+  const cW = canvas.w;
+  const cH = canvas.h;
   const totalW = Math.max(1, slides.length) * cW;
   const scale = fitScale * zoom;
   const activeIndex = Math.max(0, slides.findIndex((slide) => slide.id === activeSlideId));
@@ -125,6 +130,7 @@ export function PreviewStage({
               selectedElement={selectedElement}
               activeSlideId={activeSlide?.id || null}
               showGuides
+              device={device}
               edit={{
                 onLabelChange,
                 onHeadlineChange,
@@ -139,7 +145,7 @@ export function PreviewStage({
       </div>
 
       <div className="pointer-events-none absolute left-4 top-4 flex items-center gap-1.5 rounded-md bg-gray-950/80 px-2 py-1 text-[11px] text-gray-400 shadow-sm backdrop-blur">
-        <span className="font-medium text-gray-100">iPhone</span>
+        <DeviceToggle value={device} onChange={onDeviceChange} tp={tp} />
         {activeSlide && (
           <>
             <span aria-hidden>·</span>
@@ -186,6 +192,46 @@ export function PreviewStage({
           Fit
         </button>
       </div>
+    </div>
+  );
+}
+
+// デバイス種別（iPhone / iPad）の切替セグメント。固有名詞として英字表記のまま。
+function DeviceToggle({
+  value,
+  onChange,
+  tp,
+}: {
+  value: DeviceKind;
+  onChange: (kind: DeviceKind) => void;
+  tp: ReturnType<typeof useTranslations<"appssPreview">>;
+}) {
+  const options: DeviceKind[] = ["iphone", "ipad"];
+  return (
+    <div
+      role="tablist"
+      aria-label={tp("deviceGroup")}
+      className="pointer-events-auto inline-flex overflow-hidden rounded-md border border-gray-700 bg-gray-900"
+    >
+      {options.map((kind) => {
+        const active = value === kind;
+        return (
+          <button
+            key={kind}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(kind)}
+            className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${
+              active
+                ? "bg-cyan-400/90 text-gray-950"
+                : "text-gray-300 hover:bg-gray-800"
+            }`}
+          >
+            {kind === "iphone" ? tp("iphone") : tp("ipad")}
+          </button>
+        );
+      })}
     </div>
   );
 }

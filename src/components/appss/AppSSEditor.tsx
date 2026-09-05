@@ -16,14 +16,16 @@ import type {
 } from "@/lib/appss/types";
 import {
   BEZEL,
-  CANVAS,
   EXPORT_SIZES,
   FONTS,
+  IPAD_EXPORT_SIZE,
   MAX_SLIDES,
   THEMES,
+  canvasFor,
   resolveFontForScript,
   buildCustomTheme,
   themeById,
+  type DeviceKind,
 } from "@/lib/appss/constants";
 import { isTextElementId, textElementKey } from "@/lib/appss/elements";
 import { preloadImages } from "@/lib/appss/imageCache";
@@ -69,6 +71,9 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
   // 現在実行中の書き出しに透かしを焼き込むか（無料=true、透かし解除=false）
   const [exportWatermark, setExportWatermark] = React.useState(true);
   const [copyAssistantOpen, setCopyAssistantOpen] = React.useState(false);
+  // デバイス種別（iPhone / iPad）。プレビュー・書き出しの両方で参照する。
+  // 仕様（spec.md 置いた前提3）に従いリロードで iPhone へ戻るため、永続化しない。
+  const [deviceKind, setDeviceKind] = React.useState<DeviceKind>("iphone");
   const [usage, setUsage] = React.useState<UsageInfo | null>(initialUsage);
   const [, forceRender] = React.useReducer((n: number) => n + 1, 0);
   const exportRef = React.useRef<HTMLDivElement | null>(null);
@@ -163,14 +168,17 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
   const addTextElement = React.useCallback(
     (slideId: string) => {
       const id = nid();
+      // 初期座標は選択中のデバイス種別のキャンバス寸法を基準にする（iPad モードでも
+      // iPhone 座標で左上に小さく出てしまう問題を修正）。
+      const canvas = canvasFor(deviceKind);
       const element: TextElement = {
         id,
         text: te("textElement"),
         transform: {
-          x: CANVAS.w * 0.2,
-          y: CANVAS.h * 0.42,
-          width: CANVAS.w * 0.6,
-          height: CANVAS.h * 0.08,
+          x: canvas.w * 0.2,
+          y: canvas.h * 0.42,
+          width: canvas.w * 0.6,
+          height: canvas.h * 0.08,
         },
       };
       updateSlide(slideId, (s) => ({
@@ -179,7 +187,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       }));
       setSelectedElement({ slideId, elementId: `text:${id}` });
     },
-    [updateSlide, te],
+    [updateSlide, te, deviceKind],
   );
 
   const deleteTextElement = React.useCallback(
@@ -406,13 +414,25 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       const fontEmbedCSS = await computeFontEmbedCSS(el);
       await warmupCapture(el, fontEmbedCSS);
 
+      // デバイス別の書き出し設定を確定する。iPhone は 4 サイズ、iPad は 2064×2752 のみ。
+      // フォルダ名は iPad のとき "ipad-2064x2752/" プレフィックスを付けて、iPhone の
+      // "1320x2868/" 等のフォルダ名と一目で区別できるようにする。
+      const exportCanvas = canvasFor(deviceKind);
+      const sizes =
+        deviceKind === "ipad"
+          ? [IPAD_EXPORT_SIZE]
+          : EXPORT_SIZES;
+      const folderName = (size: { w: number; h: number }) =>
+        deviceKind === "ipad" ? `ipad-${size.w}x${size.h}` : `${size.w}x${size.h}`;
+      const zipDeviceSuffix = deviceKind === "ipad" ? "-ipad" : "";
+
       const zip = createZip();
-      const total = EXPORT_SIZES.length * slides.length;
+      const total = sizes.length * slides.length;
       let unit = 0;
       let okCount = 0;
       const errors: string[] = [];
 
-      for (const size of EXPORT_SIZES) {
+      for (const size of sizes) {
         for (let i = 0; i < slides.length; i++) {
           unit += 1;
           setExporting(`${unit}/${total}`);
@@ -424,10 +444,17 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
             continue;
           }
           try {
-            const dataUrl = await captureSlide(node, CANVAS.w, CANVAS.h, size.w, size.h, fontEmbedCSS);
+            const dataUrl = await captureSlide(
+              node,
+              exportCanvas.w,
+              exportCanvas.h,
+              size.w,
+              size.h,
+              fontEmbedCSS,
+            );
             const base64 = dataUrl.split(",")[1] || "";
             const filename = `${String(i + 1).padStart(2, "0")}-${slides[i].layout}.png`;
-            zip.file(`${size.w}x${size.h}/${filename}`, base64, { base64: true });
+            zip.file(`${folderName(size)}/${filename}`, base64, { base64: true });
             okCount += 1;
           } catch (e) {
             const msg = e instanceof Error ? e.message : String(e);
@@ -437,8 +464,12 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       }
 
       if (okCount > 0) {
-        // 言語を名前に入れる。複数言語を書き出したとき、どの zip が何語か分かるようにする。
-        await downloadZip(zip, `${slugify(state.appName)}-${projectLocale}-appstore-${stamp()}.zip`);
+        // 言語と（iPad のとき）デバイス種別のサフィックスを zip 名に含める。複数言語・
+        // 複数デバイスを書き出したときに取り違えないようにする。
+        await downloadZip(
+          zip,
+          `${slugify(state.appName)}-${projectLocale}-appstore${zipDeviceSuffix}-${stamp()}.zip`,
+        );
       }
       if (errors.length > 0) {
         setExportError(
@@ -556,6 +587,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
           theme={theme}
           backgroundStyle={backgroundStyle}
           fontFamily={fontFamily}
+          device={deviceKind}
           onSelect={(id) => {
             setActiveSlideId(id);
             setSelectedElement(null);
@@ -574,6 +606,8 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
             backgroundStyle={backgroundStyle}
             fontFamily={fontFamily}
             selectedElement={selectedElement}
+            device={deviceKind}
+            onDeviceChange={setDeviceKind}
             onActiveSlideChange={setActiveSlideId}
             onLabelChange={(slideId, v) => updateSlide(slideId, { label: v })}
             onHeadlineChange={(slideId, v) => updateSlide(slideId, { headline: v })}
@@ -602,6 +636,7 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
           <Inspector
             slide={activeSlide}
             selectedElementId={selectedElementId}
+            device={deviceKind}
             onUpdateSlide={(patch) => updateSlide(activeSlide.id, patch)}
             onElementChange={(id, t) => handleElementChange(activeSlide.id, id, t)}
             onResetElement={(id) => handleResetElement(activeSlide.id, id)}
@@ -615,30 +650,35 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
         )}
       </div>
 
-      {/* 書き出し用オフスクリーンキャンバス（実寸） */}
-      {exportSlide && (
-        <div
-          ref={exportRef}
-          aria-hidden
-          style={{
-            position: "absolute",
-            left: -99999,
-            top: 0,
-            width: CANVAS.w,
-            height: CANVAS.h,
-            fontFamily,
-            pointerEvents: "none",
-          }}
-        >
-          <SlideCanvas
-            slide={exportSlide}
-            theme={theme}
-            backgroundStyle={backgroundStyle}
-            hideEmpty
-            watermark={exportWatermark}
-          />
-        </div>
-      )}
+      {/* 書き出し用オフスクリーンキャンバス（実寸）。選択中のデバイス種別のキャンバス寸法で
+          描画する（iPhone 1320×2868 / iPad 2064×2752）。スプリント 03 で iPad 対応。 */}
+      {exportSlide && (() => {
+        const offscreen = canvasFor(deviceKind);
+        return (
+          <div
+            ref={exportRef}
+            aria-hidden
+            style={{
+              position: "absolute",
+              left: -99999,
+              top: 0,
+              width: offscreen.w,
+              height: offscreen.h,
+              fontFamily,
+              pointerEvents: "none",
+            }}
+          >
+            <SlideCanvas
+              slide={exportSlide}
+              theme={theme}
+              backgroundStyle={backgroundStyle}
+              hideEmpty
+              watermark={exportWatermark}
+              device={deviceKind}
+            />
+          </div>
+        );
+      })()}
     </div>
   );
 }

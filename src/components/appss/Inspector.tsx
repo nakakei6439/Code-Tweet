@@ -9,6 +9,7 @@ import type {
   SlideLayout,
   TextElement,
 } from "@/lib/appss/types";
+import type { DeviceKind } from "@/lib/appss/constants";
 import { isTextElementId, textElementKey, toTextElementId } from "@/lib/appss/elements";
 import { getElementTransform } from "./SlideCanvas";
 import { ScreenshotPicker } from "./ScreenshotPicker";
@@ -34,6 +35,7 @@ const ELEMENT_LABEL_KEY: Record<string, string> = {
 type Props = {
   slide: AppSSSlide;
   selectedElementId: ElementId | null;
+  device?: DeviceKind;
   onUpdateSlide: (patch: Partial<AppSSSlide>) => void;
   onElementChange: (id: ElementId, t: ElementTransform) => void;
   onResetElement: (id: ElementId) => void;
@@ -46,6 +48,7 @@ type Props = {
 export function Inspector({
   slide,
   selectedElementId,
+  device = "iphone",
   onUpdateSlide,
   onElementChange,
   onResetElement,
@@ -58,7 +61,7 @@ export function Inspector({
   const tLayout = useTranslations("appssLayoutLabel");
   const tHint = useTranslations("appssLayoutHint");
   const selectedTransform = selectedElementId
-    ? getElementTransform(slide, selectedElementId)
+    ? getElementTransform(slide, selectedElementId, device)
     : undefined;
   const selectedTextElement =
     selectedElementId && isTextElementId(selectedElementId)

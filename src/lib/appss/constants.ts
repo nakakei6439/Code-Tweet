@@ -7,6 +7,40 @@ import type { BackgroundStyle, FontId, Theme } from "./types";
 // 設計キャンバス = App Store 最大要求解像度（iPhone 6.9インチ）
 export const CANVAS = { w: 1320, h: 2868 };
 
+// ---------- デバイス種別（iPhone / iPad） ----------
+// 2026-09-04 スプリント 01 で導入。スプリント 04 で iPad の実機ベゼル画像へ差し替える前提の
+// 暫定フレーム（角丸枠 + 黒い画面領域）のみ定義。export サイズはスプリント 03 で追加する。
+export type DeviceKind = "iphone" | "ipad";
+
+// iPad 13インチの必須サイズ（App Store Connect）。スプリント 03 で export に使う。
+export const IPAD_EXPORT_SIZE = { w: 2064, h: 2752 };
+
+export const DEVICE_PROFILES: Record<DeviceKind, { canvas: { w: number; h: number }; bezelRatio: number }> = {
+  iphone: {
+    // Apple Design Resources 公式 Product Bezel (iPhone 16 Pro Max, Portrait)。
+    // public/appss/bezel-iphone.png : 1470×3000、画面開口部は実測値。
+    // 画面領域はネイティブ解像度 1320×2868 と 1:1 で一致する。
+    canvas: { w: 1320, h: 2868 },
+    bezelRatio: 1470 / 3000,
+  },
+  ipad: {
+    // スプリント 01 では実機ベゼル画像が無いので、暫定比は iPad 13インチの外形に近い 0.75 を採用。
+    // スプリント 04 で実機ベゼルへ差し替える際に、ここの比を実測値に更新する。
+    canvas: IPAD_EXPORT_SIZE,
+    bezelRatio: IPAD_EXPORT_SIZE.w / IPAD_EXPORT_SIZE.h,
+  },
+};
+
+/** 指定したデバイスの設計キャンバス寸（キャンバス px 座標系での width / height）。 */
+export function canvasFor(kind: DeviceKind): { w: number; h: number } {
+  return DEVICE_PROFILES[kind].canvas;
+}
+
+/** 指定したデバイスの外形の縦横比（ベゼル画像、または暫定フレームの aspectRatio に使う）。 */
+export function bezelRatioFor(kind: DeviceKind): number {
+  return DEVICE_PROFILES[kind].bezelRatio;
+}
+
 // App Store 提出に必要な iPhone スクリーンショットサイズ
 // label は持たず inches だけ持つ。表示は messages の appssEditor.inchLabel で組み立てる。
 export type ExportSize = { inches: string; w: number; h: number };
@@ -29,11 +63,11 @@ export const BEZEL = {
 export const BEZEL_RATIO = BEZEL.w / BEZEL.h;
 
 // レイアウト内でのデバイス幅（キャンバス幅比）
-export function phoneW(cW: number, cH: number, clamp = 0.84) {
-  return Math.min(clamp, 0.72 * (cH / cW) * BEZEL_RATIO);
+export function phoneW(cW: number, cH: number, clamp = 0.84, kind: DeviceKind = "iphone") {
+  return Math.min(clamp, 0.72 * (cH / cW) * bezelRatioFor(kind));
 }
-export function phoneWSmall(cW: number, cH: number) {
-  return phoneW(cW, cH, 0.66);
+export function phoneWSmall(cW: number, cH: number, kind: DeviceKind = "iphone") {
+  return phoneW(cW, cH, 0.66, kind);
 }
 
 // ---------- フォント ----------

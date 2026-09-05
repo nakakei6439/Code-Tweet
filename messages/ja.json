@@ -628,7 +628,10 @@
     "summary": "{count}枚 × {w}×{h}",
     "zoomOut": "縮小",
     "zoomIn": "拡大",
-    "fit": "全体表示"
+    "fit": "全体表示",
+    "iphone": "iPhone",
+    "ipad": "iPad",
+    "deviceGroup": "デバイス"
   },
   "appssPicker": {
     "clear": "クリア",
