@@ -530,6 +530,7 @@
     "exportFailedOne": "내보내기에 실패했습니다: {reason}",
     "exportFailedMany": "{failed}장의 내보내기에 실패했습니다({ok}장은 성공)",
     "exportFailed": "내보내기에 실패했습니다",
+    "exportIpadBatchFailed": "iPad {inches}인치 ({w}×{h}) — {count}장 전부 실패 (렌더링 대상이 준비되지 않음)",
     "loadingEditor": "에디터를 불러오는 중...",
     "resetConfirm": "편집 내용을 버리고 초기 상태로 되돌릴까요?",
     "projectExportFailed": "프로젝트 내보내기에 실패했습니다",

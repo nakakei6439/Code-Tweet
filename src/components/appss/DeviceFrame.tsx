@@ -16,6 +16,10 @@ type FrameProps = {
   // 書き出し時にプレースホルダを焼き込まないための抑止フラグ
   hideEmpty?: boolean;
   device?: DeviceKind;
+  // 2026-09-07 スプリント 06: device=ipad のまま 11 インチ書き出し時に
+  // フレーム外形比を 1488/2266 ≈ 0.657 に切り替えるためのオプション。
+  // 未指定なら bezelRatioFor(device) で従来どおり（iPhone 0.46 / iPad 13" 0.75）。
+  ratioOverride?: number;
 };
 
 // 外枠に対する画面領域の上下左右マージン（暫定）
@@ -66,7 +70,7 @@ function GenericFrame({ src, alt = "", style, hideEmpty, ratio }: FrameProps & {
 
 // 後方互換のために残している iPhone 向けエクスポート。device prop が未指定
 // の場合に既定の iPhone として扱う呼び出し側（古い import）に備える。
-export function Phone({ src, alt = "", style, hideEmpty, device = "iphone" }: FrameProps) {
+export function Phone({ src, alt = "", style, hideEmpty, device = "iphone", ratioOverride }: FrameProps) {
   return (
     <GenericFrame
       src={src}
@@ -74,14 +78,14 @@ export function Phone({ src, alt = "", style, hideEmpty, device = "iphone" }: Fr
       style={style}
       hideEmpty={hideEmpty}
       device={device}
-      ratio={bezelRatioFor(device)}
+      ratio={ratioOverride ?? bezelRatioFor(device)}
     />
   );
 }
 
 // 後方互換のために残している iPad 向けエクスポート。device prop が未指定でも
 // iPad として描画する。
-export function Tablet({ src, alt = "", style, hideEmpty, device = "ipad" }: FrameProps) {
+export function Tablet({ src, alt = "", style, hideEmpty, device = "ipad", ratioOverride }: FrameProps) {
   return (
     <GenericFrame
       src={src}
@@ -89,15 +93,18 @@ export function Tablet({ src, alt = "", style, hideEmpty, device = "ipad" }: Fra
       style={style}
       hideEmpty={hideEmpty}
       device={device}
-      ratio={bezelRatioFor(device)}
+      ratio={ratioOverride ?? bezelRatioFor(device)}
     />
   );
 }
 
 // 共通エントリ。device prop で iPhone / iPad を切り替える。デフォルトは iPhone。
+// 2026-09-07 スプリント 06: ratioOverride を優先し、iPad 11 インチ書き出し時は
+// 1488/2266 ≈ 0.657 を渡してフレーム外形比を切り替える。
 export function DeviceFrame(props: FrameProps) {
   const kind: DeviceKind = props.device ?? "iphone";
-  return <GenericFrame {...props} ratio={bezelRatioFor(kind)} />;
+  const ratio = props.ratioOverride ?? bezelRatioFor(kind);
+  return <GenericFrame {...props} ratio={ratio} />;
 }
 
 function EmptySlot() {

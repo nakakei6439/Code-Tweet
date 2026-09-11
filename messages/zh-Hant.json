@@ -530,6 +530,7 @@
     "exportFailedOne": "匯出失敗：{reason}",
     "exportFailedMany": "{failed} 張匯出失敗（{ok} 張成功）",
     "exportFailed": "匯出失敗",
+    "exportIpadBatchFailed": "iPad {inches}吋 ({w}×{h})，{count}張全部失敗（未找到繪製目標）",
     "loadingEditor": "正在載入編輯器…",
     "resetConfirm": "是否放棄編輯內容並恢復初始狀態？",
     "projectExportFailed": "專案匯出失敗",

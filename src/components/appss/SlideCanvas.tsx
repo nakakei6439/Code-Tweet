@@ -377,13 +377,20 @@ type LayoutRects = {
   deviceTertiary?: Rect;
 };
 
-function getDefaultRects(layout: AppSSSlide["layout"], kind: DeviceKind = "iphone"): LayoutRects {
+function getDefaultRects(
+  layout: AppSSSlide["layout"],
+  kind: DeviceKind = "iphone",
+  opts?: { canvas?: { w: number; h: number } },
+): LayoutRects {
   // iPad (kind === "ipad") はスプリント 02 で 7 レイアウトすべてが成立するように専用 rect を返す。
   // iPhone 分岐はスプリント 01 以前と完全に同値（既存テスト・既存見た目を 1px も変えない）。
+  // 2026-09-07 スプリント 06 で opts.canvas を受け取れるようにした。デフォルトは canvasFor(kind)
+  // （= プレビュー用キャンバス寸法）。iPad の 11 インチ書き出し時のみ 1488×2266 を渡して
+  // 11 インチ比率でリフローした rect を得る（13 インチ描画の単純引き伸ばしにはしない）。
   if (kind === "ipad") {
-    return getIPadDefaultRects(layout);
+    return getIPadDefaultRects(layout, opts);
   }
-  const canvas = canvasFor(kind);
+  const canvas = opts?.canvas ?? canvasFor(kind);
   const cW = canvas.w;
   const cH = canvas.h;
   const ratio = bezelRatioFor(kind);
@@ -514,16 +521,33 @@ function getDefaultRects(layout: AppSSSlide["layout"], kind: DeviceKind = "iphon
 //     上下端から少量のはみ出しに留める）
 //   - 見出しとデバイスが（collage 系を除き）重ならない
 //   - no-device の見出しは cW × 0.84（キャンバス幅の 84%）で常に 3 割を超す
-function getIPadDefaultRects(layout: AppSSSlide["layout"]): LayoutRects {
-  const canvas = canvasFor("ipad");
-  const cW = canvas.w; // 2064
-  const cH = canvas.h; // 2752
-  const ratio = bezelRatioFor("ipad"); // 0.75
-  const deviceW = phoneW(cW, cH, 0.84, "ipad") * cW; // 0.72 * 2064 = 1486
-  const deviceH = deviceW / ratio; // 1981
-  const smallW = phoneWSmall(cW, cH, "ipad") * cW; // 0.66 * 2064 = 1362
-  const smallH = smallW / ratio; // 1816
-  const capW = cW * 0.88; // 1816
+// 2026-09-07 スプリント 06: opts.canvas を受け取れるようにし、11 インチ書き出し時
+// （1488×2266, ratio ≈ 0.657）に同じ式を 11 インチ比率でリフローして再描画する。
+// デフォルトは canvasFor("ipad") (2064×2752) で、UI のプレビューはこれまで通り 13 インチ基準。
+// 2026-09-12 attempt 4: phoneW/phoneWSmall に実際にレンダリング中のキャンバス比 (ratio) を
+// 明示的に渡す。bezelRatioFor("ipad") は 0.75 固定のため、11 インチ (cW/cH=0.657) で
+// phoneW が 0.822 まで膨れて deviceH/cH が想定を超え、device-bottom の caption と
+// デバイスが重なる不具合を解消するため。13 インチ (cW/cH=0.75) では bezelRatioFor と
+// 一致するため deviceW/deviceH の数値は 1px も変わらない。
+function getIPadDefaultRects(
+  layout: AppSSSlide["layout"],
+  opts?: { canvas?: { w: number; h: number } },
+): LayoutRects {
+  const canvas = opts?.canvas ?? canvasFor("ipad");
+  const cW = canvas.w;
+  const cH = canvas.h;
+  // iPad は外形比がキャンバス比と一致する想定（スプリント 04 で canvasFor 値そのままを
+  // bezelRatioFor に渡すよう統一済み）。書き出し時の 11 インチ（1488/2266 ≈ 0.657）も
+  // キャンバス比から導出して同じ式を通す。
+  const ratio = cW / cH;
+  // attempt 4: 実キャンバス比を phoneW/phoneWSmall に渡して、デバイス幅がキャンバス比に
+  // 整合するようにする。13 インチ (ratio=0.75) と iPhone ("iphone" 分岐) では ratio 引数を
+  // 渡さないので従来式と完全に同じ結果になる。
+  const deviceW = phoneW(cW, cH, 0.84, "ipad", ratio) * cW; // 13": 0.72*cW / 11": 0.72*cW
+  const deviceH = deviceW / ratio;
+  const smallW = phoneWSmall(cW, cH, "ipad", ratio) * cW; // 13": 0.66*cW / 11": 0.66*cW
+  const smallH = smallW / ratio;
+  const capW = cW * 0.88;
 
   switch (layout) {
     case "hero":
@@ -579,7 +603,7 @@ function getIPadDefaultRects(layout: AppSSSlide["layout"]): LayoutRects {
       };
     case "collage-duo": {
       // 2台を大胆に反対向きへ傾けて重ねる。iPhone と同じ duoW=0.6, 回転 -10/+9, zIndex 2/3。
-      const duoW = phoneW(cW, cH, 0.6, "ipad") * cW;
+      const duoW = phoneW(cW, cH, 0.6, "ipad", ratio) * cW;
       const duoH = duoW / ratio;
       return {
         caption: { x: cW * 0.06, y: cH * 0.05, width: cW * 0.88, height: cH * 0.20, align: "center" },
@@ -603,9 +627,9 @@ function getIPadDefaultRects(layout: AppSSSlide["layout"]): LayoutRects {
     }
     case "collage-trio": {
       // 3台を扇状に配置。iPhone と同じ sideW=0.42 / centerW=0.5, 回転 -14/0/14, zIndex 1/3/2。
-      const centerW = phoneW(cW, cH, 0.5, "ipad") * cW;
+      const centerW = phoneW(cW, cH, 0.5, "ipad", ratio) * cW;
       const centerH = centerW / ratio;
-      const sideW = phoneW(cW, cH, 0.42, "ipad") * cW;
+      const sideW = phoneW(cW, cH, 0.42, "ipad", ratio) * cW;
       const sideH = sideW / ratio;
       return {
         caption: { x: cW * 0.06, y: cH * 0.05, width: cW * 0.88, height: cH * 0.20, align: "center" },
@@ -672,12 +696,13 @@ export function getElementTransform(
   slide: AppSSSlide,
   id: ElementId,
   kind: DeviceKind = "iphone",
+  opts?: { canvas?: { w: number; h: number } },
 ): ElementTransform | undefined {
   if (id.startsWith("text:")) {
     const textId = id.slice("text:".length);
     return slide.textElements?.find((element) => element.id === textId)?.transform;
   }
-  const defaults = getDefaultRects(slide.layout, kind);
+  const defaults = getDefaultRects(slide.layout, kind, opts);
   const rect = rectFor(id as BuiltInElementId, slide, defaults);
   if (!rect) return undefined;
   const saved = slide.transforms?.[id as BuiltInElementId];
@@ -702,8 +727,10 @@ function defaultElementZ(id: BuiltInElementId): number {
 // 課金の壁: 無料の書き出しには常にこの帯を焼き込む。透かし解除（有料）時は watermark=false で
 // レンダーしないだけ（描画パイプライン自体は変わらないため export の安全性に影響しない）。
 // filter:blur 等は使わず単色 rgba 背景のみで Safari の foreignObject バグを回避する。
-function Watermark({ kind }: { kind: DeviceKind }) {
-  const canvas = canvasFor(kind);
+// 2026-09-07 スプリント 06: exportCanvas を受け取り、iPad 11 インチ書き出し時にキャンバス
+// 寸法に比例した帯の高さ・文字サイズで描画する（13 インチ基準のまま引き伸ばさない）。
+function Watermark({ kind, exportCanvas }: { kind: DeviceKind; exportCanvas?: { w: number; h: number } }) {
+  const canvas = exportCanvas ?? canvasFor(kind);
   const cW = canvas.w;
   const cH = canvas.h;
   return (
@@ -748,6 +775,10 @@ type Props = {
   watermark?: boolean;
   // デバイス種別（既定 iPhone）。切替で iPad のキャンバス寸法・デバイス枠比を切り替える。
   device?: DeviceKind;
+  // 2026-09-07 スプリント 06: 書き出し時にキャンバス寸法を上書きするためのオプション。
+  // iPad 11 インチ書き出し時のみ 1488×2266 を渡し、レイアウト既定 rect を 11 インチ比率で
+  // リフローさせる。未指定なら device のキャンバス寸法（プレビュー用）を使う。
+  exportCanvas?: { w: number; h: number };
 };
 
 export function SlideCanvas({
@@ -761,6 +792,7 @@ export function SlideCanvas({
   hideEmpty,
   watermark,
   device = "iphone",
+  exportCanvas,
 }: Props) {
   const handleBackgroundMouseDown = editable
     ? (e: React.MouseEvent<HTMLDivElement>) => {
@@ -783,8 +815,9 @@ export function SlideCanvas({
         previewScale={previewScale}
         hideEmpty={hideEmpty}
         device={device}
+        exportCanvas={exportCanvas}
       />
-      {watermark && <Watermark kind={device} />}
+      {watermark && <Watermark kind={device} exportCanvas={exportCanvas} />}
     </div>
   );
 }
@@ -931,6 +964,7 @@ function SlideElements({
   previewScale,
   hideEmpty,
   device = "iphone",
+  exportCanvas,
 }: {
   slide: AppSSSlide;
   theme: Theme;
@@ -940,13 +974,19 @@ function SlideElements({
   previewScale: number;
   hideEmpty?: boolean;
   device?: DeviceKind;
+  // 2026-09-07 スプリント 06: 11 インチ書き出し時にキャンバス寸法を上書きする。
+  // getDefaultRects と bounds（react-rnd の clampRect 範囲）の両方でこの値を使う。
+  exportCanvas?: { w: number; h: number };
 }) {
   const tcv = useTranslations("appssCanvas");
-  const canvas = canvasFor(device);
+  const canvas = exportCanvas ?? canvasFor(device);
   const cW = canvas.w;
   const cH = canvas.h;
+  // デバイス外形比はキャンバス比と一致する想定（スプリント 04 で bezelRatioFor を
+  // canvasFor 値ベースに統一済み）。exportCanvas が来たら同じロジックで cW/cH 比を使う。
+  const deviceRatio = cW / cH;
   const inverted = !!slide.inverted;
-  const defaults = getDefaultRects(slide.layout, device);
+  const defaults = getDefaultRects(slide.layout, device, { canvas: { w: cW, h: cH } });
   const captionRect = rectFor("caption", slide, defaults);
   const deviceRect = rectFor("device", slide, defaults);
   const secondaryRect = rectFor("deviceSecondary", slide, defaults);
@@ -1017,7 +1057,7 @@ function SlideElements({
             zIndex: t.zIndex ?? zIndex,
           })
         }
-        lockAspectRatio={bezelRatioFor(device)}
+        lockAspectRatio={deviceRatio}
         zIndex={zIndex}
         allowOverflow
         selected={selectedElementId === id}
@@ -1027,6 +1067,7 @@ function SlideElements({
           device={device}
           src={src}
           hideEmpty={hideEmpty}
+          ratioOverride={deviceRatio}
           style={{ width: "100%", height: "100%", ...extraStyle }}
         />
       </Movable>

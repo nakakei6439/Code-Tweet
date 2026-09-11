@@ -530,6 +530,7 @@
     "exportFailedOne": "Export failed: {reason}",
     "exportFailedMany": "{failed} images failed to export ({ok} succeeded)",
     "exportFailed": "Export failed",
+    "exportIpadBatchFailed": "iPad {inches}-inch ({w}×{h}) — all {count} images failed (render target not ready)",
     "loadingEditor": "Loading the editor...",
     "resetConfirm": "Discard your edits and reset to the initial state?",
     "projectExportFailed": "Failed to export the project",

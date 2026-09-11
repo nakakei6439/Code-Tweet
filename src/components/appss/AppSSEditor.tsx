@@ -17,10 +17,11 @@ import type {
 import {
   EXPORT_SIZES,
   FONTS,
-  IPAD_EXPORT_SIZE,
+  IPAD_EXPORT_SIZES,
   MAX_SLIDES,
   THEMES,
   canvasFor,
+  ipadInchesFor,
   resolveFontForScript,
   buildCustomTheme,
   themeById,
@@ -32,13 +33,13 @@ import { useAppSSProject } from "@/lib/appss/storage";
 import { makeStarterSlides, nid } from "@/lib/appss/defaults";
 import {
   captureSlide,
+  commitAndVerifyOffscreen,
   computeFontEmbedCSS,
   createZip,
   downloadZip,
   slugify,
   stamp,
   waitForFonts,
-  waitForPaint,
   warmupCapture,
 } from "@/lib/appss/exporter";
 import { exportProjectZip, importProjectZip } from "@/lib/appss/projectFile";
@@ -76,6 +77,9 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
   const [usage, setUsage] = React.useState<UsageInfo | null>(initialUsage);
   const [, forceRender] = React.useReducer((n: number) => n + 1, 0);
   const exportRef = React.useRef<HTMLDivElement | null>(null);
+  // 2026-09-07 スプリント 06: 書き出し用オフスクリーン DOM の現在寸法。
+  // iPad の 13"/11" を切り替えるために使う。iPhone は常に canvasFor("iphone") のまま。
+  const [exportDims, setExportDims] = React.useState<{ w: number; h: number }>(() => canvasFor("iphone"));
 
   async function refreshUsage() {
     try {
@@ -404,8 +408,46 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
     try {
       await preloadImages(assetRefs, { retryFailed: true });
       await waitForFonts();
-      setExportSlideIndex(0);
-      await waitForPaint();
+      // デバイス別の書き出し設定を確定する。iPhone は 4 サイズ（1320×2868 等）、
+      // iPad は 13 インチ (2064×2752) と 11 インチ (1488×2266) の 2 サイズ（2026-09-07 スプリント 06）。
+      const isIpad = deviceKind === "ipad";
+      const sizes = isIpad ? IPAD_EXPORT_SIZES : EXPORT_SIZES;
+      const folderName = (size: { w: number; h: number }) =>
+        isIpad ? `ipad-${size.w}x${size.h}` : `${size.w}x${size.h}`;
+      const zipDeviceSuffix = isIpad ? "-ipad" : "";
+
+      // 2026-09-12 attempt 3 — React state を async 関数内で「今何を撮っているか」
+      // の判断材料として読み返してはいけない（await をまたぐと最新値の保証が無い）。
+      // attempt 2 のバグの根因は、`exportAll` のクロージャが `exportSlideIndex` を
+      // 呼出時点の値で固定し、後続の setExportSlideIndex(i) が同じクロージャ変数を
+      // 更新しないことにあった。これを解消するため、ループ中はローカル変数
+      // `currentSlideIndex` を単一の真実源とし、React state には「期待する値を
+      // 書き戻す」用途だけに使わせる。
+      //
+      //   - サイズ切替時: currentSlideIndex を 0 にリセットし、
+      //                   setExportSlideIndex(0) と setExportDims(offscreenDims) を
+      //                   同じ flushSync 内でコミットする（それぞれを別 commit すると
+      //                   中間状態が DOM に一瞬出る）。
+      //   - スライド切替時: currentSlideIndex = i で setExportSlideIndex(i) をコミット。
+      //   - 検証 expectation はローカル変数から組み立てる（state から逆算しない）。
+      let currentSlideIndex = 0;
+      const initialDims = isIpad ? sizes[0] : canvasFor(deviceKind);
+      const initialReady = await commitAndVerifyOffscreen(
+        {
+          slideId: slides[currentSlideIndex].id,
+          width: initialDims.w,
+          height: initialDims.h,
+        },
+        () => {
+          setExportSlideIndex(currentSlideIndex);
+          setExportDims(initialDims);
+        },
+        () => exportRef.current,
+        "initial",
+      );
+      if (!initialReady) {
+        throw new Error(te("canvasInitFailed"));
+      }
 
       const el = exportRef.current;
       if (!el) throw new Error(te("canvasInitFailed"));
@@ -414,30 +456,90 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       const fontEmbedCSS = await computeFontEmbedCSS(el);
       await warmupCapture(el, fontEmbedCSS);
 
-      // デバイス別の書き出し設定を確定する。iPhone は 4 サイズ、iPad は 2064×2752 のみ。
-      // フォルダ名は iPad のとき "ipad-2064x2752/" プレフィックスを付けて、iPhone の
-      // "1320x2868/" 等のフォルダ名と一目で区別できるようにする。
-      const exportCanvas = canvasFor(deviceKind);
-      const sizes =
-        deviceKind === "ipad"
-          ? [IPAD_EXPORT_SIZE]
-          : EXPORT_SIZES;
-      const folderName = (size: { w: number; h: number }) =>
-        deviceKind === "ipad" ? `ipad-${size.w}x${size.h}` : `${size.w}x${size.h}`;
-      const zipDeviceSuffix = deviceKind === "ipad" ? "-ipad" : "";
-
       const zip = createZip();
       const total = sizes.length * slides.length;
       let unit = 0;
       let okCount = 0;
       const errors: string[] = [];
 
-      for (const size of sizes) {
+      for (let s = 0; s < sizes.length; s++) {
+        const size = sizes[s];
+        // iPad のとき 13"/11" でオフスクリーン DOM の寸法と SlideCanvas 内の rect 計算を
+        // 切り替える。11" は 13" 用レイアウト既定値を 11" 比率 (≈ 0.657) でリフローして
+        // 再描画する（13" 描画の単純引き伸ばしスケールではない）。
+        // iPhone はオフスクリーンを常に CANVAS (1320×2868) のまま据え置く。
+        const offscreenDims = isIpad ? size : canvasFor(deviceKind);
+
+        // サイズ切替: 必ずスライド 0 へ巻き戻し、寸法変更と同時にコミットする。
+        // attempt 2 の旧実装は「現在の exportSlideIndex」をクロージャ越しに参照していた
+        // ため、サイズ 2 周目の検証が古いスライド ID を期待値にして必ず失敗していた。
+        // attempt 3 ではローカル変数を真実源にしてこれを根絶する。
+        currentSlideIndex = 0;
+        const sizeReady = await commitAndVerifyOffscreen(
+          {
+            slideId: slides[currentSlideIndex].id,
+            width: offscreenDims.w,
+            height: offscreenDims.h,
+          },
+          () => {
+            // サイズとスライドを同一 commit 内で切り替える（分離すると DOM が
+            // 中間状態「古い寸法・新しいスライド」になり verify が揺れる）。
+            setExportSlideIndex(currentSlideIndex);
+            setExportDims(offscreenDims);
+          },
+          () => exportRef.current,
+          `size[s=${s}/${sizes.length}]=${offscreenDims.w}x${offscreenDims.h}`,
+        );
+        if (!sizeReady) {
+          // サイズ切替で race が解決しない場合は、このサイズ内の全スライドをスキップ。
+          // 2026-09-12: どのサイズが丸ごと失敗したかが伝わるよう、iPad のときは
+          // 専用文言を出す（attempt 2 の「7枚失敗/7枚成功」だけだと 11" が全滅したことが
+          // 読み取れない）。
+          if (isIpad) {
+            const inches = ipadInchesFor(size);
+            errors.push(
+              inches
+                ? te("exportIpadBatchFailed", {
+                    inches,
+                    w: String(size.w),
+                    h: String(size.h),
+                    count: slides.length,
+                  })
+                : te("exportTargetMissing", { size: `${size.w}×${size.h}`, n: "1" }),
+            );
+            for (let k = 0; k < slides.length; k++) unit += 1;
+          } else {
+            for (let k = 0; k < slides.length; k++) {
+              errors.push(
+                te("exportTargetMissing", { size: `${size.w}×${size.h}`, n: k + 1 }),
+              );
+              unit += 1;
+            }
+          }
+          continue;
+        }
+
         for (let i = 0; i < slides.length; i++) {
+          currentSlideIndex = i;
           unit += 1;
           setExporting(`${unit}/${total}`);
-          setExportSlideIndex(i);
-          await waitForPaint();
+          // スライド切替も flushSync + 検証で同期コミット。検証成功後にのみ
+          // html-to-image キャプチャを開始する。これにより attempt 1 の
+          // 「1 枚前ずれ」「torn（DOM 途中状態）」フレームを根絶する。
+          const slideReady = await commitAndVerifyOffscreen(
+            { slideId: slides[i].id, width: offscreenDims.w, height: offscreenDims.h },
+            () => {
+              setExportSlideIndex(currentSlideIndex);
+            },
+            () => exportRef.current,
+            `slide[s=${s},i=${i}/${slides.length}]`,
+          );
+          if (!slideReady) {
+            errors.push(
+              te("exportTargetMissing", { size: `${size.w}×${size.h}`, n: i + 1 }),
+            );
+            continue;
+          }
           const node = exportRef.current;
           if (!node) {
             errors.push(te("exportTargetMissing", { size: `${size.w}×${size.h}`, n: i + 1 }));
@@ -446,8 +548,8 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
           try {
             const dataUrl = await captureSlide(
               node,
-              exportCanvas.w,
-              exportCanvas.h,
+              offscreenDims.w,
+              offscreenDims.h,
               size.w,
               size.h,
               fontEmbedCSS,
@@ -651,34 +753,41 @@ export function AppSSEditor({ isLoggedIn, initialUsage }: Props) {
       </div>
 
       {/* 書き出し用オフスクリーンキャンバス（実寸）。選択中のデバイス種別のキャンバス寸法で
-          描画する（iPhone 1320×2868 / iPad 2064×2752）。スプリント 03 で iPad 対応。 */}
-      {exportSlide && (() => {
-        const offscreen = canvasFor(deviceKind);
-        return (
-          <div
-            ref={exportRef}
-            aria-hidden
-            style={{
-              position: "absolute",
-              left: -99999,
-              top: 0,
-              width: offscreen.w,
-              height: offscreen.h,
-              fontFamily,
-              pointerEvents: "none",
-            }}
-          >
-            <SlideCanvas
-              slide={exportSlide}
-              theme={theme}
-              backgroundStyle={backgroundStyle}
-              hideEmpty
-              watermark={exportWatermark}
-              device={deviceKind}
-            />
-          </div>
-        );
-      })()}
+          描画する。iPhone は 1320×2868 固定、iPad は exportDims で 13"/11" を切り替える
+          （2026-09-07 スプリント 06）。SlideCanvas に exportCanvas を渡して 11" 比率で
+          rect をリフローする（13" 描画の単純引き伸ばしスケールではない）。
+          2026-09-07 スプリント 06 attempt 2: data-export-* 属性を output して
+          commitAndVerifyOffscreen が「これから撮るスライド・寸法」を実 DOM から
+          読み戻して検証できるようにする。これが無いと React commit と
+          html-to-image クローンが非同期で race する。 */}
+      {exportSlide && (
+        <div
+          ref={exportRef}
+          aria-hidden
+          data-export-slide-id={exportSlide.id}
+          data-export-w={String(exportDims.w)}
+          data-export-h={String(exportDims.h)}
+          style={{
+            position: "absolute",
+            left: -99999,
+            top: 0,
+            width: exportDims.w,
+            height: exportDims.h,
+            fontFamily,
+            pointerEvents: "none",
+          }}
+        >
+          <SlideCanvas
+            slide={exportSlide}
+            theme={theme}
+            backgroundStyle={backgroundStyle}
+            hideEmpty
+            watermark={exportWatermark}
+            device={deviceKind}
+            exportCanvas={deviceKind === "ipad" ? exportDims : undefined}
+          />
+        </div>
+      )}
     </div>
   );
 }

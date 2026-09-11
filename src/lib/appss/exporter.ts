@@ -3,6 +3,7 @@
 // html-to-image で実寸 DOM を PNG 化し、全サイズを JSZip で 1 つの zip にまとめる。
 // Based on MIT-licensed https://github.com/ParthJadhav/app-store-screenshots
 import { getFontEmbedCSS, toPng } from "html-to-image";
+import { flushSync } from "react-dom";
 import JSZip from "jszip";
 
 // Safari(WebKit) は SVG foreignObject への画像埋め込みで、初回描画時に
@@ -17,6 +18,153 @@ export const waitForPaint = () =>
   new Promise<void>((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
   });
+
+// 2026-09-07 スプリント 06 attempt 2: スプリント 03 / 06 で顕在化した
+// 「React commit/paint と html-to-image キャプチャの非決定的レース」対策。
+// React 18+ (本プロジェクトは React 19) の setState はバッチングされ、
+// await をまたいでコミットが遅延しうる。さらに Next.js の Turbopack で
+// コミット直後のレイアウト計算に数 ms 〜 数十 ms かかるケースもあるため、
+// 単に二重 rAF (waitForPaint) を入れても「次のスライド/寸法に切り替わった
+// 状態でキャプチャされる保証」は得られない。
+// 対策:
+//   1. setState を flushSync で同期コミット (DOM がこの呼び出し直後に更新)
+//   2. オフスクリーンのルート要素に data-export-slide-id / data-export-w /
+//      data-export-h を書き出しておき、実 DOM から読み戻して期待値と一致
+//      するまで短い間隔でリトライする（上限つき）
+//   3. 一致しないまま上限に達したら false を返し、呼び出し側で errors[] に
+//      積む（壊れた PNG を zip に混入させない）
+export type OffscreenExpectation = {
+  slideId: string;
+  width: number;
+  height: number;
+};
+
+// 検証リトライの最大回数（各 16ms 待つので合計 ~0.5s）。Next.js + フォント
+// ロードで重くなった環境でも 30 回 ≒ 480ms あれば、コミット後のレイアウト
+// 計算をほぼ確実に吸収できる。超えたら "race で詰んだ" として呼び出し側に
+// 報告する。
+export const OFFSCREEN_VERIFY_MAX_ATTEMPTS = 30;
+const OFFSCREEN_VERIFY_INTERVAL_MS = 16;
+
+// 検証失敗時のデバッグ用に、ルート要素の実状態を読み取った形。
+export type OffscreenObserved = {
+  rootFound: boolean;
+  attrSlideId: string | null;
+  attrW: string | null;
+  attrH: string | null;
+  rectWidth: number | null;
+  rectHeight: number | null;
+};
+
+// キャプチャ対象のオフスクリーン DOM を取得して、data-export-* 属性が
+// expectation と一致するかを確認する。一致したら true、上限到達で false。
+// 「ルート要素が存在しない」「属性が書かれていない」「期待値と違う」
+// いずれも「まだ切り替わっていない」とみなして再試行する。
+// 2026-09-12 attempt 3: 失敗時に「最後の観測値」を返すように拡張。
+// `verifyOffscreenReady` は後方互換のため boolean を返す形式を残す。
+export async function verifyOffscreenReady(
+  expectation: OffscreenExpectation,
+  getRoot: () => HTMLElement | null,
+): Promise<boolean> {
+  const result = await verifyOffscreenReadyWithDetails(expectation, getRoot);
+  return result.ready;
+}
+
+// 失敗時のデバッグ用：期待値 or 最後の観測値（DOM から実際に読み戻した内容）
+// の両方を含んだ構造体。呼び出し側で console.warn に使える。
+export async function verifyOffscreenReadyWithDetails(
+  expectation: OffscreenExpectation,
+  getRoot: () => HTMLElement | null,
+): Promise<{ ready: boolean; observed: OffscreenObserved }> {
+  let lastObserved: OffscreenObserved = {
+    rootFound: false,
+    attrSlideId: null,
+    attrW: null,
+    attrH: null,
+    rectWidth: null,
+    rectHeight: null,
+  };
+  for (let attempt = 0; attempt < OFFSCREEN_VERIFY_MAX_ATTEMPTS; attempt++) {
+    const el = getRoot();
+    if (!el) {
+      lastObserved = {
+        rootFound: false,
+        attrSlideId: null,
+        attrW: null,
+        attrH: null,
+        rectWidth: null,
+        rectHeight: null,
+      };
+      await delay(OFFSCREEN_VERIFY_INTERVAL_MS);
+      continue;
+    }
+    const attrSlide = el.getAttribute("data-export-slide-id");
+    const attrW = el.getAttribute("data-export-w");
+    const attrH = el.getAttribute("data-export-h");
+    const rect = el.getBoundingClientRect();
+    lastObserved = {
+      rootFound: true,
+      attrSlideId: attrSlide,
+      attrW,
+      attrH,
+      rectWidth: Math.round(rect.width),
+      rectHeight: Math.round(rect.height),
+    };
+    if (
+      attrSlide === expectation.slideId &&
+      attrW === String(expectation.width) &&
+      attrH === String(expectation.height) &&
+      Math.round(rect.width) === expectation.width &&
+      Math.round(rect.height) === expectation.height
+    ) {
+      return { ready: true, observed: lastObserved };
+    }
+    await delay(OFFSCREEN_VERIFY_INTERVAL_MS);
+  }
+  return { ready: false, observed: lastObserved };
+}
+
+// setState を含むコールバックを flushSync で同期コミットしてから、
+// オフスクリーン DOM が期待状態になったかを確認するワンショットヘルパー。
+// 失敗時は false（= 呼び出し側で errors[] に積む）。
+// 2026-09-12 attempt 3: label 引数を追加。検証上限到達時に期待値と観測値を
+// console.warn で出し、デバッグ・切り分けをしやすくした。
+export async function commitAndVerifyOffscreen(
+  expectation: OffscreenExpectation,
+  commit: () => void,
+  getRoot: () => HTMLElement | null,
+  label?: string,
+): Promise<boolean> {
+  // 1) React state を同期コミット。commit() 内の setState が直ちに DOM に反映される。
+  try {
+    flushSync(() => {
+      commit();
+    });
+  } catch {
+    // flushSync が失敗した場合は rAF にフォールバックして最低限の遅延を入れる。
+    await waitForPaint();
+  }
+  // 2) 念のため paint を 1 回挟み（Safari の場合レイアウトに 1f 必要）、
+  // 3) 実 DOM の data-* 属性 + 寸法が expectation と一致するまで短い間隔で再確認。
+  await waitForPaint();
+  const { ready, observed } = await verifyOffscreenReadyWithDetails(expectation, getRoot);
+  if (!ready) {
+    // 失敗時の切り分け用: 期待値 / 観測値（DOM から実際に読み戻した値）/
+    // ラベル（呼び出し元の文脈: "size loop/13inch" 等）を出す。サイレントで
+    // errors[] に積まれると evaluator からのフィードバックループが遅くなるため
+    // ここでは必ず console.warn を出す。
+    console.warn("[commitAndVerifyOffscreen] verify timed out", {
+      label: label ?? "(no label)",
+      expected: expectation,
+      observed,
+    });
+  }
+  return ready;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export async function waitForFonts() {
   if (typeof document !== "undefined" && document.fonts?.ready) {

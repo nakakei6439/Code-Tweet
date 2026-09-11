@@ -530,6 +530,7 @@
     "exportFailedOne": "書き出しに失敗しました: {reason}",
     "exportFailedMany": "{failed}枚の書き出しに失敗しました（{ok}枚は成功）",
     "exportFailed": "書き出しに失敗しました",
+    "exportIpadBatchFailed": "iPad {inches}インチ ({w}×{h})、{count}枚全部が失敗しました（描画先が準備できませんでした）",
     "loadingEditor": "エディタを読み込み中…",
     "resetConfirm": "編集内容を破棄して初期状態に戻しますか？",
     "projectExportFailed": "プロジェクトの書き出しに失敗しました",

@@ -530,6 +530,7 @@
     "exportFailedOne": "La exportación falló: {reason}",
     "exportFailedMany": "Falló la exportación de {failed} imágenes ({ok} correctas)",
     "exportFailed": "La exportación falló",
+    "exportIpadBatchFailed": "iPad {inches} pulgadas ({w}×{h}) — fallaron las {count} imágenes (destino de renderizado no listo)",
     "loadingEditor": "Cargando el editor...",
     "resetConfirm": "¿Descartar tus cambios y volver al estado inicial?",
     "projectExportFailed": "No se pudo exportar el proyecto",
