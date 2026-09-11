@@ -530,6 +530,7 @@
     "exportFailedOne": "导出失败：{reason}",
     "exportFailedMany": "{failed} 张导出失败（{ok} 张成功）",
     "exportFailed": "导出失败",
+    "exportIpadBatchFailed": "iPad {inches}英寸 ({w}×{h})，{count}张全部失败（未找到绘制目标）",
     "loadingEditor": "正在加载编辑器…",
     "resetConfirm": "是否放弃编辑内容并恢复初始状态？",
     "projectExportFailed": "项目导出失败",

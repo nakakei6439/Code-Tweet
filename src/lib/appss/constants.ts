@@ -19,6 +19,27 @@ export type DeviceKind = "iphone" | "ipad";
 // iPad 13インチの必須サイズ（App Store Connect）。スプリント 03 で export に使う。
 export const IPAD_EXPORT_SIZE = { w: 2064, h: 2752 };
 
+// iPad 11インチ（任意提出）のサイズ（iPad Pro M4/M5 基準、App Store Connect）。
+// 2026-09-07 スプリント 06 で iPad 書き出しに 11インチを追加するために導入。
+// 13インチは App Store Connect で必須、11インチは任意（未提出なら 13インチから自動スケール）。
+export const IPAD_EXPORT_SIZE_11 = { w: 1488, h: 2266 };
+
+// iPad の書き出しサイズ一覧（スプリント 06 で追加）。
+// 13インチ（必須）と 11インチ（任意）の両方を含む。
+// UI のプレビュー・キャンバス寸法は従来どおり 13インチ基準（DEVICE_PROFILES.ipad.canvas）
+// のままなので、この配列は export 専用。フォルダ名（`ipad-2064x2752/`, `ipad-1488x2266/`）に
+// そのまま使う。
+export const IPAD_EXPORT_SIZES = [IPAD_EXPORT_SIZE, IPAD_EXPORT_SIZE_11];
+
+// iPad サイズ（{w,h}）から見た目用のインチ表記（"13" / "11"）を返す。
+// 2026-09-12 attempt 3: エラーメッセージでサイズを一意に識別するために導入。
+// 未知のサイズは空文字を返し、エラー文言では "{w}×{h}" にフォールバックする。
+export function ipadInchesFor(size: { w: number; h: number }): string {
+  if (size.w === IPAD_EXPORT_SIZE.w && size.h === IPAD_EXPORT_SIZE.h) return "13";
+  if (size.w === IPAD_EXPORT_SIZE_11.w && size.h === IPAD_EXPORT_SIZE_11.h) return "11";
+  return "";
+}
+
 export const DEVICE_PROFILES: Record<DeviceKind, { canvas: { w: number; h: number }; bezelRatio: number }> = {
   iphone: {
     // スプリント 04 方針転換: Apple Design Resources 公式 Product Bezel ではなく、
@@ -56,11 +77,28 @@ export const EXPORT_SIZES: ExportSize[] = [
 ];
 
 // レイアウト内でのデバイス幅（キャンバス幅比）
-export function phoneW(cW: number, cH: number, clamp = 0.84, kind: DeviceKind = "iphone") {
-  return Math.min(clamp, 0.72 * (cH / cW) * bezelRatioFor(kind));
+// 2026-09-12 attempt 4: ratio 引数を追加。iPad 11 インチ書き出し時など、呼び出し元が
+// 「実際にレンダリング中のキャンバス比」を持っている場合は ratio を渡す（bezelRatioFor
+// の固定値 0.75 と cW/cH が乖離するケースで、deviceH/cH がレイアウト想定を超えて
+// 見出しと重なる不具合を解消するため）。未指定時は従来どおり bezelRatioFor(kind) を使い、
+// iPhone 側・iPad 13 インチ側（cW/cH === bezelRatioFor(kind)）は完全に不変。
+export function phoneW(
+  cW: number,
+  cH: number,
+  clamp = 0.84,
+  kind: DeviceKind = "iphone",
+  ratio?: number,
+) {
+  const effectiveRatio = ratio ?? bezelRatioFor(kind);
+  return Math.min(clamp, 0.72 * (cH / cW) * effectiveRatio);
 }
-export function phoneWSmall(cW: number, cH: number, kind: DeviceKind = "iphone") {
-  return phoneW(cW, cH, 0.66, kind);
+export function phoneWSmall(
+  cW: number,
+  cH: number,
+  kind: DeviceKind = "iphone",
+  ratio?: number,
+) {
+  return phoneW(cW, cH, 0.66, kind, ratio);
 }
 
 // ---------- フォント ----------

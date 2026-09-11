@@ -31,7 +31,8 @@
 | App SS iPad 実機ベゼル差し替え（2026-09-05、スプリント 04、保留） | 暫定の角丸枠を Apple 公式 iPad Pro 13インチ Product Bezel（縦向き）に差し替えるスプリント。Apple Design Resources の画像取得と画面開口部の座標実測はコードで自動化できない人手の作業のため、2026-09-05 ユーザー判断で保留。スプリント 01 の暫定フレームのままリリースし、ベゼル画像が用意でき次第、後日再開 |
 | App SS iPad 対応のドキュメント反映（2026-09-05、スプリント 05） | `README.md` の主要仕様の表と `docs/product.md` の App SS 節・「今後の候補」セクションを iPad 対応済み・ベゼル暫定の旨に更新（横向き・12.9インチ非対応を含む）。本ファイルにスプリント 01〜04 の履歴を追記。**実機 iPad ベゼルへの差し替えは引き続き今後の課題** |
 | App SS 汎用デバイスフレームへの統一（2026-09-05、スプリント 04、方針転換） | Apple Design Resources のライセンス条文を再確認したところ、複数ユーザー向け製品への組み込み・再配布は許諾範囲外と判明。Code Tweet のような SaaS への同梱は許諾違反にあたるため、iPhone の既存ベゼルも含めて撤廃し、iPhone / iPad とも汎用フレーム（角丸の黒枠 + 内側に画面領域、外形比はそれぞれ設計キャンバスの縦横比）に統一。`DEVICE_PROFILES.iphone.bezelRatio` を 1470/3000 から CANVAS.w/CANVAS.h に変更し、`BEZEL` / `BEZEL_RATIO` 定数と `public/appss/bezel-iphone.png` を削除。`NOTICE.md` の Apple Product Bezels セクションも削除 |
-| 現在 | 管理画面、規約、プライバシーポリシー、問い合わせ導線、ゲスト利用回数リセット、管理画面ログインロックまで実装済み。App SS は iPhone と iPad（13インチ・縦のみ）の両対応、デバイスフレームは汎用フレームで統一 |
+| App SS iPad 11インチ書き出し追加（2026-09-07、スプリント 06） | iPad 選択時の zip に App Store Connect の 11インチ任意サイズ **1488×2266px** を追加。書き出しサイズは `IPAD_EXPORT_SIZES` の配列（13インチ + 11インチ）に統一し、フォルダは `ipad-2064x2752/` と `ipad-1488x2266/` の 2 種類。`SlideCanvas` に `exportCanvas` オプションを足し、`getDefaultRects` / `getIPadDefaultRects` / `getElementTransform` が cW/cH を引数で受け取れるように拡張して 11インチ比率で rect をリフロー（13インチ描画の単純引き伸ばしスケールではない、専用レイアウト調整は無し）。`AppSSEditor.exportAll` のサイズループで iPad の各サイズごとにオフスクリーン DOM の寸法と `SlideCanvas.exportCanvas` を切り替え、`await waitForPaint()` で React commit を待つ。`DeviceFrame` に `ratioOverride` を追加して 11インチ外形比 (≈ 0.657) で描画。透かし ON / OFF・進捗表示・IndexedDB ベースの画像取り込みは据え置き。**透かし解除の課金消費は「書き出し操作 1 回 = 1 回分」のまま**（13"/11" をまとめて 1 回で出しても多重課金なし）。iPhone 側の挙動と EXPORT_SIZES / CANVAS / プレビューは完全不変 |
+| 現在 | 管理画面、規約、プライバシーポリシー、問い合わせ導線、ゲスト利用回数リセット、管理画面ログインロックまで実装済み。App SS は iPhone と iPad（13インチ・縦のみ）の両対応、iPad は 13インチ + 11インチの 2 サイズを zip 同梱、デバイスフレームは汎用フレームで統一 |
 
 ## 重要な設計判断
 
