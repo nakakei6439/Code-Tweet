@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import type { GenerateContentParameters, GenerateContentResponse } from "@google/genai";
 import twitterText from "twitter-text";
 import { DEFAULT_LOCALE, LOCALES, type LocaleId } from "@/lib/locales";
@@ -10,17 +10,18 @@ function escapeRegExp(value: string): string {
 }
 
 const TWEET_LIMIT = 280;
-export const GEMINI_MODEL = "gemini-2.5-flash";
+export const GEMINI_MODEL = "gemini-3.5-flash-lite";
 
-// gemini-2.5-flash は thinking がデフォルト有効で 1 回の応答が遅く、Hobby プランの
-// 60 秒関数上限を超えて 504 になりやすい。thinkingBudget: 0 で無効化してレイテンシを抑える。
-export const GEMINI_THINKING_OFF = { thinkingBudget: 0 } as const;
+// Gemini 3.x 系の thinking 既定値は MEDIUM で 1 回の応答が遅く、Hobby プランの
+// 60 秒関数上限を超えて 504 になりやすい。thinkingLevel を MINIMAL にしてレイテンシを抑える。
+// 3.x 系では thinkingBudget と thinkingLevel の併用は 400 エラーになるので thinkingBudget は使わない。
+export const GEMINI_THINKING_OFF = { thinkingLevel: ThinkingLevel.MINIMAL } as const;
 
-// 指示追従が効かないと困る短い補正呼び出しにだけ使う控えめな thinking 予算。
+// 指示追従が効かないと困る短い補正呼び出しにだけ使う控えめな thinking レベル。
 // 本生成に使うと 60 秒上限に当たるので、リトライ系の 1 往復に限って有効化する。
-export const GEMINI_THINKING_LIGHT = { thinkingBudget: 512 } as const;
+export const GEMINI_THINKING_LIGHT = { thinkingLevel: ThinkingLevel.LOW } as const;
 
-// gemini-2.5-flash は無料枠で 503(UNAVAILABLE「high demand」)や 429 を一時的に返すことが多い。
+// Gemini API は混雑時に 503(UNAVAILABLE「high demand」)や 429 を一時的に返すことが多い。
 // これらの一過性エラーは指数バックオフで自動リトライし、ユーザーに即エラーを返さない。
 const TRANSIENT_ERROR_RE =
   /\b429\b|\b503\b|UNAVAILABLE|overloaded|high demand|RESOURCE_EXHAUSTED|Service Unavailable|fetch failed|ECONNRESET/i;
@@ -531,7 +532,6 @@ async function regenerateOne(
     contents: buildShortenPrompt(originalText, currentWeight, projectText, toneMemo, url, hashtags, locale),
     config: {
       thinkingConfig: GEMINI_THINKING_OFF,
-      temperature: 0.7,
       maxOutputTokens: 512,
     },
   }, 1);
@@ -572,7 +572,6 @@ async function relanguageOne(
       // 「翻訳して」を無視することがあり、実測で 5 件中 1 件が日本語のまま返っていた。
       // 走るのは言語違いだったポストだけ・並列なので、60 秒上限への影響は限定的。
       thinkingConfig: GEMINI_THINKING_LIGHT,
-      temperature: 0.2,
       maxOutputTokens: 1024,
     },
   }, 1);
@@ -679,7 +678,6 @@ export async function generateTweets(
         // 作り直しのときだけ thinking を入れる。初回から入れると毎回遅くなり、
         // Hobby の 60 秒上限に当たる。
         thinkingConfig: attempt === 0 ? GEMINI_THINKING_OFF : GEMINI_THINKING_LIGHT,
-        temperature: 0.9,
         maxOutputTokens: 2048,
       },
     }, 3);

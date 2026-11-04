@@ -21,7 +21,7 @@ Code Tweet は、README やプロジェクト説明から次の3つを AI で生
 - GitHub リポジトリ URL から README を取得
 - README や機能説明の直接入力
 - 口調メモ、投稿に載せる URL、ハッシュタグの任意指定
-- Gemini API `gemini-2.5-flash` による 5 件生成（note Draft は Markdown 1 本）
+- Gemini API `gemini-3.5-flash-lite` による 5 件生成（note Draft は Markdown 1 本）
 - Code Tweet は 8 言語で生成可能。生成結果の下から言語を追加でき、翻訳ではなく同じ README から対象言語で書き直す（言い回しと 280 weighted length を言語ごとに最適化）。1 リクエスト = 1 言語で、クレジットは 4 言語ごとに 1 回分を消費（切り上げ）
 - `twitter-text` による X の 280 weighted length チェックと自動短縮
 - 生成ポストの「Xで投稿」ボタン（X Web Intent / 共有リンク。API・課金不要、ログイン不要）

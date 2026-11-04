@@ -258,7 +258,6 @@ export async function generateAppSSCopy(
         contents: buildAppSSCopyPrompt(appName, appDescription, features, tone, slideCount, locale),
         config: {
           thinkingConfig: GEMINI_THINKING_OFF,
-          temperature: 0.85,
           maxOutputTokens: 1024,
         },
       },
@@ -322,7 +321,6 @@ export async function extractAppSSInfo(readme: string): Promise<AppSSExtractInfo
       contents: buildAppSSInfoPrompt(readme),
       config: {
         thinkingConfig: GEMINI_THINKING_OFF,
-        temperature: 0.3,
         maxOutputTokens: 220,
       },
     },

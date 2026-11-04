@@ -154,7 +154,6 @@ export async function generateNoteDraft(
   // note は長文のため出力枠を大きめに確保しつつ、thinking は無効化してレイテンシを抑える。
   const noteConfig = {
     thinkingConfig: GEMINI_THINKING_OFF,
-    temperature: 0.8,
     maxOutputTokens: 8192,
   } as const;
   const first = await generateContentWithRetry(ai, {

@@ -98,7 +98,7 @@ npm run dev
 - next-intl（UI の 8 言語対応。`localePrefix: "as-needed"`）
 - Tailwind CSS v4
 - Supabase Auth / Database / RLS
-- Gemini API `gemini-2.5-flash`
+- Gemini API `gemini-3.5-flash-lite`
 - Stripe Checkout / Webhook / Customer Portal
 - Vercel Analytics、Speed Insights、Microsoft Clarity
 - Google Search Console（所有権確認は `public/google56bb80f617a5907b.html`。**削除すると確認が外れます**。`src/proxy.ts` の matcher が `.html` を除外していないと next-intl に書き換えられて 404 になるため、境界を `src/lib/__tests__/proxyMatcher.test.ts` で固定しています）
