@@ -385,6 +385,28 @@ export function detectUrlType(url: string): string {
 }
 
 // テストから言語指示の有無を確認できるよう export する。
+// temperature を使わない代わりに、書き出しの切り口を呼び出しごとにランダムに割り当てて
+// 5 件の書き出しが似通う（同じ入りが繰り返される）のを防ぐ。
+const OPENING_ANGLES = [
+  "疑問形で読者に問いかける",
+  "プロダクト名から始める",
+  "読者の課題・悩みの提起から始める",
+  "具体的な数字から始める",
+  "意外な事実や逆説から始める",
+  "使った後の変化（ビフォーアフター）から始める",
+  "開発者の本音・一言から始める",
+  "短い断言文から始める",
+];
+
+function pickOpeningAngles(random: () => number): string[] {
+  const pool = [...OPENING_ANGLES];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, 5);
+}
+
 export function buildPrompt(
   projectText: string,
   toneMemo: string,
@@ -392,14 +414,18 @@ export function buildPrompt(
   hashtags: string,
   todayStr: string,
   locale: LocaleId = DEFAULT_LOCALE,
+  random: () => number = Math.random,
 ): string {
+  const angles = pickOpeningAngles(random)
+    .map((a, i) => `  ${i + 1}件目: ${a}`)
+    .join("\n");
   const lang = LOCALES[locale].promptName;
   const leads = URL_LEADS[locale];
   // 文字幅が違うので目安字数を言語で変える（CJK は 1 文字 2 ウェイト）。
   const lengthHint =
     LOCALES[locale].script === "latin"
       ? `${lang} は概ね 1 文字 1 ウェイトなので約 260 文字が目安`
-      : `${lang} は 1 文字 2 ウェイトなので約 130 文字が目安`;
+      : `${lang} は 1 文字 2 ウェイトなので、URL を除く本文・リード文・ハッシュタグの合計で約 120〜130 文字を使い切る。短すぎる（110 文字未満）ポストは不可`;
   return `あなたは個人開発者向けのTwitter/Xマーケティングの専門家です。
 以下のプロジェクト説明を読み、そのプロダクトを宣伝するためのポストを5件生成してください。
 
@@ -422,6 +448,8 @@ ${hashtags
 - weighted length の計算ルール：半角英数記号=1、日本語・絵文字など全角文字=2、URL は実長を問わず 23 ウェイト固定
 - ハッシュタグ・URL・リード文・改行を含めた合計を 280 ウェイト以内とする
 - 余裕を持たせるため 260 ウェイトを目安に作成する（${lengthHint}）
+- 書き出し（1 文目）は件ごとに次の切り口で変える。5 件で同じ入り方・同じ言い回しを繰り返さない：
+${angles}
 - 本文には読みやすさのために1〜2箇所の改行を入れる
 - ハッシュタグは本文・URLと改行して末尾に記載する（例：「本文\n#tag1 #tag2 #tag3」）
 - 本文中にハッシュタグを入れた場合でも、最後の行にハッシュタグ行を必ず作る

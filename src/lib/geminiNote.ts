@@ -1,5 +1,5 @@
-import { GoogleGenAI } from "@google/genai";
-import { GEMINI_MODEL, GEMINI_THINKING_OFF, generateContentWithRetry, detectUrlType, formatScheduleLabel } from "@/lib/gemini";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
+import { GEMINI_MODEL, generateContentWithRetry, detectUrlType, formatScheduleLabel } from "@/lib/gemini";
 import {
   DEFAULT_NOTE_LENGTH_PRESET,
   NOTE_LENGTH_PRESETS,
@@ -12,6 +12,8 @@ import type {
 
 const TITLE_RE = /^\s*TITLE:\s*(.+)\s*$/m;
 const TITLE_MAX_LENGTH = 32;
+const MAX_NOTE_RETRIES = 2;
+const NOTE_RETRY_BUDGET_MS = 25_000;
 const HASHTAG_LINE_RE = /^\s*#\S+(?:\s+#\S+)+\s*$/m;
 const SCHEDULE_RE =
   /SCHEDULE:\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})\s*\/\s*([^/\n]+?)\s*\/\s*([^\n]+)/g;
@@ -39,6 +41,34 @@ function countPlainText(markdown: string): number {
   return stripMarkdown(markdown).length;
 }
 
+/** セクションごとの字数配分（合計 1.0）。リード文は別途 200〜300 字固定。 */
+const SECTION_SHARES = [
+  ["こんな課題はありませんか？", 0.12],
+  ["〇〇とは", 0.18],
+  ["主な機能", 0.3],
+  ["使い方", 0.14],
+  ["こんな人におすすめ", 0.1],
+  ["最後に", 0.08],
+] as const;
+
+/** プリセットごとの目標字数と各節の字数目安を文章にする。下限割れを防ぐための具体指示。 */
+function buildLengthGuide(min: number, max: number): string {
+  // モデルは目標より短く書く傾向があるので、範囲の上寄り（85% 位置）を狙わせる。
+  const target = Math.round((min + (max - min) * 0.85) / 50) * 50;
+  const lines = SECTION_SHARES.map(
+    ([name, share]) => `  - \`## ${name}\`：約 ${Math.round((target * share) / 10) * 10} 字`,
+  ).join("\n");
+  const rich =
+    min >= 1500
+      ? "\n- 主な機能は 4〜6 個に増やし、各項目は 2〜3 文（具体例・利用場面を含む）で書く。使い方は各ステップに補足の 1〜2 文を添える。課題・おすすめの各項目も 1〜2 文で書く\n- 短い箇条書きだけで済ませない。各節を指定字数まで具体的に書き込む"
+      : "";
+  return `【字数の目標】
+- 本文全体で **約 ${target.toLocaleString("en-US")} 字** を狙う（下限 ${min.toLocaleString("en-US")} 字を割らないことを最優先、上限 ${max.toLocaleString("en-US")} 字は超えない）
+- リード文：約 250 字
+- 各節の目安：
+${lines}${rich}`;
+}
+
 function buildNotePrompt(
   projectText: string,
   toneMemo: string,
@@ -54,6 +84,8 @@ function buildNotePrompt(
 【最重要ルール（絶対厳守）】
 - TITLE 行のタイトルは記号・空白も含めて必ず ${TITLE_MAX_LENGTH} 文字以内にする。${TITLE_MAX_LENGTH} 文字を超えるタイトルは絶対に出力しない。長くなりそうなら短くまとめ直す。
 - 本文の長さは **プレーンテキスト換算で必ず ${min.toLocaleString("en-US")}〜${max.toLocaleString("en-US")} 字** に収める。プレーンテキスト換算とは、Markdown 記号（\`#\` \`##\` \`-\` \`*\` \`**\` \`>\` \`1.\` リンク記号 \`[](url)\` の \`[]()\` 部分等）と末尾のハッシュタグ行を除いた本文の字数。**上限 ${max.toLocaleString("en-US")} 字は絶対に超えない**。長くなりそうなら、各セクションを短く圧縮するか、箇条書きの項目数を減らす。書き終わったら自分で字数を見積もり、上限超過していたら削る。
+
+${buildLengthGuide(min, max)}
 
 【プロジェクト説明】
 ${projectText}
@@ -141,6 +173,7 @@ export async function generateNoteDraft(
   hashtags: string,
   lengthPreset: NoteLengthPreset = DEFAULT_NOTE_LENGTH_PRESET,
 ): Promise<NoteDraft> {
+  const startedAt = Date.now();
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY が設定されていません。");
   const ai = new GoogleGenAI({ apiKey });
@@ -151,9 +184,14 @@ export async function generateNoteDraft(
   const { min: bodyMin, max: bodyMax } = NOTE_LENGTH_PRESETS[lengthPreset];
 
   const basePrompt = buildNotePrompt(projectText, toneMemo, url, hashtags, todayStr, lengthPreset);
-  // note は長文のため出力枠を大きめに確保しつつ、thinking は無効化してレイテンシを抑える。
+  // note は長文のため出力枠を大きめに確保する。thinking を最小にすると字数下限を守れないため
+  // LOW 以上にする（note は所要 10 秒前後で、Hobby の 60 秒上限まで余裕がある）。
   const noteConfig = {
-    thinkingConfig: GEMINI_THINKING_OFF,
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+    maxOutputTokens: 8192,
+  } as const;
+  const retryConfig = {
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     maxOutputTokens: 8192,
   } as const;
   const first = await generateContentWithRetry(ai, {
@@ -170,23 +208,32 @@ export async function generateNoteDraft(
     return firstNote;
   }
 
-  const retryPrompt = `${basePrompt}\n\n【再生成指示】\n${firstViolations.join("\n")}\nタイトルは ${TITLE_MAX_LENGTH} 字以内、本文は ${bodyMin.toLocaleString("en-US")}〜${bodyMax.toLocaleString("en-US")} 字（プレーンテキスト換算）に必ず収めてください。`;
-  const retry = await generateContentWithRetry(ai, {
-    model: GEMINI_MODEL,
-    contents: retryPrompt,
-    config: noteConfig,
-  }, 1);
-  if (!retry.text) {
-    return firstNote;
+  // 範囲外なら、直前の出力との差を明示して最大 2 回まで作り直し、最も範囲に近いものを採用する。
+  let best = firstNote;
+  let violations = firstViolations;
+  for (let i = 0; i < MAX_NOTE_RETRIES; i++) {
+    // Hobby の 60 秒上限に収めるため、既に 25 秒を超えていたら追加の作り直しはしない。
+    if (i > 0 && Date.now() - startedAt > NOTE_RETRY_BUDGET_MS) break;
+    const previous = `TITLE: ${best.title}\n\n${best.markdown}`;
+    const retryPrompt = `${basePrompt}\n\n【前回の出力（字数が範囲外）】\n${previous}\n\n【再生成指示】\n前回の出力を土台に、同じ構成・見出しで書き直してください。\n${violations.join("\n")}\nタイトルは ${TITLE_MAX_LENGTH} 字以内、本文は ${bodyMin.toLocaleString("en-US")}〜${bodyMax.toLocaleString("en-US")} 字（プレーンテキスト換算）に必ず収めてください。字数が足りない場合は、本文全体で約 ${Math.round((bodyMin + (bodyMax - bodyMin) * 0.85) / 50) * 50} 字を目標に、各節の説明・具体例・補足を増やして書き足してください（節や箇条書きの項目を増やしてもよい）。`;
+    const retry = await generateContentWithRetry(ai, {
+      model: GEMINI_MODEL,
+      contents: retryPrompt,
+      config: retryConfig,
+    }, 1).catch(() => null);
+    if (!retry?.text) break;
+    try {
+      const retryNote = parseNoteOutput(retry.text);
+      if (deviation(retryNote, bodyMin, bodyMax) <= deviation(best, bodyMin, bodyMax)) {
+        best = retryNote;
+      }
+    } catch {
+      break;
+    }
+    violations = describeViolations(best, bodyMin, bodyMax);
+    if (violations.length === 0) break;
   }
-  try {
-    const retryNote = parseNoteOutput(retry.text);
-    return overage(retryNote, bodyMax) <= overage(firstNote, bodyMax)
-      ? retryNote
-      : firstNote;
-  } catch {
-    return firstNote;
-  }
+  return best;
 }
 
 function describeViolations(note: NoteDraft, bodyMin: number, bodyMax: number): string[] {
@@ -202,6 +249,11 @@ function describeViolations(note: NoteDraft, bodyMin: number, bodyMax: number): 
   return issues;
 }
 
-function overage(note: NoteDraft, bodyMax: number): number {
-  return Math.max(0, note.title.length - TITLE_MAX_LENGTH) + Math.max(0, note.charCount - bodyMax);
+/** 許容範囲（タイトル上限・本文の min〜max）からの外れ量。0 なら範囲内。 */
+function deviation(note: NoteDraft, bodyMin: number, bodyMax: number): number {
+  return (
+    Math.max(0, note.title.length - TITLE_MAX_LENGTH) +
+    Math.max(0, note.charCount - bodyMax) +
+    Math.max(0, bodyMin - note.charCount)
+  );
 }

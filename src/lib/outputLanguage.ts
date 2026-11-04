@@ -16,6 +16,9 @@ const FOREIGN_TOLERANCE = 0.12;
 /** CJK・ハングル圏の出力に最低限求める自体系文字の比率。下回れば別言語で書かれている。 */
 const NATIVE_MINIMUM = 0.2;
 
+/** 韓国語の出力に許す漢字の最大数。固有名詞の 1 文字程度は通し、「最短」のような熟語の混入は弾く。 */
+const KR_MAX_HAN = 1;
+
 /** 判定材料が乏しい短文は誤判定の害のほうが大きいので、この長さ未満は判定しない。 */
 const MIN_CHARS = 12;
 
@@ -60,6 +63,7 @@ function isNativeTo(ch: string, script: LocaleScript): boolean {
  * - ラテン圏（en/es/fr/de）: かな・漢字・ハングルが本文の 12% を超えたら違反。
  *   固有名詞をそのまま残すぶんには閾値に届かない。
  * - 中国語・韓国語: かなが 1 文字でも混ざれば、日本語のまま返ってきたとみなして違反。
+ * - 韓国語: 漢字が 2 文字以上混ざっても違反（固有名詞の 1 文字は許容）。
  * - 日本語 / 中国語 / 韓国語: 自体系の文字が本文の 20% に満たなければ違反（英語で返ってきた場合）。
  */
 export function isWrongLanguage(text: string, locale: LocaleId): boolean {
@@ -69,6 +73,11 @@ export function isWrongLanguage(text: string, locale: LocaleId): boolean {
   const script = LOCALES[locale].script;
 
   if ((script === "sc" || script === "tc" || script === "kr") && chars.some(isKana)) {
+    return true;
+  }
+
+  // 韓国語に漢字の熟語が混ざる崩れ（例: 「방지하고最短 루트로」）。かなは無いので上で拾えない。
+  if (script === "kr" && chars.filter((ch) => HAN.test(ch)).length > KR_MAX_HAN) {
     return true;
   }
 

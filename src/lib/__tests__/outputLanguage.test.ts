@@ -70,4 +70,12 @@ describe("isWrongLanguage", () => {
     expect(isWrongLanguage("完了", "en")).toBe(false);
     expect(isWrongLanguage("Done", "ja")).toBe(false);
   });
+
+  it("韓国語に漢字の熟語が混ざった出力を検出する", () => {
+    expect(isWrongLanguage("과학습을 방지하고最短 루트로 프로그래밍을 익히세요.", "ko")).toBe(true);
+  });
+
+  it("韓国語で漢字が 1 文字だけの出力は通す", () => {
+    expect(isWrongLanguage("日 프로젝트를 소개합니다. README를 붙여넣어 보세요.", "ko")).toBe(false);
+  });
 });
