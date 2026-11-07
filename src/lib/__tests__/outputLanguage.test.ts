@@ -78,4 +78,21 @@ describe("isWrongLanguage", () => {
   it("韓国語で漢字が 1 文字だけの出力は通す", () => {
     expect(isWrongLanguage("日 프로젝트를 소개합니다. README를 붙여넣어 보세요.", "ko")).toBe(false);
   });
+
+  it("入力に出てくる製品名のかな・漢字は ko の判定から除外する", () => {
+    const source = "サバイバルTypeScriptは実務で必要な知識を学べる書籍です。";
+    const ko = "'サバイバルTypeScript'를 소개합니다! 실무에 필요한 지식만 골라 배울 수 있어요.";
+    expect(isWrongLanguage(ko, "ko")).toBe(true);
+    expect(isWrongLanguage(ko, "ko", source)).toBe(false);
+  });
+
+  it("入力に無い漢字の熟語は入力を渡しても ko の違反にする", () => {
+    const source = "サバイバルTypeScriptは書籍です。";
+    expect(isWrongLanguage("과학습을 방지하고最短 루트로 프로그래밍을 익히세요.", "ko", source)).toBe(true);
+  });
+
+  it("日本語の文を丸ごと流用した ko 出力は入力を渡しても違反にする", () => {
+    const source = "実務で必要な知識だけを学べる書籍です";
+    expect(isWrongLanguage("実務で必要な知識だけを学べる書籍です 좋아요", "ko", source)).toBe(true);
+  });
 });

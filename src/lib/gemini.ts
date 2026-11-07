@@ -26,17 +26,51 @@ export const GEMINI_THINKING_LIGHT = { thinkingLevel: ThinkingLevel.LOW } as con
 const TRANSIENT_ERROR_RE =
   /\b429\b|\b503\b|UNAVAILABLE|overloaded|high demand|RESOURCE_EXHAUSTED|Service Unavailable|fetch failed|ECONNRESET/i;
 
+// 1 回の生成リクエスト（Route Handler の 1 呼び出し）が使える時間の上限。
+// Hobby の関数上限は 60 秒なので、レスポンス整形・DB 書き込みの余裕として 5 秒を残し 55 秒とする。
+const REQUEST_BUDGET_MS = 55_000;
+// Gemini 1 回の呼び出しに許す最大時間。通常の生成は note でも 10〜20 秒、X ポストは数秒で終わる。
+// 25 秒を超える呼び出しは Gemini 側のハングとみなして打ち切り、残り時間があれば再試行する。
+const CALL_TIMEOUT_MS = 25_000;
+// 残りがこれ未満なら新しい呼び出しは始めない（始めても完了前に 60 秒上限に当たる）。
+const MIN_CALL_MS = 4_000;
+
+const requestDeadlines = new WeakMap<GoogleGenAI, number>();
+
+/** この ai クライアントを使う 1 リクエストの時間予算（既定 55 秒）を開始する。 */
+export function startRequestBudget(ai: GoogleGenAI, budgetMs = REQUEST_BUDGET_MS): void {
+  requestDeadlines.set(ai, Date.now() + budgetMs);
+}
+
+/** 予算の残り時間（ms）。予算未開始なら Infinity。 */
+export function remainingBudgetMs(ai: GoogleGenAI): number {
+  const deadline = requestDeadlines.get(ai);
+  return deadline === undefined ? Infinity : deadline - Date.now();
+}
+
+// タイムアウト（AbortSignal.timeout が投げる TimeoutError）も一過性エラーとして再試行対象にする。
+const TIMEOUT_ERROR_RE = /TimeoutError|AbortError|aborted|timed out|timeout/i;
+
 export async function generateContentWithRetry(
   ai: GoogleGenAI,
   params: GenerateContentParameters,
   maxRetries = 2,
 ): Promise<GenerateContentResponse> {
   for (let attempt = 0; ; attempt++) {
+    const remaining = remainingBudgetMs(ai);
+    if (remaining < MIN_CALL_MS) {
+      throw new Error("Gemini API の応答待ち時間が上限に達しました。もう一度お試しください。");
+    }
+    const timeoutMs = Math.min(CALL_TIMEOUT_MS, remaining - 1_000);
     try {
-      return await ai.models.generateContent(params);
+      return await ai.models.generateContent({
+        ...params,
+        config: { ...params.config, abortSignal: AbortSignal.timeout(timeoutMs) },
+      });
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      if (attempt < maxRetries && TRANSIENT_ERROR_RE.test(message)) {
+      const message = err instanceof Error ? `${err.name} ${err.message}` : String(err);
+      const retriable = TRANSIENT_ERROR_RE.test(message) || TIMEOUT_ERROR_RE.test(message);
+      if (attempt < maxRetries && retriable) {
         await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** attempt));
         continue;
       }
@@ -384,14 +418,13 @@ export function detectUrlType(url: string): string {
   return "Webアプリ・ランディングページ";
 }
 
-// テストから言語指示の有無を確認できるよう export する。
 // temperature を使わない代わりに、書き出しの切り口を呼び出しごとにランダムに割り当てて
 // 5 件の書き出しが似通う（同じ入りが繰り返される）のを防ぐ。
 const OPENING_ANGLES = [
   "疑問形で読者に問いかける",
   "プロダクト名から始める",
   "読者の課題・悩みの提起から始める",
-  "具体的な数字から始める",
+  "プロジェクト説明に書かれている具体的な数字から始める（説明に数字が無ければ別の切り口にする。数字を創作しない）",
   "意外な事実や逆説から始める",
   "使った後の変化（ビフォーアフター）から始める",
   "開発者の本音・一言から始める",
@@ -407,6 +440,7 @@ function pickOpeningAngles(random: () => number): string[] {
   return pool.slice(0, 5);
 }
 
+// テストから言語指示の有無を確認できるよう export する。
 export function buildPrompt(
   projectText: string,
   toneMemo: string,
@@ -610,16 +644,17 @@ async function relanguageOne(
 // （生成そのものを失敗させるより、混在していても何か返すほうが実害が小さい）。
 async function fixLanguage(
   draft: string,
+  projectText: string,
   url: string,
   hashtags: string,
   ai: GoogleGenAI,
   locale: LocaleId,
 ): Promise<string> {
-  if (!isWrongLanguage(draft, locale)) return draft;
+  if (!isWrongLanguage(draft, locale, projectText)) return draft;
   for (let attempt = 0; attempt < MAX_RELANGUAGE_ATTEMPTS; attempt++) {
     try {
       const rewritten = await relanguageOne(draft, url, hashtags, ai, locale);
-      if (rewritten.length > 0 && !isWrongLanguage(rewritten, locale)) return rewritten;
+      if (rewritten.length > 0 && !isWrongLanguage(rewritten, locale, projectText)) return rewritten;
     } catch {
       break;
     }
@@ -643,6 +678,9 @@ async function shortenWithinLimit(
   let weight = countWeighted(current);
   let attempts = 0;
   let languageFailures = 0;
+  // 言語判定に落ちたが上限内に収まった短縮結果。280 ウェイトの上限は言語判定より優先するので、
+  // 言語違反しか得られなかった場合の最終手段として取っておく。
+  let withinLimitButWrongLanguage = "";
   while (weight > TWEET_LIMIT && attempts < MAX_REGENERATE_ATTEMPTS) {
     try {
       const shortened = dropTagsToFit(
@@ -658,7 +696,10 @@ async function shortenWithinLimit(
       // 短縮のはずみで別言語に化けた結果を採用してはいけない。
       // ただしこれは「短縮の失敗」ではないので、短縮の試行回数からは外す。
       // 数えてしまうと言語事故のぶんだけ短縮の機会が減り、上限超過のまま返りやすくなる。
-      if (isWrongLanguage(shortened, locale)) {
+      if (isWrongLanguage(shortened, locale, projectText)) {
+        if (shortened.length > 0 && countWeighted(shortened) <= TWEET_LIMIT) {
+          withinLimitButWrongLanguage = shortened;
+        }
         languageFailures++;
         if (languageFailures >= MAX_SHORTEN_LANGUAGE_FAILURES) break;
         continue;
@@ -676,7 +717,27 @@ async function shortenWithinLimit(
       break;
     }
   }
+  if (weight > TWEET_LIMIT && withinLimitButWrongLanguage) return withinLimitButWrongLanguage;
   return current;
+}
+
+// どの経路でも最終出力が 280 ウェイトを超えないようにする最後の砦。
+// 短縮が失敗したときに、本文（URL ブロック・ハッシュタグより前）を末尾から削って収める。
+export function forceWithinLimit(text: string): string {
+  if (countWeighted(text) <= TWEET_LIMIT) return text;
+  const blocks = text.split("\n\n");
+  // URL ブロック（リード文＋URL）とハッシュタグ行より前を「本文」とみなし、そこだけを削る。
+  const urlIndex = blocks.findIndex((block) => /https?:\/\//.test(block));
+  const last = blocks[blocks.length - 1] ?? "";
+  const tailStart =
+    urlIndex >= 0 ? urlIndex : /^(?:#\S+\s*)+$/.test(last.trim()) ? blocks.length - 1 : blocks.length;
+  const tail = blocks.slice(tailStart);
+  const body = Array.from(blocks.slice(0, tailStart).join("\n\n"));
+  const render = () => [body.join("").trimEnd() + "…", ...tail].join("\n\n");
+  while (body.length > 0 && countWeighted(render()) > TWEET_LIMIT) body.pop();
+  if (body.length > 0 && countWeighted(render()) <= TWEET_LIMIT) return render();
+  if (tail.length > 0 && countWeighted(tail.join("\n\n")) <= TWEET_LIMIT) return tail.join("\n\n");
+  return text;
 }
 
 export async function generateTweets(
@@ -689,6 +750,7 @@ export async function generateTweets(
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY が設定されていません。");
   const ai = new GoogleGenAI({ apiKey });
+  startRequestBudget(ai);
 
   const today = new Date();
   const todayStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
@@ -716,7 +778,7 @@ export async function generateTweets(
 
     ({ drafts, schedules } = parseGeneratedTweets(text, locale));
 
-    const wrong = drafts.filter((d) => isWrongLanguage(d, locale)).length;
+    const wrong = drafts.filter((d) => isWrongLanguage(d, locale, projectText)).length;
     if (wrong * 2 <= drafts.length) break;
   }
 
@@ -724,8 +786,9 @@ export async function generateTweets(
   // 1 ツイート内では、言語を直してから長さを詰める。逆順だと書き直しで再び超過しうる。
   const finalDrafts = await Promise.all(
     drafts.map(async (draft) => {
-      const inLanguage = await fixLanguage(draft, url, hashtags, ai, locale);
-      return shortenWithinLimit(inLanguage, projectText, toneMemo, url, hashtags, ai, locale);
+      const inLanguage = await fixLanguage(draft, projectText, url, hashtags, ai, locale);
+      const shortened = await shortenWithinLimit(inLanguage, projectText, toneMemo, url, hashtags, ai, locale);
+      return forceWithinLimit(shortened);
     }),
   );
 

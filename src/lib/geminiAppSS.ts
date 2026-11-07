@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { GEMINI_MODEL, GEMINI_THINKING_OFF, generateContentWithRetry } from "./gemini";
+import { GEMINI_MODEL, GEMINI_THINKING_OFF, generateContentWithRetry, startRequestBudget } from "./gemini";
 import { BACKGROUND_STYLES, THEMES, isBackgroundStyle, sanitizeHex } from "./appss/constants";
 import type { AppSSCopySlideIdea, GeneratedPalette } from "@/types/appss";
 import { DEFAULT_LOCALE, LOCALES, type LocaleId } from "@/lib/locales";
@@ -246,6 +246,7 @@ export async function generateAppSSCopy(
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY が設定されていません。");
   const ai = new GoogleGenAI({ apiKey });
+  startRequestBudget(ai);
 
   // 見出しコピーは 1 本が短すぎて単体では言語判定できないため、全スライド分をまとめて判定する。
   // 言語違いなら丸ごと生成し直す（X ポストと違い、1 行だけ書き直しても他の行が残るため）。
@@ -313,6 +314,7 @@ export async function extractAppSSInfo(readme: string): Promise<AppSSExtractInfo
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY が設定されていません。");
   const ai = new GoogleGenAI({ apiKey });
+  startRequestBudget(ai);
 
   const result = await generateContentWithRetry(
     ai,

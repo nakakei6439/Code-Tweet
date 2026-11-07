@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
+import type { GoogleGenAI } from "@google/genai";
 import {
   buildPrompt,
   countWeighted,
   dropTagsToFit,
+  forceWithinLimit,
+  generateContentWithRetry,
+  startRequestBudget,
   formatScheduleLabel,
   parseGeneratedTweets,
   reformatTweet,
@@ -280,4 +284,49 @@ describe("buildPrompt — 多言語", () => {
     expect(prompt).toContain("Kostenlos im App Store");
     expect(prompt).not.toContain("App Storeで無料公開中");
   });
+});
+
+describe("forceWithinLimit — 280 ウェイトの保証", () => {
+  it("上限内のポストはそのまま返す", () => {
+    const text = "短い本文\n\nGitHubで公開中 →\nhttps://example.com\n\n#tag";
+    expect(forceWithinLimit(text)).toBe(text);
+  });
+
+  it("超過したポストは本文だけを削って 280 以内にし、URL とハッシュタグを残す", () => {
+    const long = "가".repeat(200);
+    const text = `${long}\n\nGitHub에서 보기 →\nhttps://example.com/x\n\n#tag1 #tag2`;
+    expect(countWeighted(text)).toBeGreaterThan(280);
+    const result = forceWithinLimit(text);
+    expect(countWeighted(result)).toBeLessThanOrEqual(280);
+    expect(result).toContain("https://example.com/x");
+    expect(result).toContain("#tag1 #tag2");
+  });
+});
+
+describe("buildPrompt — 書き出しの切り口", () => {
+  it("数字の切り口は説明にある数字に限定する", () => {
+    const prompt = buildPrompt("p", "", "", "", "2026年1月1日", "ja", () => 0);
+    expect(prompt).not.toContain("具体的な数字から始める\n");
+    expect(prompt).toContain("数字を創作しない");
+  });
+});
+
+describe("generateContentWithRetry — 時間上限", () => {
+  it("応答が返らない呼び出しは打ち切り、予算内で例外にする（ハングしない）", async () => {
+    let calls = 0;
+    const ai = {
+      models: {
+        generateContent: (params: { config?: { abortSignal?: AbortSignal } }) =>
+          new Promise((_, reject) => {
+            calls++;
+            params.config?.abortSignal?.addEventListener("abort", () => reject(params.config?.abortSignal?.reason));
+          }),
+      },
+    } as unknown as GoogleGenAI;
+    startRequestBudget(ai, 6_000);
+    const started = Date.now();
+    await expect(generateContentWithRetry(ai, { model: "m", contents: "x" }, 2)).rejects.toThrow();
+    expect(calls).toBeGreaterThanOrEqual(1);
+    expect(Date.now() - started).toBeLessThan(8_000);
+  }, 15_000);
 });
