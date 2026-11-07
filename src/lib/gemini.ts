@@ -3,6 +3,7 @@ import type { GenerateContentParameters, GenerateContentResponse } from "@google
 import twitterText from "twitter-text";
 import { DEFAULT_LOCALE, LOCALES, type LocaleId } from "@/lib/locales";
 import { isWrongLanguage } from "@/lib/outputLanguage";
+import { GeminiTimeoutError } from "@/lib/geminiErrors";
 import type { Tweet } from "@/types/tweet";
 
 function escapeRegExp(value: string): string {
@@ -59,7 +60,7 @@ export async function generateContentWithRetry(
   for (let attempt = 0; ; attempt++) {
     const remaining = remainingBudgetMs(ai);
     if (remaining < MIN_CALL_MS) {
-      throw new Error("Gemini API の応答待ち時間が上限に達しました。もう一度お試しください。");
+      throw new GeminiTimeoutError();
     }
     const timeoutMs = Math.min(CALL_TIMEOUT_MS, remaining - 1_000);
     try {
@@ -74,6 +75,8 @@ export async function generateContentWithRetry(
         await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** attempt));
         continue;
       }
+      // 打ち切られた呼び出しは、クライアントで「混雑・再試行してください」に訳せる専用エラーにする。
+      if (TIMEOUT_ERROR_RE.test(message) && !TRANSIENT_ERROR_RE.test(message)) throw new GeminiTimeoutError();
       throw err;
     }
   }
@@ -722,22 +725,61 @@ async function shortenWithinLimit(
 }
 
 // どの経路でも最終出力が 280 ウェイトを超えないようにする最後の砦。
-// 短縮が失敗したときに、本文（URL ブロック・ハッシュタグより前）を末尾から削って収める。
+// 本文（URL ブロック・ハッシュタグ以外）を末尾から削って収め、それでも収まらなければ
+// リード文 → ハッシュタグの順に捨てる。URL は 23 ウェイト固定なので最後まで残せる。
 export function forceWithinLimit(text: string): string {
   if (countWeighted(text) <= TWEET_LIMIT) return text;
-  const blocks = text.split("\n\n");
-  // URL ブロック（リード文＋URL）とハッシュタグ行より前を「本文」とみなし、そこだけを削る。
-  const urlIndex = blocks.findIndex((block) => /https?:\/\//.test(block));
-  const last = blocks[blocks.length - 1] ?? "";
-  const tailStart =
-    urlIndex >= 0 ? urlIndex : /^(?:#\S+\s*)+$/.test(last.trim()) ? blocks.length - 1 : blocks.length;
-  const tail = blocks.slice(tailStart);
-  const body = Array.from(blocks.slice(0, tailStart).join("\n\n"));
-  const render = () => [body.join("").trimEnd() + "…", ...tail].join("\n\n");
-  while (body.length > 0 && countWeighted(render()) > TWEET_LIMIT) body.pop();
-  if (body.length > 0 && countWeighted(render()) <= TWEET_LIMIT) return render();
-  if (tail.length > 0 && countWeighted(tail.join("\n\n")) <= TWEET_LIMIT) return tail.join("\n\n");
-  return text;
+
+  const lines = text.split("\n");
+  const isTagLine = (line: string) => /^(?:#\S+\s*)+$/.test(line.trim());
+  const urlLineIndex = lines.findIndex((line) => /https?:\/\//.test(line));
+  const tagLineIndex = lines.findLastIndex(isTagLine);
+
+  // URL 行の直前行が短いリード文（「…→」等）ならリード文として一緒に守る。
+  const prev = urlLineIndex > 0 ? lines[urlLineIndex - 1].trim() : "";
+  const leadIndex = prev && !isTagLine(prev) && prev.length <= 40 ? urlLineIndex - 1 : -1;
+
+  const reserved = new Set<number>();
+  if (urlLineIndex >= 0) reserved.add(urlLineIndex);
+  if (leadIndex >= 0) reserved.add(leadIndex);
+  if (tagLineIndex >= 0) reserved.add(tagLineIndex);
+
+  const bodyText = lines.filter((_, i) => !reserved.has(i)).join("\n").trim();
+  const lead = leadIndex >= 0 ? lines[leadIndex].trim() : "";
+  const urlLine = urlLineIndex >= 0 ? lines[urlLineIndex].trim() : "";
+  const tags = tagLineIndex >= 0 ? lines[tagLineIndex].trim() : "";
+
+  const compose = (body: string, parts: string[]) =>
+    [body, parts.filter(Boolean).join("\n")].filter(Boolean).join("\n\n");
+
+  // 単語の途中で切れないよう、空白・句読点の位置まで戻って「…」を付ける。
+  const trimBody = (parts: string[]): string | null => {
+    if (countWeighted(compose("", parts)) > TWEET_LIMIT) return null;
+    const chars = Array.from(bodyText);
+    while (chars.length > 0 && countWeighted(compose(chars.join("").trimEnd() + "…", parts)) > TWEET_LIMIT) {
+      chars.pop();
+    }
+    if (chars.length === 0) return compose("", parts);
+    let kept = chars.join("");
+    const boundary = Math.max(...Array.from(kept.matchAll(/[\s、。，．,.!?！？]/g)).map((m) => (m.index ?? -1) + 1), -1);
+    if (boundary > kept.length - 14 && boundary > kept.length / 2) kept = kept.slice(0, boundary);
+    kept = kept.replace(/[\s、，,]+$/, "");
+    return compose(kept.endsWith("。") || kept.endsWith(".") ? kept : kept + "…", parts);
+  };
+
+  const candidates = [
+    [lead, urlLine, tags],
+    [urlLine, tags],
+    [urlLine],
+  ];
+  for (const parts of candidates) {
+    const result = trimBody(parts);
+    if (result !== null && countWeighted(result) <= TWEET_LIMIT) return result;
+  }
+  // URL が無い入力などで構造を読み取れなかった場合は、全体を文字単位で切って収める。
+  const chars = Array.from(text);
+  while (chars.length > 0 && countWeighted(chars.join("")) > TWEET_LIMIT) chars.pop();
+  return chars.join("").trimEnd();
 }
 
 export async function generateTweets(

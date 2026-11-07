@@ -19,7 +19,7 @@ const NATIVE_MINIMUM = 0.2;
 /** 韓国語の出力に許す漢字の最大数。固有名詞の 1 文字程度は通し、「最短」のような熟語の混入は弾く。 */
 const KR_MAX_HAN = 1;
 
-/** 入力由来の語として除外してよい、かな・漢字の連続（語）の最大長。長い塊は文の流用とみなす。 */
+/** 入力由来の語として除外してよい、カタカナ語の最大長。長い塊は文の流用とみなす。 */
 const SOURCE_TERM_MAX = 16;
 
 /** 除外した文字が本文のこの比率を超えたら、固有名詞ではなく入力の流用（言語違い）とみなして除外しない。 */
@@ -43,16 +43,18 @@ function meaningfulChars(text: string): string[] {
     .filter((ch) => /[\p{L}\p{N}]/u.test(ch));
 }
 
-const CJK_RUN = /[\u3040-\u30FF\u31F0-\u31FF\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]+/g;
+// 除外対象はカタカナ語（長音符を含む）だけ。製品名・外来語は原語のまま残ってよいが、
+// 漢字やひらがなは「타言語」「最短」のような本物の日本語混入と区別できないので除外しない。
+const KATAKANA_RUN = /[\u30A0-\u30FF\u31F0-\u31FF]{2,}/g;
 
 /**
- * 入力（README 等）にそのまま出てくるかな・漢字の語を本文から取り除く。
- * 製品名「サバイバルTypeScript」のように入力由来の固有名詞は、ko/zh の出力に残ってよい。
+ * 入力（README 等）にそのまま出てくるカタカナ語を本文から取り除く。
+ * 製品名「サバイバルTypeScript」のカタカナ部分は ko / zh の出力に残ってよい。
  * ただし除外が本文の 3 割を超える場合は、固有名詞ではなく日本語の流用なので除外しない。
  */
 function stripSourceTerms(text: string, source: string): string {
   let exempt = 0;
-  const stripped = text.replace(CJK_RUN, (run) => {
+  const stripped = text.replace(KATAKANA_RUN, (run) => {
     if (run.length <= SOURCE_TERM_MAX && source.includes(run)) {
       exempt += run.length;
       return "";
@@ -88,7 +90,7 @@ function isNativeTo(ch: string, script: LocaleScript): boolean {
  * - ラテン圏（en/es/fr/de）: かな・漢字・ハングルが本文の 12% を超えたら違反。
  *   固有名詞をそのまま残すぶんには閾値に届かない。
  * - 中国語・韓国語: かなが 1 文字でも混ざれば、日本語のまま返ってきたとみなして違反。
- * - sourceText（入力）を渡すと、入力にそのまま出てくる語（製品名など）は ko / zh の判定から除外する。
+ * - sourceText（入力）を渡すと、入力にそのまま出てくるカタカナ語（製品名など）は ko / zh の判定から除外する（漢字・ひらがなは除外しない）。
  * - 韓国語: 漢字が 2 文字以上混ざっても違反（固有名詞の 1 文字は許容）。
  * - 日本語 / 中国語 / 韓国語: 自体系の文字が本文の 20% に満たなければ違反（英語で返ってきた場合）。
  */

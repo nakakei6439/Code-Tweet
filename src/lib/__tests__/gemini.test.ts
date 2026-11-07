@@ -303,6 +303,33 @@ describe("forceWithinLimit — 280 ウェイトの保証", () => {
   });
 });
 
+describe("forceWithinLimit — 構造が崩れた入力", () => {
+  it("URL が本文と同じ段落にあっても 280 以内にする", () => {
+    const text = `${"가나다 ".repeat(120)}\nGitHub에서 보기 →\nhttps://example.com/x\n#tag1 #tag2`;
+    const result = forceWithinLimit(text);
+    expect(countWeighted(result)).toBeLessThanOrEqual(280);
+    expect(result).toContain("https://example.com/x");
+  });
+
+  it("URL ブロック（リード文）自体が長くても 280 以内にする", () => {
+    const text = `短い本文\n\n${"とても長い案内文".repeat(30)}\nhttps://example.com/x\n\n#tag1 #tag2`;
+    const result = forceWithinLimit(text);
+    expect(countWeighted(result)).toBeLessThanOrEqual(280);
+    expect(result).toContain("https://example.com/x");
+  });
+
+  it("URL も無く長い本文は文字単位で収める", () => {
+    expect(countWeighted(forceWithinLimit("あ".repeat(500)))).toBeLessThanOrEqual(280);
+  });
+
+  it("単語の途中で切らず空白位置で切る", () => {
+    const text = `${"TypeScript ".repeat(40)}\n\nGitHubで公開中 →\nhttps://example.com/x`;
+    const result = forceWithinLimit(text);
+    expect(countWeighted(result)).toBeLessThanOrEqual(280);
+    expect(result).not.toMatch(/TypeScri…|TypeScr…|TypeSc…|TypeS…/);
+  });
+});
+
 describe("buildPrompt — 書き出しの切り口", () => {
   it("数字の切り口は説明にある数字に限定する", () => {
     const prompt = buildPrompt("p", "", "", "", "2026年1月1日", "ja", () => 0);

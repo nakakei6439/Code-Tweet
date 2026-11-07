@@ -95,4 +95,19 @@ describe("isWrongLanguage", () => {
     const source = "実務で必要な知識だけを学べる書籍です";
     expect(isWrongLanguage("実務で必要な知識だけを学べる書籍です 좋아요", "ko", source)).toBe(true);
   });
+
+  it("入力にある漢字語でも本物の日本語混入（타言語・最短・実務で必須…）は ko の違反にする", () => {
+    const source = "Java や Python のような他言語の経験があれば、実務で必須な知識に厳選した最短ルートで学べます。サバイバルTypeScript";
+    expect(isWrongLanguage("Java나 Python 같은 타言語 경험을 가진 분께 추천합니다.", "ko", source)).toBe(true);
+    expect(isWrongLanguage("과학습을 방지하고最短 루트로 프로그래밍을 익히세요.", "ko", source)).toBe(true);
+    expect(isWrongLanguage("실무에서 쓰는 実務で必須な知識に厳選した内容 입니다.", "ko", source)).toBe(true);
+    expect(isWrongLanguage("'サバイバルTypeScript'를 소개합니다! 실무에 필요한 지식만 배우세요.", "ko", source)).toBe(false);
+  });
+
+  it("zh-Hans の判定は入力を渡しても変わらない", () => {
+    const source = "サバイバルTypeScript は書籍です";
+    expect(isWrongLanguage("发布了 サバイバルTypeScript。粘贴 README，就能一次生成五条推文。", "zh-Hans", source)).toBe(false);
+    expect(isWrongLanguage("発表しました。READMEを貼り付けるだけで投稿を作れます。", "zh-Hans", source)).toBe(true);
+    expect(isWrongLanguage("Code Tweet released. Paste your README to generate five posts easily.", "zh-Hans", source)).toBe(true);
+  });
 });

@@ -12,6 +12,8 @@ import type {
 
 const TITLE_RE = /^\s*TITLE:\s*(.+)\s*$/m;
 const TITLE_MAX_LENGTH = 32;
+// 目標字数を範囲のどこに置くか（0=下限, 1=上限）。モデルは目標より短く書くので上寄りにする。
+const NOTE_TARGET_POSITION = 0.9;
 const MAX_NOTE_RETRIES = 2;
 const NOTE_RETRY_BUDGET_MS = 25_000;
 const NOTE_RETRY_MIN_REMAINING_MS = 15_000;
@@ -55,7 +57,7 @@ const SECTION_SHARES = [
 /** プリセットごとの目標字数と各節の字数目安を文章にする。下限割れを防ぐための具体指示。 */
 function buildLengthGuide(min: number, max: number): string {
   // モデルは目標より短く書く傾向があるので、範囲の上寄り（90% 位置）を狙わせる。
-  const target = Math.round((min + (max - min) * 0.9) / 50) * 50;
+  const target = Math.round((min + (max - min) * NOTE_TARGET_POSITION) / 50) * 50;
   const lines = SECTION_SHARES.map(
     ([name, share]) => `  - \`## ${name}\`：約 ${Math.round((target * share) / 10) * 10} 字`,
   ).join("\n");
@@ -218,7 +220,7 @@ export async function generateNoteDraft(
     // 加えて、初回を含め開始から 25 秒を超えていたら作り直しはしない（再生成 1 回が 25 秒弱かかりうるため）。
     if (Date.now() - startedAt > NOTE_RETRY_BUDGET_MS || remainingBudgetMs(ai) < NOTE_RETRY_MIN_REMAINING_MS) break;
     const previous = `TITLE: ${best.title}\n\n${best.markdown}`;
-    const retryPrompt = `${basePrompt}\n\n【前回の出力（字数が範囲外）】\n${previous}\n\n【再生成指示】\n前回の出力を土台に、同じ構成・見出しで書き直してください。\n${violations.join("\n")}\nタイトルは ${TITLE_MAX_LENGTH} 字以内、本文は ${bodyMin.toLocaleString("en-US")}〜${bodyMax.toLocaleString("en-US")} 字（プレーンテキスト換算）に必ず収めてください。字数が足りない場合は、本文全体で約 ${Math.round((bodyMin + (bodyMax - bodyMin) * 0.85) / 50) * 50} 字を目標に、各節の説明・具体例・補足を増やして書き足してください（節や箇条書きの項目を増やしてもよい）。`;
+    const retryPrompt = `${basePrompt}\n\n【前回の出力（字数が範囲外）】\n${previous}\n\n【再生成指示】\n前回の出力を土台に、同じ構成・見出しで書き直してください。\n${violations.join("\n")}\nタイトルは ${TITLE_MAX_LENGTH} 字以内、本文は ${bodyMin.toLocaleString("en-US")}〜${bodyMax.toLocaleString("en-US")} 字（プレーンテキスト換算）に必ず収めてください。字数が足りない場合は、本文全体で約 ${Math.round((bodyMin + (bodyMax - bodyMin) * NOTE_TARGET_POSITION) / 50) * 50} 字を目標に、各節の説明・具体例・補足を増やして書き足してください（節や箇条書きの項目を増やしてもよい）。`;
     const retry = await generateContentWithRetry(ai, {
       model: GEMINI_MODEL,
       contents: retryPrompt,
