@@ -16,9 +16,9 @@ Code Tweet は **2026-11-27 に開発を終了**しました。このリポジ�
 | Git 履歴 | 公開前に全 188 コミットを検査（秘密ファイル・API キー形式・実際のキー値）。検出なし | 2026-11-27 完了 |
 | README | 冒頭に開発終了を明記 | 2026-11-27 完了 |
 | 未マージの作業 | PR #16・#17 をクローズ。ブランチ（`chore/gemini-3.5-flash-lite` ほか）は削除せず残す | 2026-11-27 完了 |
-| Gemini API キー | キーを削除（値は保管しない） | 未着手 |
-| Stripe | Webhook・商品の停止、API キーの失効 | 未着手 |
-| GitHub App / OAuth App | 削除 | 未着手 |
-| Vercel | プロジェクト `code-tweet` を削除（https://code-tweet.vercel.app/ 停止） | 未着手 |
-| Supabase | プロジェクトを削除 | 未着手 |
-| GitHub リポジトリ | Public 化 → アーカイブ | 未着手 |
+| Gemini API キー | Google AI Studio で「Code-Tweet Gemini API Key」（末尾 bMXs）を削除。値は保管しない | 2026-11-27 完了 |
+| Stripe | 本番決済は運営者本人の 1 件（2026-07-17 ¥300、返金済み）のみと確認。Webhook 送信先を削除、商品「Code Tweet Pro」をアーカイブ、制限付きキー・Marketing metrics キーを失効、シークレットキーは即時失効でローテーション（新キーは保管しない）。アカウントは決済記録の閲覧用に残す | 2026-11-27 完了 |
+| GitHub App / OAuth App | OAuth App「Code Tweet」と GitHub App「Code Tweet App」を削除 | 2026-11-27 完了 |
+| Vercel | プロジェクト `code-tweet` を削除（https://code-tweet.vercel.app/ は 404 を確認） | 2026-11-27 完了 |
+| Supabase | プロジェクト `code-tweet`（lmrigfcghzmahgykdptd）を削除。同じ組織の SameQ は残す | 2026-11-27 完了 |
+| GitHub リポジトリ | Public 化（2026-11-27）→ この記録を push した後にアーカイブ | 2026-11-27 完了 |
