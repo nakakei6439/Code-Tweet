@@ -58,3 +58,7 @@
 - 多言語生成は 1 リクエスト = 1 言語に分割する。maxDuration 60 秒に収まり、`recordUserUsage`（1 行 insert）と `consume_credit`（常に 1 減算）が無改造で動き、Gemini コストが言語数に比例して粗利率が保てる。クレジットは 4 言語ごとに 1 消費（切り上げ）
 - `formatScheduleLabel` は日本語のみ従来表記を維持し、他言語は `Intl.DateTimeFormat` に委譲する。曜日名を手で持つと言語を足すたびに配列が増えるため
 - `/admin` は運用者専用で訪問者が到達しないため日本語のまま据え置く。ロケール接頭辞付き URL でも認証ゲートを通ることをテストで固定している
+
+## 2026-11-27 開発終了
+
+- 利用者が運営者本人のみとなったため開発を終了。Vercel・Supabase・Stripe・Gemini API キーを停止し、リポジトリはポートフォリオとして公開・アーカイブする（詳細は [shutdown.md](./shutdown.md)）

@@ -8,10 +8,13 @@
 | [setup.md](./setup.md) | ローカル起動、環境変数、外部サービス、DB SQL 適用 |
 | [operations.md](./operations.md) | 本番ヘルスチェック、優先タスク、運用ロードマップ、定期確認 |
 | [history.md](./history.md) | V1 から現行版までの短い実装履歴 |
+| [shutdown.md](./shutdown.md) | 開発終了・サービス停止の記録とチェックリスト |
 | [database.sql](./database.sql) | Supabase SQL。管理画面ロックと生成履歴テーブル |
 
 ## 現在の状態
 
-Code Tweet は本番稼働中。GitHub OAuth、README 取得、Gemini 生成、Code Tweet / note Draft / App SS のタブ式生成、利用制限、Stripe 課金（クレジットパック）、管理画面、生成履歴まで実装済みです。
+**2026-11-27 に開発終了・サービス停止**（[shutdown.md](./shutdown.md)）。以下は停止前の状態です。
+
+Code Tweet は停止前まで本番稼働。GitHub OAuth、README 取得、Gemini 生成、Code Tweet / note Draft / App SS のタブ式生成、利用制限、Stripe 課金（クレジットパック）、管理画面、生成履歴まで実装済みです。
 
 今後は大きな新機能より、課金者数の増加、計測、軽微な導線改善を優先します。

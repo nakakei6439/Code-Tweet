@@ -1,8 +1,11 @@
 # Code Tweet
 
+> **⚠️ 開発終了（2026-11-27）**
+> Code Tweet は開発を終了し、サービスも停止しました（本番 URL は閉鎖）。このリポジトリはポートフォリオとして公開・アーカイブしており、今後の更新はありません。停止の記録は [docs/shutdown.md](./docs/shutdown.md) にあります。
+
 README やプロジェクト説明を AI が分析し、X（旧 Twitter）向けのマーケティングポスト 5 件、note.com に貼り付けられる Markdown Draft 1 本、または App Store 提出用スクリーンショット（App SS）を生成する個人開発者向け Web アプリ。
 
-- 本番 URL: https://code-tweet.vercel.app/
+- 本番 URL: ~~https://code-tweet.vercel.app/~~（停止済み）
 - ドキュメント索引: [docs/index.md](./docs/index.md)
 - プロダクト概要: [docs/product.md](./docs/product.md)
 - セットアップ: [docs/setup.md](./docs/setup.md)
@@ -11,7 +14,9 @@ README やプロジェクト説明を AI が分析し、X（旧 Twitter）向け
 
 ## 現在の状態
 
-本番稼働中。GitHub OAuth、README 取得、Code Tweet / note Draft / App SS のタブ式生成、利用制限、Stripe 課金、管理画面、Pro 向け生成履歴まで実装済みです。
+**2026-11-27 開発終了・サービス停止。**以下は停止直前の状態の記録です。
+
+停止前は本番稼働中。GitHub OAuth、README 取得、Code Tweet / note Draft / App SS のタブ式生成、利用制限、Stripe 課金、管理画面、Pro 向け生成履歴まで実装済みです。
 
 **2026-08-14: プロダクトの軸を App SS に寄せました。**トップページの既定タブを App SS に変更し（`src/app/[locale]/page.tsx`）、ヒーローコピー・`homePage.title` / `description`・`meta.description` を 8 言語すべて書き換えています。理由は、X 向けポスト生成が汎用チャット AI で代替可能なのに対し、**「撮ったスクショを掲載画像に変える」部分は代替コストが高く、ここが本当の差分だと判断したため**です。
 
